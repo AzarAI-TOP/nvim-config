@@ -60,11 +60,28 @@ map("n", "<Leader>lf", function()
   })
 end, { desc = "Format the code" })
 map("n", "<Leader>lr", vim.lsp.buf.rename, { desc = "Rename the symbol" })
-map("n", "<Leader>lR", vim.lsp.buf.references, { desc = "References" })
+map("n", "<Leader>lR", require("telescope.builtin").lsp_references, { desc = "References" })
 map("n", "<Leader>ld", vim.lsp.buf.definition, { desc = "Definition" })
 map("n", "<Leader>lD", vim.lsp.buf.declaration, { desc = "Declaration" })
+map("n", "<Leader>ls", require("telescope.builtin").lsp_document_symbols, { desc = "List symbols in current buffer" })
+map(
+    "n",
+    "<Leader>lS",
+    require("telescope.builtin").lsp_workspace_symbols,
+    { desc = "List symbols in current workspace" }
+)
 
 -- Diagnotic
 map('n', '[d', function() vim.diagnostic.jump({ count = -1, float = true }) end, { desc = "Go to the next diagnostic" })
 map('n', ']d', function() vim.diagnostic.jump({ count = 1, float = true }) end, { desc = "Go to the next diagnostic" })
 map("n", "<Leader>d", function() vim.diagnostic.open_float() end, { desc = "Open diagnostic window" })
+
+-- Telescope
+map("n", "<Leader>ff", require("telescope.builtin").find_files, { desc = "Find files" })
+map("n", "<Leader>fh", require("telescope.builtin").help_tags, { desc = "Help tags" })
+map("n", "<Leader>fk", require("telescope.builtin").keymaps, { desc = "Keymaps" })
+map("n", "<Leader>fr", require("telescope.builtin").registers, { desc = "Registers" })
+map("n", "<Leader>fd", require("telescope.builtin").diagnostics, { desc = "Diagnostics" })
+
+-- Git
+map("n", "<Leader>gc", require("telescope.builtin").git_commits, { desc = "Git commits" })
