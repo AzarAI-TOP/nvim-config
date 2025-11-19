@@ -31,9 +31,12 @@ map("n", "<Leader>/", "gcc", { desc = "Toggle comment", remap = true })
 map({ "o", "x" }, "<Leader>/", "gc", { desc = "Toggle comment", remap = true })
 
 -- Hop
-map({ "n", "o" }, "<Leader>F", function() require("hop").hint_char1() end, { desc = "Hop move in this screen" })
-map({ "n", "o" }, "<Leader>f", function() require("hop").hint_char1 { current_line_only = true } end,
-  { desc = "Hop move in this line" })
+map({ "n", "o" }, "<Leader>J", function()
+    require("hop").hint_char1()
+end, { desc = "Hop move in this screen" })
+map({ "n", "o" }, "<Leader>j", function()
+    require("hop").hint_char1({ current_line_only = true })
+end, { desc = "Hop move in this line" })
 
 -- Todo-Comments
 map("n", "]t", function() require("todo-comments").jump_next() end, { desc = "Go to the next todo comments" })
