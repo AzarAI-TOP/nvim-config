@@ -49,11 +49,11 @@ map("n", "<Leader>e", "<Cmd>Neotree toggle<CR>", { desc = "Toggle directory expl
 
 -- LSP
 map("n", "K", function()
-  vim.lsp.buf.hover({
-    border = "rounded",
-    width = 60,
-    height = 15,
-  })
+    vim.lsp.buf.hover({
+        border = "rounded",
+        width = 60,
+        height = 15,
+    })
 end, { desc = "Hover the word" })
 map("n", "<Leader>la", vim.lsp.buf.code_action, { desc = "Rename the symbol" })
 map("n", "<Leader>lf", require("conform").format, { desc = "Format the code" })
@@ -70,9 +70,13 @@ map(
 )
 
 -- Diagnotic
-map('n', '[d', function() vim.diagnostic.jump({ count = -1, float = true }) end, { desc = "Go to the next diagnostic" })
-map('n', ']d', function() vim.diagnostic.jump({ count = 1, float = true }) end, { desc = "Go to the next diagnostic" })
-map("n", "<Leader>d", function() vim.diagnostic.open_float() end, { desc = "Open diagnostic window" })
+map("n", "[d", function()
+    vim.diagnostic.jump({ count = -1, float = true })
+end, { desc = "Go to the next diagnostic" })
+map("n", "]d", function()
+    vim.diagnostic.jump({ count = 1, float = true })
+end, { desc = "Go to the next diagnostic" })
+map("n", "<Leader>d", vim.diagnostic.open_float, { desc = "Open diagnostic window under cursor" })
 
 -- Telescope
 map("n", "<Leader>ff", require("telescope.builtin").find_files, { desc = "Find files" })
