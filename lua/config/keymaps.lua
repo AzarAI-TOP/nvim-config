@@ -39,8 +39,8 @@ map({ "n", "o" }, "<Leader>j", function()
 end, { desc = "Hop move in this line" })
 
 -- Todo-Comments
-map("n", "]t", function() require("todo-comments").jump_next() end, { desc = "Go to the next todo comments" })
-map("n", "[t", function() require("todo-comments").jump_prev() end, { desc = "Go to the previous todo comments" })
+map("n", "]t", require("todo-comments").jump_next, { desc = "Go to the next todo comments" })
+map("n", "[t", require("todo-comments").jump_prev, { desc = "Go to the previous todo comments" })
 map("n", "<F5>", "<Cmd>TodoQuickFix<CR>", { desc = "Show all todos in the project" })
 map("n", "<F4>", "<Cmd>TodoLocList<CR>", { desc = "Show all todos in the buffer" })
 
@@ -56,12 +56,7 @@ map("n", "K", function()
   })
 end, { desc = "Hover the word" })
 map("n", "<Leader>la", vim.lsp.buf.code_action, { desc = "Rename the symbol" })
-map("n", "<Leader>lf", function()
-  require("conform").format({
-    lsp_format = "fallback",
-    timeout_ms = 1000,
-  })
-end, { desc = "Format the code" })
+map("n", "<Leader>lf", require("conform").format, { desc = "Format the code" })
 map("n", "<Leader>lr", vim.lsp.buf.rename, { desc = "Rename the symbol" })
 map("n", "<Leader>lR", require("telescope.builtin").lsp_references, { desc = "References" })
 map("n", "<Leader>ld", vim.lsp.buf.definition, { desc = "Definition" })
