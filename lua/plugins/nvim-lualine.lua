@@ -2,21 +2,21 @@
 
 ---@type LazySpec
 return {
-  'nvim-lualine/lualine.nvim',
-  dependencies = { 'nvim-tree/nvim-web-devicons' },
+  "nvim-lualine/lualine.nvim",
+  dependencies = { "nvim-tree/nvim-web-devicons" },
   opts = {
     theme = "tokyonight",
     disabled_filetypes = {
-      statusline = { 'neo-tree' },
-      tabline = { 'neo-tree' },
-      winbar = { 'neo-tree' },
+      statusline = { "neo-tree" },
+      tabline = { "neo-tree" },
+      winbar = { "neo-tree" },
     },
     sections = {
-      lualine_a = { 'mode' },
+      lualine_a = { "mode" },
       lualine_b = {
-        'branch',
-        'diff',
-        'diagnostics',
+        "branch",
+        "diff",
+        "diagnostics",
       },
 
       lualine_c = { "filename" },
@@ -27,24 +27,24 @@ return {
     inactive_sections = {
       lualine_a = {},
       lualine_b = {},
-      lualine_c = { 'filename' },
-      lualine_x = { 'location' },
+      lualine_c = { "filename" },
+      lualine_x = { "location" },
       lualine_y = {},
-      lualine_z = {}
+      lualine_z = {},
     },
     tabline = {
       lualine_a = {
         {
-          'buffers',
+          "buffers",
           max_length = vim.o.columns * 9 / 10,
           use_mode_colors = false,
-        }
+        },
       },
       lualine_b = {},
       lualine_c = {},
       lualine_x = {},
       lualine_y = {},
-      lualine_z = { 'lsp_status' },
+      lualine_z = { "lsp_status" },
     },
     extensions = { "neo-tree" },
   },

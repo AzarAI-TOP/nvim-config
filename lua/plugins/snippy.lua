@@ -2,6 +2,6 @@
 
 ---@type LazySpec
 return {
-    "dcampos/nvim-snippy",
-    opts = {},
+  "dcampos/nvim-snippy",
+  opts = {},
 }

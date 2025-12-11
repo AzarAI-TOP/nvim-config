@@ -5,15 +5,15 @@ vim.diagnostic.config({
       ERROR = "󰅙",
       WARN = "",
       INFO = "󰋼",
-      HINT = "󰌵"
-    }
+      HINT = "󰌵",
+    },
   },
   underline = true,
   virtual_text = false,
-  virtual_lines = true,
+  virtual_lines = false,
   update_in_insert = false,
   float = {
     header = "Diagnostic",
-    border = 'rounded',
+    border = "rounded",
   },
 })

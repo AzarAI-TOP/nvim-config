@@ -1,0 +1,18 @@
+# Template for new plugin configuration
+snippet new_plugin
+	-- ${1:plugin_name}
+
+	---@type LazySpec
+	return {
+		${2:content}
+	}
+
+# Function in a line
+snippet funcl
+	function(${1:argument}) ${2:content} end
+
+# Function in a block
+snippet funcb
+	function(${1:argument})
+		${2:content}
+	end

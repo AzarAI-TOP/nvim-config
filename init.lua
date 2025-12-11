@@ -1,5 +1,5 @@
 -- This file simply bootstraps the installation of Lazy.nvim and then calls other files for execution
-local lazypath = vim.env.LAZY or vim.fn.stdpath "data" .. "/lazy/lazy.nvim"
+local lazypath = vim.env.LAZY or vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
 
 if not (vim.env.LAZY or (vim.uv or vim.loop).fs_stat(lazypath)) then
   -- stylua: ignore
@@ -23,19 +23,19 @@ if not pcall(require, "lazy") then
 end
 
 -- Load options
-require "config.options"
+require("config.options")
 
 -- Load lazy.nvim
-require "config.lazy_setup"
+require("config.lazy_setup")
 
 -- Load autocmds
-require "config.autocmds"
+require("config.autocmds")
 
 -- Load keymaps
-require "config.keymaps"
+require("config.keymaps")
 
 -- Load LSP
-require "config.lsp_setup"
+require("config.lsp_setup")
 
 -- Load Diagnostic
-require "config.diagnostic"
+require("config.diagnostic")

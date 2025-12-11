@@ -2,7 +2,7 @@
 require("lazy").setup({
   spec = {
     -- add your plugins here
-    {import = "../plugins"}
+    { import = "../plugins" },
   },
   -- colorscheme that will be used when installing plugins.
   install = { colorscheme = { "tokyonight-moon" } },
@@ -17,4 +17,3 @@ require("lazy").setup({
     notify = false, -- get a notification when changes are found
   },
 })
-

@@ -2,14 +2,13 @@
 
 ---@type LazySpec
 return {
-    "stevearc/conform.nvim",
-    opts = {
-        formatters_by_ft = {
-            python = { "isort", "black" },
-            lua = { "stylua" },
-        },
-
-        lsp_format = "fallback",
-        timeout_ms = 1000,
+  "stevearc/conform.nvim",
+  opts = {
+    formatters_by_ft = {
+      python = { "isort", "black" },
+      lua = { "stylua" },
+      c = { "clang-format" },
+      cpp = { "clang-format" },
     },
+  },
 }
