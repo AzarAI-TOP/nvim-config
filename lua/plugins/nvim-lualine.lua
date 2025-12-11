@@ -19,10 +19,10 @@ return {
         'diagnostics',
       },
 
-      lualine_c = { 'filename' },
-      lualine_x = { 'lsp_status', 'encoding', 'filetype' },
-      lualine_y = { 'progress' },
-      lualine_z = { 'location' }
+      lualine_c = { "filename" },
+      lualine_x = { "encoding", "filetype" },
+      lualine_y = { "progress" },
+      lualine_z = { "location" },
     },
     inactive_sections = {
       lualine_a = {},
