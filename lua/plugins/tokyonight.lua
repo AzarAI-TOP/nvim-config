@@ -1,3 +1,5 @@
+-- Tokyonight Colorscheme
+
 ---@type LazySpec
 return {
   "folke/tokyonight.nvim",
