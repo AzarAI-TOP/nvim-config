@@ -16,9 +16,10 @@ opt.cursorline = true -- Enable highlighting of the current line
 -- Indent
 opt.autoindent = true
 opt.shiftround = true -- Round indent
-opt.shiftwidth = 2 -- Size of an indent
 opt.expandtab = true -- Use spaces instead of tabs
+opt.shiftwidth = 2 -- Size of an indent
 opt.tabstop = 2 -- Number of spaces tabs count for
+opt.softtabstop = 2 -- Number of spaces tabs count for
 
 -- Status Line
 opt.showmode = false
