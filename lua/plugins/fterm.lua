@@ -5,7 +5,12 @@ return {
   "numToStr/FTerm.nvim",
   config = function(_, opts)
     local fterm = require("FTerm")
-    vim.keymap.set("n", "<Leader>tt", fterm.toggle, { desc = "Toggle terminal" })
+    local map = require("config.utils").default_keymap
+
+    --  Default terminal
+    map("nt", "<F1>", fterm.toggle, "Toggle terminal")
+    map("n", "<Leader>tt", fterm.toggle, "Toggle terminal")
+
     -- Custom several terminals
     -- Lazygit
     ---@diagnostic disable-next-line: missing-fields
@@ -18,9 +23,10 @@ return {
         width = 0.8,
       },
     })
-    vim.keymap.set("n", "<Leader>tl", function()
+
+    map("n", "<Leader>tl", function()
       fterm_lazygit:toggle()
-    end, { desc = "Toggle terminal of Lazygit" })
+    end, "Toggle terminal of Lazygit")
 
     -- Python
     ---@diagnostic disable-next-line: missing-fields
@@ -33,9 +39,9 @@ return {
         width = 0.8,
       },
     })
-    vim.keymap.set("n", "<Leader>tp", function()
+    map("n", "<Leader>tp", function()
       fterm_python:toggle()
-    end, { desc = "Toggle terminal of Python" })
+    end, "Toggle terminal of Python")
 
     -- Btop
     ---@diagnostic disable-next-line: missing-fields
@@ -48,9 +54,9 @@ return {
         width = 0.9,
       },
     })
-    vim.keymap.set("n", "<Leader>tb", function()
+    map("n", "<Leader>tb", function()
       fterm_btop:toggle()
-    end, { desc = "Toggle terminal of Btop" })
+    end, "Toggle terminal of Btop")
 
     -- Configurate FTerm
     opts.border = "rounded"
