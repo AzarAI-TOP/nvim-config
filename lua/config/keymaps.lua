@@ -22,7 +22,7 @@ map("n", "U", "<C-R>", "Redo")
 -- Buffers
 map("n", "[b", "<Cmd>bprevious<CR>", "Prev buffer")
 map("n", "]b", "<Cmd>bnext<CR>", "Next buffer")
-map("n", "<Leader>bc", "<Cmd>bd<CR>", "Close buffer")
+map("n", "<Leader>bd", "<Cmd>bd<CR>", "Close buffer")
 
 -- Lazy
 map("n", "<Leader>pl", "<Cmd>Lazy<CR>", "Open Lazy")
@@ -31,8 +31,8 @@ map("n", "<Leader>pc", "<Cmd>Lazy check<CR>", "Check plugins' updates")
 map("n", "<Leader>pC", "<Cmd>Lazy clean<CR>", "Clean no-needed plugins")
 
 -- Comment
-map("n", "<Leader>/", "gcc", "Toggle comment", { noremap = false })
-map("ox", "<Leader>/", "gc", "Toggle comment", { noremap = false })
+map("n", "<Leader>/", "gcc", "Toggle comment", { remap = true })
+map("ox", "<Leader>/", "gc", "Toggle comment", { remap = true })
 
 -- Hop
 map("nox", "<Leader>J", function()
