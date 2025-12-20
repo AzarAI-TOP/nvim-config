@@ -26,7 +26,8 @@ return {
         checkThirdParty = false,
         library = {
           vim.env.VIMRUNTIME,
-          "$XDG_DATA_HOME/nvim/lazy",
+          -- Comment this line because of too slow workspace-loading
+          -- "$XDG_DATA_HOME/nvim/lazy",
           -- Depending on the usage, you might want to add additional paths here.
           "${3rd}/luv/library",
           -- "${3rd}/busted/library",
