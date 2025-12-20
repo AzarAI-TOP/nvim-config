@@ -71,6 +71,10 @@ return {
         enable = true,
       },
 
+      fold = {
+        enable = false,
+      },
+
       textobjects = {
 
         -- Built-in Textobjects
