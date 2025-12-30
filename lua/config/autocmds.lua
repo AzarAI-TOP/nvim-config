@@ -1,25 +1,29 @@
 -- Autocmds
 -- -----------------------------------------------------------------------------
--- Fcitx5 IME auto-switch
--- switch to English IME when exiting from Insert mode
-local function setup_fcitx_auto_switch()
-  -- check if `fcitx5-remote` command valid
-  if vim.fn.executable("fcitx5-remote") == 0 then
-    vim.notify("command `fcitx5-remote` not found, this auto-command is disabled.", vim.log.levels.WARN)
-    return
+--- Setup fcitx5 IME auto-switching
+--- Automatically switches to English IME when leaving insert mode
+--- @return boolean True if setup successful, false otherwise
+function Setup_fcitx5_autoswitch()
+  -- Check if fcitx5-remote command is available
+  if vim.fn.executable("fcitx5-remote") == 0 then return false end
+
+  -- Switch to English IME
+  local function switch_to_english()
+    os.execute("fcitx5-remote -c")
   end
 
-  -- switch to English IME
+  -- Create autocommand to switch when leaving insert mode
   vim.api.nvim_create_autocmd({ "InsertLeave" }, {
-    group = vim.api.nvim_create_augroup("FcitxAutoSwitch", { clear = true }),
+    group = vim.api.nvim_create_augroup("Fcitx5AutoSwitch", { clear = true }),
     pattern = "*",
-    callback = function()
-      os.execute("fcitx5-remote -c")
-    end,
+    callback = switch_to_english,
+    desc = "Switch to English IME when leaving insert mode",
   })
+
+  return true
 end
 -- Initilize
-setup_fcitx_auto_switch()
+Setup_fcitx5_autoswitch()
 -- -----------------------------------------------------------------------------
 -- Set cursor at the position of last edit
 vim.api.nvim_create_autocmd("BufReadPost", {
@@ -30,3 +34,4 @@ vim.api.nvim_create_autocmd("BufReadPost", {
     if mark[1] > 0 and mark[1] <= lcount then pcall(vim.api.nvim_win_set_cursor, 0, mark) end
   end,
 })
+-- -----------------------------------------------------------------------------
