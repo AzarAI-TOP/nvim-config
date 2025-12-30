@@ -30,12 +30,12 @@ return {
 
     cmp.setup({
       -- Required - must specify a snippet engine
-      -- snippet = {
-        -- expand = function(args)
-          -- require("snippy").expand_snippet(args.body) -- For 'snippy' user
+      snippet = {
+        expand = function(args)
+          require("snippy").expand_snippet(args.body) -- For 'snippy' user
           -- vim.snippet.expand(args.body) -- For native neovim snippet
-        -- end,
-      -- },
+        end,
+      },
 
       window = {
         completion = cmp.config.window.bordered(),
@@ -43,7 +43,7 @@ return {
       },
 
       sources = cmp.config.sources({
-        -- { name = "snippy" },
+        { name = "snippy" },
         { name = "nvim_lsp", max_item_count = 10 },
         { name = "path" },
       }, {

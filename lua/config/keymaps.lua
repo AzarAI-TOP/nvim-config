@@ -26,9 +26,11 @@ map("n", "<Leader>bd", "<Cmd>bd<CR>", "Close buffer")
 
 -- Lazy
 map("n", "<Leader>pl", "<Cmd>Lazy<CR>", "Open Lazy")
-map("n", "<Leader>pu", "<Cmd>Lazy<CR>", "Update plugins")
-map("n", "<Leader>pc", "<Cmd>Lazy check<CR>", "Check plugins' updates")
-map("n", "<Leader>pC", "<Cmd>Lazy clean<CR>", "Clean no-needed plugins")
+map("n", "<Leader>pL", "<Cmd>Lazy sync<CR>", "Lazy Update")
+
+-- Mason
+map("n", "<Leader>pm", "<Cmd>Mason<CR>", "Open Mason")
+map("n", "<Leader>pM", "<Cmd>MasonToolUpdate<CR>", "Mason Update")
 
 -- Comment
 map("n", "<Leader>/", "gcc", "Toggle comment", { remap = true })
@@ -85,7 +87,7 @@ map("n", "<Leader>d", vim.diagnostic.open_float, "Open diagnostic window under c
 
 -- Telescope
 map("n", "<Leader>ff", require("telescope.builtin").find_files, "Find files")
-map("n", "<Leader>fw", require("telescope.builtin").live_grep, "Live grep")
+map("n", "<Leader>fg", require("telescope.builtin").live_grep, "Live grep")
 map("n", "<Leader>fa", function()
   require("telescope.builtin").find_files({
     prompt_title = "Config files",
