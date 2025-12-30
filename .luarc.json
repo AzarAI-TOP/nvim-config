@@ -5,13 +5,11 @@
     },
     "workspace": {
       "checkThirdParty": false,
-      "library": [
-        "$VIMRUNTIME",
-      ]
+      "library": ["$VIMRUNTIME", "~/.local/share/nvim/lazy", "${3rd}/luv/env"]
     },
     "diagnostics": {
       "globals": ["vim"]
-    }
+    },
+    "format.enable": false
   }
 }
-

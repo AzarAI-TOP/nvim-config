@@ -31,16 +31,15 @@ bootstrap_lazy()
 -- Load modules safely
 -- Basic
 safe_require("config.options")
-
+--
 -- Events & FileTypes
 safe_require("config.autocmds")
 safe_require("config.filetypes")
-
--- Plugins & Keymaps
+--
+-- -- Plugins & Keymaps
 safe_require("config.lazy_setup")
 safe_require("config.cmds")
 safe_require("config.keymaps")
 
 -- LSP
 safe_require("config.lsp_setup")
-safe_require("config.diagnostic")
