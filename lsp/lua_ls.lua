@@ -1,5 +1,7 @@
--- luals.lua
+-- lua_ls.lua
 -- languange : Lua
+
+local addons_dir = vim.fn.expand(vim.env.LLS_ADDONS_DIR)
 
 ---@type vim.lsp.Config
 return {
@@ -25,13 +27,7 @@ return {
       workspace = {
         checkThirdParty = false,
         library = {
-          vim.env.VIMRUNTIME,
-          -- Comment this line because of too slow workspace-loading
-          -- "$XDG_DATA_HOME/nvim/lazy",
-          -- Depending on the usage, you might want to add additional paths here.
-          "${3rd}/luv/library",
-          -- "${3rd}/busted/library",
-          "$LLS_ADDONS_DIR",
+          addons_dir,
         },
         -- or pull in all of 'runtimepath'.
         -- NOTE: this is a lot slower
