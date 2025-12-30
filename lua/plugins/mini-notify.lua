@@ -3,8 +3,9 @@
 ---@type LazySpec
 return {
   "nvim-mini/mini.notify",
+  enabled = false,
   version = "*",
-  config = function(_, opts)
+  config = function()
     local mini_notify = require("mini.notify")
 
     -- Setup
