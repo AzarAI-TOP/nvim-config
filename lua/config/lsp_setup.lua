@@ -13,3 +13,28 @@ if vim.fn.isdirectory(lsp_dir) == 1 then
 end
 
 vim.lsp.enable(lsp_servers)
+
+
+-- Diagnostic configurations
+vim.diagnostic.config({
+  signs = {
+    text = {
+      ERROR = "󰅙",
+      WARN = "",
+      INFO = "󰋼",
+      HINT = "󰌵",
+    },
+  },
+  underline = true,
+  virtual_text = {
+    spacing = 4,
+    source = "if_many",
+    prefix = "●",
+  },
+  virtual_lines = false,
+  update_in_insert = false,
+  float = {
+    header = "Diagnostic",
+    border = "rounded",
+  },
+})
