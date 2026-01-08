@@ -20,7 +20,7 @@ return {
       },
 
       lualine_c = { "filename" },
-      lualine_x = { "encoding", "filetype" },
+      lualine_x = { "encoding", "lsp_status", "filetype" },
       lualine_y = { "progress" },
       lualine_z = { "location" },
     },
@@ -32,20 +32,7 @@ return {
       lualine_y = {},
       lualine_z = {},
     },
-    tabline = {
-      lualine_a = {
-        {
-          "buffers",
-          max_length = vim.o.columns * 9 / 10,
-          use_mode_colors = false,
-        },
-      },
-      lualine_b = {},
-      lualine_c = {},
-      lualine_x = {},
-      lualine_y = {},
-      lualine_z = { "lsp_status" },
-    },
+
     extensions = { "neo-tree" },
   },
 }
