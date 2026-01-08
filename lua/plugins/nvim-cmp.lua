@@ -14,7 +14,12 @@ return {
     "hrsh7th/cmp-nvim-lsp",
     "hrsh7th/cmp-buffer",
     "hrsh7th/cmp-path",
-    "vurentjie/cmp-gl",
+    -- {
+    --   "vurentjie/cmp-gl",
+    --   config = function(_, _)
+    --     require("cmp_gl").setup({ move_cursor = true })
+    --   end,
+    -- },
   },
 
   opts = function()
@@ -45,7 +50,7 @@ return {
 
       sources = cmp.config.sources({
         { name = "snippy" },
-        { name = "cmp_gl", max_item_count = 6 },
+        -- { name = "cmp_gl", max_item_count = 6 },
         { name = "nvim_lsp", max_item_count = 10 },
         { name = "path" },
       }, {
