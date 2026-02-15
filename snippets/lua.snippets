@@ -9,10 +9,10 @@ snippet new_plugin bA
 
 # Function in a line
 snippet funcl
-	function(${1:argument}) ${2:content} end
+	function ${1:name}(${2:argument}) $0 end
 
 # Function in a block
 snippet funcb
-	function(${1:argument})
-		${2:content}
+	function ${1:name}(${2:argument})
+		$0
 	end
