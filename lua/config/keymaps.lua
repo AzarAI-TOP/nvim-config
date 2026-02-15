@@ -20,9 +20,33 @@ map("inxs", "<C-S>", "<Cmd>w<CR><esc>", "Save File")
 map("n", "U", "<C-R>", "Redo")
 
 -- Buffers
-map("n", "[b", "<Cmd>bprevious<CR>", "Prev buffer")
+map("n", "[b", "<Cmd>bprevious<CR>", "Previous buffer")
 map("n", "]b", "<Cmd>bnext<CR>", "Next buffer")
-map("n", "<Leader>bd", "<Cmd>bd<CR>", "Close buffer")
+map("n", "<Leader>bp", "<Cmd>bprevious<CR>", "Previous buffer")
+map("n", "<Leader>bn", "<Cmd>bnext<CR>", "Next buffer")
+map("n", "<Leader>bd", function()
+  require("mini.bufremove").delete(0)
+end, "Delete buffer (safe)")
+map("n", "<Leader>bD", function()
+  require("mini.bufremove").delete(0, true)
+end, "Delete buffer (force)")
+
+map("n", "<leader>bo", function()
+  local current = vim.api.nvim_get_current_buf()
+
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if buf ~= current and vim.bo[buf].buflisted then require("mini.bufremove").delete(buf) end
+  end
+end, "Delete all other buffers (safe)")
+
+map("n", "<leader>bO", function()
+  local current = vim.api.nvim_get_current_buf()
+
+  -- 遍历所有 listed buffer
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if buf ~= current and vim.bo[buf].buflisted then require("mini.bufremove").delete(buf) end
+  end
+end, "Delete all other buffers (force)")
 
 -- Lazy
 map("n", "<Leader>pl", "<Cmd>Lazy<CR>", "Open Lazy")
