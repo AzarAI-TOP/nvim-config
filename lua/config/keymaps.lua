@@ -21,7 +21,9 @@ end
 map({ "n", "i" }, "<C-s>", "<Esc>:write<CR>", "Save file")
 map("n", "<leader>q", ":quit<CR>", "Quit")
 map("n", "<leader>Q", ":qa<CR>", "Quit all")
-map("n", "<leader>W", ":write !sudo tee % > /dev/null<CR>", "Sudo save")
+if not require("config.platform").is_windows and vim.fn.executable("sudo") == 1 then
+    map("n", "<leader>W", ":write !sudo tee % > /dev/null<CR>", "Sudo save")
+end
 map("n", "<leader>nh", ":nohlsearch<CR>", "Clear search highlight")
 
 -- =============================================
@@ -41,8 +43,15 @@ map("n", "<leader>cr", ":source $MYVIMRC<CR>", "Reload config")
 -- <leader>l — language (format / LSP)
 -- =============================================
 map("n", "<leader>lf", function()
-    require("conform").format({ lsp_format = "fallback", timeout_ms = 1000 })
-    vim.notify("Conform.nvim: the code has been formatted.", "INFO")
+    require("conform").format({ async = true, lsp_format = "fallback", timeout_ms = 3000 }, function(err, did_edit)
+        if err then
+            vim.notify("格式化失败: " .. tostring(err), vim.log.levels.ERROR)
+        elseif did_edit then
+            vim.notify("已格式化", vim.log.levels.INFO)
+        else
+            vim.notify("无需修改或没有可用的格式化器", vim.log.levels.WARN)
+        end
+    end)
 end, "Format file")
 -- LSP
 map("n", "<leader>ld", vim.lsp.buf.definition, "Go to definition")
@@ -57,7 +66,7 @@ map("n", "<leader>ls", function() vim.lsp.buf.signature_help({ border = "rounded
 -- =============================================
 -- <leader>e — explorer
 -- =============================================
-map("n", "<leader>e", ":lua MiniFiles.open()<CR>", "File explorer")
+map("n", "<leader>e", function() require("mini.files").open() end, "File explorer")
 
 -- =============================================
 -- <leader>f — find / search
@@ -112,10 +121,10 @@ map("v", "<C-/>", "gc", "Toggle comment", { remap = true })
 -- Plugin mappings
 -- =============================================
 -- FZF-LUA
-map("n", "<Leader>ff", ":lua FzfLua.files()<CR>", "Find files")
-map("n", "<Leader>fc", ":lua FzfLua.files({ cwd= '~/.config/nvim'})<CR>", "Find in config")
-map("n", "<Leader>fr", ":lua FzfLua.registers()<CR>", "Search registers")
-map("n", "<Leader>fh", ":lua FzfLua.helptags()<CR>", "Search help")
+map("n", "<Leader>ff", function() require("fzf-lua").files() end, "Find files")
+map("n", "<Leader>fc", function() require("fzf-lua").files({ cwd = vim.fn.stdpath("config") }) end, "Find in config")
+map("n", "<Leader>fr", function() require("fzf-lua").registers() end, "Search registers")
+map("n", "<Leader>fh", function() require("fzf-lua").helptags() end, "Search help")
 
 -- Todo comments
 map("n", "<Leader>ft", ":TodoFzfLua<CR>", "Find todos")

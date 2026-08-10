@@ -6,8 +6,16 @@
 
 local dir = vim.fn.stdpath("config") .. "/lua/plugins"
 
-for name, type in vim.fs.dir(dir) do
-    if type == "file" and name:match("%.lua$") and name ~= "init.lua" then
-        require("plugins." .. name:gsub("%.lua$", ""))
+local modules = {}
+for name, ftype in vim.fs.dir(dir) do
+    if ftype == "file" and name:match("%.lua$") and name ~= "init.lua" then
+        table.insert(modules, (name:gsub("%.lua$", "")))
     end
+end
+
+-- Filesystem iteration order differs between NTFS and Linux filesystems.
+-- Sorting makes startup deterministic on every platform.
+table.sort(modules)
+for _, module in ipairs(modules) do
+    require("plugins." .. module)
 end

@@ -1,17 +1,4 @@
-local servers = {
-    "gopls",
-    "clangd",
-    "rust_analyzer",
-    "ts_ls",
-    "html",
-    "cssls",
-    "jsonls",
-    "pyright",
-    "lua_ls",
-    "bashls",
-    "yamlls",
-    "kotlin_lsp",
-}
+local servers = require("config.tools").lsp_servers
 
 local ok, err = pcall(function()
     for _, server in ipairs(servers) do
@@ -32,4 +19,4 @@ end
 
 io.stdout:write("LSP_CONFIG_CHECK_OK servers=" .. #servers .. "\n")
 io.stdout:flush()
-vim.cmd("qa")
+if not vim.g.config_test_runner then vim.cmd("qa") end

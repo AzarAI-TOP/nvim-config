@@ -20,35 +20,33 @@ vim.diagnostic.config({
     },
 })
 
--- LSP servers to install (names match mason-lspconfig registry)
-local servers = {
-    "gopls",
-    "clangd",
-    "rust_analyzer",
-    "ts_ls",
-    "html",
-    "cssls",
-    "jsonls",
-    "pyright",
-    "lua_ls",
-    "bashls",
-    "yamlls",
-    "kotlin_lsp",
-}
+-- LSP servers to install (names match mason-lspconfig registry).
+local servers = require("config.tools").lsp_servers
 
--- Mason: install LSP servers on first run
+-- Installation is centralized in mason-tool-installer so bootstrap scripts can
+-- synchronously install LSP servers and formatters with one command. Explicit
+-- vim.lsp.enable() below remains the only activation path.
 require("mason-lspconfig").setup({
-    ensure_installed = servers,
+    automatic_enable = false,
 })
 
 -- Auto-load per-server configs from lua/lsp/<server>.lua
 -- Each file must return a config table (or empty for defaults).
 local lsp_dir = vim.fn.stdpath("config") .. "/lua/lsp"
+local config_modules = {}
 for name, ftype in vim.fs.dir(lsp_dir) do
-    if ftype == "file" and name:match("%.lua$") then
-        local server_name = name:gsub("%.lua$", "")
-        local ok, config = pcall(require, "lsp." .. server_name)
-        if ok and type(config) == "table" then vim.lsp.config(server_name, config) end
+    if ftype == "file" and name:match("%.lua$") then table.insert(config_modules, (name:gsub("%.lua$", ""))) end
+end
+table.sort(config_modules)
+
+for _, server_name in ipairs(config_modules) do
+    local ok, config = pcall(require, "lsp." .. server_name)
+    if not ok then
+        vim.notify("Failed to load LSP config for " .. server_name .. ": " .. tostring(config), vim.log.levels.ERROR)
+    elseif type(config) ~= "table" then
+        vim.notify("LSP config for " .. server_name .. " must return a table", vim.log.levels.ERROR)
+    else
+        vim.lsp.config(server_name, config)
     end
 end
 

@@ -10,14 +10,32 @@ if [ -z "$staged" ]; then
     exit 0
 fi
 
-# Check that stylua is available
-if ! command -v stylua >/dev/null 2>&1; then
+# Find StyLua on PATH or in Mason's platform-specific data directory.
+stylua_cmd=$(command -v stylua 2>/dev/null || true)
+if [ -z "$stylua_cmd" ] && [ -n "${LOCALAPPDATA:-}" ] && command -v cygpath >/dev/null 2>&1; then
+    candidate="$(cygpath -u "$LOCALAPPDATA")/nvim-data/mason/bin/stylua.CMD"
+    [ -f "$candidate" ] && stylua_cmd=$candidate
+fi
+if [ -z "$stylua_cmd" ]; then
+    candidate="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/mason/bin/stylua"
+    [ -x "$candidate" ] && stylua_cmd=$candidate
+fi
+if [ -z "$stylua_cmd" ]; then
     echo "⚠️  stylua not found — skipping Lua formatting"
     exit 0
 fi
 
+# Refuse partially staged Lua files. Formatting the working-tree copy and then
+# re-adding it would otherwise absorb unrelated unstaged edits into the commit.
+for file in $staged; do
+    if ! git diff --quiet -- "$file"; then
+        echo "❌ $file has both staged and unstaged changes. Stage or stash it before committing."
+        exit 1
+    fi
+done
+
 # Format staged Lua files in-place
-echo "$staged" | tr '\n' '\0' | xargs -0 stylua
+echo "$staged" | tr '\n' '\0' | xargs -0 "$stylua_cmd"
 
 # Re-stage any files that changed
 echo "$staged" | tr '\n' '\0' | xargs -0 git add

@@ -1,0 +1,45 @@
+name: config-tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    env:
+      NVIM_CONFIG_TEST: "1"
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: core.longpaths
+      GIT_CONFIG_VALUE_0: "true"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Neovim 0.12
+        uses: rhysd/action-setup-vim@v1
+        with:
+          version: v0.12.4
+
+      - name: Prepare isolated config
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/xdg/nvim"
+          cp -R . "$RUNNER_TEMP/xdg/nvim"
+          echo "XDG_CONFIG_HOME=$RUNNER_TEMP/xdg" >> "$GITHUB_ENV"
+          echo "NVIM_TEST_ROOT=$RUNNER_TEMP/xdg/nvim" >> "$GITHUB_ENV"
+
+      - name: Show Neovim version
+        run: nvim --version
+
+      - name: Run config test suite
+        shell: bash
+        run: |
+          cd "$NVIM_TEST_ROOT"
+          nvim --headless "+lua dofile(vim.fs.joinpath(vim.fn.getcwd(), 'tests', 'run.lua'))"

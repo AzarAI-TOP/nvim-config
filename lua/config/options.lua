@@ -4,6 +4,13 @@
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
+local platform = require("config.platform")
+
+-- A Windows nvim.exe launched from Git Bash inherits $SHELL=...bash.exe while
+-- retaining cmd.exe's /s /c flags. Pin the matching native shell so :!,
+-- system(), filters, and :make do not receive cmd flags through Bash.
+if platform.is_windows then vim.opt.shell = vim.env.COMSPEC or "cmd.exe" end
+
 -- Display
 vim.opt.number = true
 vim.opt.relativenumber = true
@@ -27,9 +34,14 @@ vim.opt.smartcase = true
 -- Editing
 vim.opt.wrap = false
 vim.opt.mouse = "a"
+-- WSL and SSH copy through the host terminal. Desktop Linux and Windows use
+-- Neovim's native provider discovery (wl-clipboard / win32yank).
+if platform.is_remote then vim.g.clipboard = "osc52" end
 vim.opt.clipboard = "unnamedplus"
 vim.opt.undofile = true
-vim.opt.undodir = vim.fn.stdpath("data") .. "/undo"
+local undo_dir = vim.fs.joinpath(vim.fn.stdpath("data"), "undo")
+vim.fn.mkdir(undo_dir, "p")
+vim.opt.undodir = undo_dir
 vim.opt.swapfile = false
 vim.opt.backup = false
 vim.opt.writebackup = false
@@ -57,4 +69,3 @@ vim.opt.undolevels = 1000
 -- Windows
 vim.opt.splitright = true
 vim.opt.splitbelow = true
-

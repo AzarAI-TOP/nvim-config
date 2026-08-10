@@ -38,7 +38,7 @@ local parsers = {
 }
 
 -- Async install/update parsers (already-installed ones are skipped)
-require("nvim-treesitter").install(parsers)
+if vim.env.NVIM_CONFIG_TEST ~= "1" then require("nvim-treesitter").install(parsers) end
 
 -- Filetype -> parser mapping (when names differ)
 vim.treesitter.language.register("javascript", { "javascriptreact" })
