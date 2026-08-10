@@ -172,6 +172,18 @@ permission; normal terminal paste remains available regardless.
 Neovide uses 0xProto Nerd Font at 13pt on Windows and Fedora. Windows-only title
 bar and rounded-corner settings are not applied on Linux.
 
+### Launching Neovide
+
+On Windows, press `Ctrl+Alt+N` to launch Neovide via the Start Menu shortcut
+(installed automatically by the bootstrap). Alternatively, run `neovide` from
+PowerShell after the bootstrap adds it to your user `PATH`, or find "Neovide"
+in the Start Menu.
+
+On Fedora, launch `neovide` from a terminal or your application launcher.
+
+IME auto-toggles for Chinese input: on in Insert mode and `/` / `?` search,
+off in Normal mode and `:` commands.
+
 ## Verification
 
 Run the isolated headless suite from the repository root. The wrapper copies

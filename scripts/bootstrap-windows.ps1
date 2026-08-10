@@ -22,6 +22,18 @@ $packages = @(
     "7zip.7zip"
 )
 
+# Neovide installs to C:\Program Files\Neovide but the winget package does not
+# add it to PATH. Repair it idempotently so "neovide" works from any shell.
+$neovideDir = "C:\Program Files\Neovide"
+if ((Test-Path (Join-Path $neovideDir "neovide.exe")) -and -not (Get-Command neovide -ErrorAction SilentlyContinue)) {
+    $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    $pathParts = @($userPath -split ";" | Where-Object { $_ })
+    if ($pathParts -notcontains $neovideDir) {
+        [Environment]::SetEnvironmentVariable("Path", (($pathParts + $neovideDir) -join ";") + ";", "User")
+    }
+    $env:Path += ";$neovideDir"
+}
+
 foreach ($package in $packages) {
     winget install --id $package --exact --accept-package-agreements --accept-source-agreements
 }
