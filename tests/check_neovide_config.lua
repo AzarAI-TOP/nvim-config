@@ -15,8 +15,20 @@ check(#vim.g.neovide_cursor_vfx_mode == 6, "all six cursor VFX modes must be ena
 
 local cmdline_enter = vim.api.nvim_get_autocmds({ group = "neovide_ime", event = "CmdlineEnter" })
 local cmdline_leave = vim.api.nvim_get_autocmds({ group = "neovide_ime", event = "CmdlineLeave" })
-check(#cmdline_enter == 1 and cmdline_enter[1].pattern == "[/\\?]", "IME must only enter for / and ? searches")
-check(#cmdline_leave == 1 and cmdline_leave[1].pattern == "[/\\?]", "IME must only leave for / and ? searches")
+check(#cmdline_enter == 2, "IME must register literal / and ? CmdlineEnter patterns")
+check(#cmdline_leave == 2, "IME must register literal / and ? CmdlineLeave patterns")
+
+for _, search_type in ipairs({ "/", "?" }) do
+    vim.g.neovide_input_ime = false
+    vim.api.nvim_exec_autocmds("CmdlineEnter", { pattern = search_type })
+    check(vim.g.neovide_input_ime == true, "IME did not enable for " .. search_type .. " search")
+    vim.api.nvim_exec_autocmds("CmdlineLeave", { pattern = search_type })
+    check(vim.g.neovide_input_ime == false, "IME did not disable after " .. search_type .. " search")
+end
+
+vim.g.neovide_input_ime = false
+vim.api.nvim_exec_autocmds("CmdlineEnter", { pattern = ":" })
+check(vim.g.neovide_input_ime == false, "IME must stay disabled for : commands")
 
 if require("config.platform").is_windows then
     check(vim.g.neovide_corner_preference == "round", "Windows rounded corners are missing")
