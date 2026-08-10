@@ -18,6 +18,13 @@ local cmdline_leave = vim.api.nvim_get_autocmds({ group = "neovide_ime", event =
 check(#cmdline_enter == 2, "IME must register literal / and ? CmdlineEnter patterns")
 check(#cmdline_leave == 2, "IME must register literal / and ? CmdlineLeave patterns")
 
+local enter_patterns = {}
+for _, autocmd in ipairs(cmdline_enter) do
+    enter_patterns[autocmd.pattern] = true
+end
+check(enter_patterns["/"] == true, "literal / CmdlineEnter pattern missing")
+check(enter_patterns["\\?"] == true, "escaped literal ? CmdlineEnter pattern missing")
+
 for _, search_type in ipairs({ "/", "?" }) do
     vim.g.neovide_input_ime = false
     vim.api.nvim_exec_autocmds("CmdlineEnter", { pattern = search_type })
@@ -26,9 +33,11 @@ for _, search_type in ipairs({ "/", "?" }) do
     check(vim.g.neovide_input_ime == false, "IME did not disable after " .. search_type .. " search")
 end
 
-vim.g.neovide_input_ime = false
-vim.api.nvim_exec_autocmds("CmdlineEnter", { pattern = ":" })
-check(vim.g.neovide_input_ime == false, "IME must stay disabled for : commands")
+for _, non_search_type in ipairs({ ":", "=", "@", "-" }) do
+    vim.g.neovide_input_ime = false
+    vim.api.nvim_exec_autocmds("CmdlineEnter", { pattern = non_search_type })
+    check(vim.g.neovide_input_ime == false, "IME must stay disabled for " .. non_search_type .. " commands")
+end
 
 if require("config.platform").is_windows then
     check(vim.g.neovide_corner_preference == "round", "Windows rounded corners are missing")
