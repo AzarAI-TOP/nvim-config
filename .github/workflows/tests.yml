@@ -44,3 +44,55 @@ jobs:
         run: |
           cd "$NVIM_TEST_ROOT"
           nvim --headless "+lua dofile(vim.fs.joinpath(vim.fn.getcwd(), 'tests', 'run.lua'))"
+
+      - name: Verify SSH clipboard strategy
+        if: runner.os == 'Linux'
+        shell: bash
+        env:
+          SSH_CONNECTION: "192.0.2.1 12345 192.0.2.2 22"
+        run: |
+          cd "$NVIM_TEST_ROOT"
+          nvim --headless "+lua local p=require('config.platform'); assert(p.is_remote and p.is_ssh); assert(vim.g.clipboard == 'osc52'); assert(not vim.tbl_contains(vim.opt.clipboard:get(), 'unnamedplus')); assert(vim.fn.maparg('<leader>y', 'n') == '\"+y'); print('REMOTE_CLIPBOARD_OK')" "+qa!"
+
+  mason-first-boot:
+    name: ubuntu-mason-first-boot
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NVIM_BOOTSTRAP: "1"
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Neovim 0.12
+        uses: rhysd/action-setup-vim@v1
+        with:
+          neovim: true
+          version: v0.12.4
+
+      - name: Prepare disposable XDG environment
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/first-boot/config/nvim" "$RUNNER_TEMP/first-boot/data" "$RUNNER_TEMP/first-boot/state" "$RUNNER_TEMP/first-boot/cache"
+          cp -R . "$RUNNER_TEMP/first-boot/config/nvim"
+          echo "XDG_CONFIG_HOME=$RUNNER_TEMP/first-boot/config" >> "$GITHUB_ENV"
+          echo "XDG_DATA_HOME=$RUNNER_TEMP/first-boot/data" >> "$GITHUB_ENV"
+          echo "XDG_STATE_HOME=$RUNNER_TEMP/first-boot/state" >> "$GITHUB_ENV"
+          echo "XDG_CACHE_HOME=$RUNNER_TEMP/first-boot/cache" >> "$GITHUB_ENV"
+          echo "NVIM_TEST_ROOT=$RUNNER_TEMP/first-boot/config/nvim" >> "$GITHUB_ENV"
+
+      - name: Verify pinned Linux release assets
+        shell: bash
+        run: bash "$NVIM_TEST_ROOT/scripts/verify-linux-assets.sh"
+
+      - name: Run Linux bootstrap and verify all Mason packages
+        shell: bash
+        run: |
+          cd "$NVIM_TEST_ROOT"
+          bash scripts/bootstrap-linux.sh
+
+      - name: Attach representative LSP and formatter
+        shell: bash
+        run: |
+          cd "$NVIM_TEST_ROOT"
+          nvim --headless init.lua "+lua assert(vim.fn.executable('stylua') == 1, 'stylua missing'); assert(vim.wait(15000, function() return #vim.lsp.get_clients({ bufnr = 0, name = 'lua_ls' }) > 0 end, 100), 'lua_ls did not attach'); print('FIRST_BOOT_RUNTIME_OK')" "+qa!"

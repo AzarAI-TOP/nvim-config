@@ -15,14 +15,20 @@ local function map(mode, lhs, rhs, desc, opts)
     vim.keymap.set(mode, lhs, rhs, opts)
 end
 
+local platform = require("config.platform")
+
 -- =============================================
 -- Top-level: file / session (no prefix)
 -- =============================================
 map({ "n", "i" }, "<C-s>", "<Esc>:write<CR>", "Save file")
 map("n", "<leader>q", ":quit<CR>", "Quit")
 map("n", "<leader>Q", ":qa<CR>", "Quit all")
-if not require("config.platform").is_windows and vim.fn.executable("sudo") == 1 then
+if not platform.is_windows and vim.fn.executable("sudo") == 1 then
     map("n", "<leader>W", ":write !sudo tee % > /dev/null<CR>", "Sudo save")
+end
+if platform.is_remote then
+    map({ "n", "x" }, "<leader>y", '"+y', "Copy to host clipboard")
+    map("n", "<leader>Y", '"+Y', "Copy line to host clipboard")
 end
 map("n", "<leader>nh", ":nohlsearch<CR>", "Clear search highlight")
 
@@ -43,7 +49,7 @@ map("n", "<leader>cr", ":source $MYVIMRC<CR>", "Reload config")
 -- <leader>l — language (format / LSP)
 -- =============================================
 map("n", "<leader>lf", function()
-    require("conform").format({ async = true, lsp_format = "fallback", timeout_ms = 3000 }, function(err, did_edit)
+    require("conform").format({ async = true, lsp_format = "fallback" }, function(err, did_edit)
         if err then
             vim.notify("格式化失败: " .. tostring(err), vim.log.levels.ERROR)
         elseif did_edit then

@@ -122,9 +122,11 @@ by `lua/config/lsp.lua`.
 ### Windows
 
 ```powershell
+winget install --id Git.Git --exact --accept-package-agreements --accept-source-agreements
+$env:Path = @([Environment]::GetEnvironmentVariable("Path", "Machine"), [Environment]::GetEnvironmentVariable("Path", "User")) -join ";"
 git clone https://github.com/AzarAI-TOP/nvim-config "$env:LOCALAPPDATA\nvim"
 Set-Location "$env:LOCALAPPDATA\nvim"
-.\scripts\bootstrap-windows.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\bootstrap-windows.ps1
 ```
 
 The Windows bootstrap installs Neovim, Neovide, Git, Node, Python, Go, Rust,
@@ -134,6 +136,7 @@ all Mason-managed LSP servers and formatters.
 ### Fedora / Ubuntu / WSL
 
 ```sh
+if command -v dnf >/dev/null; then sudo dnf install -y git curl; else sudo apt-get update && sudo apt-get install -y git curl; fi
 git clone https://github.com/AzarAI-TOP/nvim-config "${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
 cd "${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
 bash scripts/bootstrap-linux.sh
@@ -145,8 +148,8 @@ The Linux bootstrap script:
 - installs Neovim under `~/.local` when the distro version is older than 0.12;
 - installs both `wl-clipboard` and `xclip` for Fedora desktop, even when run
   from TTY/SSH; set `INSTALL_DESKTOP_DEPS=0` for a headless Fedora host;
-- replaces distro `fzf` with a user-local current release when it is older
-  than the fzf-lua minimum (0.36);
+- replaces distro `fzf` with a pinned, checksum-verified user-local release
+  when it is older than the fzf-lua minimum (0.36);
 - installs 0xProto Nerd Font on Fedora desktop (disable with
   `INSTALL_0XPROTO_FONT=0`);
 - runs Mason's synchronous LSP server and formatter installation.
@@ -159,8 +162,8 @@ Ensure `~/.local/bin` is in your shell `PATH` after bootstrap.
 |-------------|----|-----------|-------|
 | Windows | terminal / Neovide | native Windows provider | `cmd.exe` pinned for `:!` compatibility |
 | Fedora desktop | terminal / Neovide | `wl-clipboard` (Wayland) or `xclip` (X11) | inherited user shell |
-| WSL | terminal | OSC52 through the host terminal | inherited Linux shell |
-| Ubuntu over SSH | terminal | OSC52 through the SSH terminal | inherited Linux shell |
+| WSL | terminal | `<leader>y` copies through OSC52; ordinary `p` stays internal | inherited Linux shell |
+| Ubuntu over SSH | terminal | `<leader>y` copies through OSC52; ordinary `p` stays internal | inherited Linux shell |
 
 OSC52 copy works in modern terminals such as Windows Terminal, WezTerm, Kitty,
 and recent GNOME Terminal. Clipboard *read* may require explicit terminal
@@ -182,7 +185,7 @@ bash scripts/test-config.sh
 On Windows PowerShell:
 
 ```powershell
-.\scripts\test-config.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\test-config.ps1
 ```
 
 Inside Neovim, run `:checkhealth nvim_config` for platform-specific system-tool,

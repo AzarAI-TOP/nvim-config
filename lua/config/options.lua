@@ -6,6 +6,18 @@ vim.g.maplocalleader = " "
 
 local platform = require("config.platform")
 
+-- Winget portable packages can update the user PATH while Explorer/Neovide
+-- still holds an older environment. Discover fzf for this process immediately;
+-- bootstrap-windows.ps1 also persists the directory for future shells.
+if platform.is_windows and vim.fn.executable("fzf") == 0 then
+    local package_root = vim.fs.joinpath(vim.env.LOCALAPPDATA or "", "Microsoft", "WinGet", "Packages")
+    local matches = vim.fn.glob(vim.fs.joinpath(package_root, "junegunn.fzf_*", "fzf.exe"), false, true)
+    if #matches > 0 then
+        local fzf_dir = vim.fs.dirname(matches[1])
+        vim.env.PATH = fzf_dir .. ";" .. (vim.env.PATH or "")
+    end
+end
+
 -- A Windows nvim.exe launched from Git Bash inherits $SHELL=...bash.exe while
 -- retaining cmd.exe's /s /c flags. Pin the matching native shell so :!,
 -- system(), filters, and :make do not receive cmd flags through Bash.
@@ -34,10 +46,15 @@ vim.opt.smartcase = true
 -- Editing
 vim.opt.wrap = false
 vim.opt.mouse = "a"
--- WSL and SSH copy through the host terminal. Desktop Linux and Windows use
--- Neovim's native provider discovery (wl-clipboard / win32yank).
-if platform.is_remote then vim.g.clipboard = "osc52" end
-vim.opt.clipboard = "unnamedplus"
+-- WSL and SSH copy explicitly through OSC52. Keep their unnamed register
+-- internal so ordinary `p` never waits for terminals that forbid OSC52 reads.
+-- Desktop Linux and Windows use native provider discovery and unnamedplus.
+if platform.is_remote then
+    vim.g.clipboard = "osc52"
+    vim.opt.clipboard = ""
+else
+    vim.opt.clipboard = "unnamedplus"
+end
 vim.opt.undofile = true
 local undo_dir = vim.fs.joinpath(vim.fn.stdpath("data"), "undo")
 vim.fn.mkdir(undo_dir, "p")

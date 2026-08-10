@@ -14,12 +14,14 @@ vim.pack.add({
 
 require("mason").setup()
 
-require("mason-tool-installer").setup({
+local automated = vim.env.NVIM_CONFIG_TEST == "1" or vim.env.NVIM_BOOTSTRAP == "1"
+local tool_installer_options = {
     ensure_installed = require("config.tools").mason_packages,
     auto_update = false,
     -- Tests use disposable XDG directories and must not leave background
     -- downloads running after assertions finish.
-    run_on_start = vim.env.NVIM_CONFIG_TEST ~= "1",
+    run_on_start = not automated,
     start_delay = 1000,
-    debounce_hours = 24,
-})
+}
+if not automated then tool_installer_options.debounce_hours = 24 end
+require("mason-tool-installer").setup(tool_installer_options)

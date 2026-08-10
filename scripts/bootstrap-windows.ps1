@@ -57,7 +57,11 @@ if (-not $fontInstalled) {
     $fontTarget = Join-Path $env:LOCALAPPDATA "Microsoft\Windows\Fonts"
     New-Item -ItemType Directory -Force -Path $fontSource, $fontTarget | Out-Null
     try {
-        Invoke-WebRequest "https://github.com/ryanoasis/nerd-fonts/releases/latest/download/0xProto.zip" -OutFile $fontArchive
+        Invoke-WebRequest "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.0/0xProto.zip" -OutFile $fontArchive
+        $fontHash = (Get-FileHash -Path $fontArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($fontHash -ne "96044c9b041dbe6341a2e8b831259ba8e60f4646e55b721b5f6577505381df1f") {
+            throw "0xProto archive checksum mismatch"
+        }
         Expand-Archive -Path $fontArchive -DestinationPath $fontSource -Force
         New-Item -Path $fontRegistry -Force | Out-Null
         Get-ChildItem -Path $fontSource -Filter "*.ttf" | ForEach-Object {
@@ -79,9 +83,12 @@ if (-not (Get-Command nvim -ErrorAction SilentlyContinue)) {
     throw "nvim is not visible in PATH yet. Open a new PowerShell window, then rerun this script."
 }
 
-& nvim --headless "+MasonToolsInstallSync" "+qa!"
-if ($LASTEXITCODE -ne 0) {
-    throw "Mason tool installation failed with exit code $LASTEXITCODE"
+$env:NVIM_BOOTSTRAP = "1"
+& nvim --headless "+MasonToolsInstallSync" "+lua require('config.mason_verify').assert_all_installed()" "+qa!"
+$masonExitCode = $LASTEXITCODE
+$env:NVIM_BOOTSTRAP = $null
+if ($masonExitCode -ne 0) {
+    throw "Mason tool installation failed with exit code $masonExitCode"
 }
 
 Write-Host "Windows bootstrap complete. Run :checkhealth nvim_config inside Neovim."

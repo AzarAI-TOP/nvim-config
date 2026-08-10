@@ -61,6 +61,33 @@ function M.check()
         end
     end
 
+    local python = any_executable({ "python", "python3" })
+    if python then
+        local venv_check = vim.system({ vim.fn.exepath(python), "-c", "import venv" }):wait()
+        if venv_check.code == 0 then
+            health.ok("Python venv module found")
+        else
+            health.error("Python venv module missing", { "Ubuntu/Debian: install python3-venv" })
+        end
+    end
+
+    health.start("Mason-managed LSP servers")
+    local installed = {}
+    for _, name in ipairs(require("mason-registry").get_installed_package_names()) do
+        installed[name] = true
+    end
+    local mappings = require("mason-lspconfig.mappings").get_mason_map().lspconfig_to_package
+    for _, server in ipairs(tools.lsp_servers) do
+        local package_name = mappings[server]
+        if not package_name then
+            health.error(server .. " has no Mason mapping")
+        elseif installed[package_name] then
+            health.ok(server .. " installed (" .. package_name .. ")")
+        else
+            health.error(server .. " missing (" .. package_name .. ")", { "Run :MasonToolsInstallSync." })
+        end
+    end
+
     health.start("Mason-managed formatters")
     for _, tool in ipairs(tools.mason_formatters) do
         if executable(tool) then
@@ -86,6 +113,11 @@ function M.check()
             health.ok("OSC52 clipboard forced for WSL/SSH")
         else
             health.error("Remote session is not using OSC52")
+        end
+        if not vim.tbl_contains(vim.opt.clipboard:get(), "unnamedplus") then
+            health.ok("Remote unnamed register stays internal; use <leader>y for OSC52 copy")
+        else
+            health.error("Remote unnamedplus may block on OSC52 clipboard reads")
         end
     end
 

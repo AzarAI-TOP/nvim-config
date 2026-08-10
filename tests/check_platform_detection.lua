@@ -42,6 +42,13 @@ local ubuntu_ssh = platform.detect({
 check(ubuntu_ssh.is_linux and ubuntu_ssh.is_ssh, "Ubuntu SSH detection failed")
 check(ubuntu_ssh.is_remote and not ubuntu_ssh.has_display, "Ubuntu SSH flags are inconsistent")
 
+local empty_remote_env = platform.detect({
+    has = fake_has({ linux = true }),
+    env = { WSL_DISTRO_NAME = "", WSL_INTEROP = "", SSH_CONNECTION = "", SSH_CLIENT = "", SSH_TTY = "" },
+    uname_release = "6.8.0-generic",
+})
+check(not empty_remote_env.is_remote, "empty WSL/SSH variables must not mark a local session remote")
+
 if #failures > 0 then
     io.stderr:write("PLATFORM_DETECTION_CHECK_FAILED:\n- " .. table.concat(failures, "\n- ") .. "\n")
     vim.cmd("cquit 1")

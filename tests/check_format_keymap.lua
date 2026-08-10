@@ -15,7 +15,7 @@ vim.notify = function(message, level) table.insert(notifications, { message = me
 package.loaded["conform"] = {
     format = function(options, callback)
         check(options.async == true, "formatting must be asynchronous")
-        check(options.timeout_ms == 3000, "format timeout must be 3000ms")
+        check(options.timeout_ms == nil, "async formatting must not claim a timeout")
         check(type(callback) == "function", "format callback missing")
         callback(nil, true)
     end,

@@ -10,8 +10,13 @@ end
 check(vim.o.guifont:find("0xProto", 1, true) ~= nil, "Neovide font is not 0xProto")
 check(vim.g.neovide_opacity == 0.85, "Neovide opacity mismatch")
 check(vim.g.neovide_remember_window_size == true, "Neovide window size must persist")
-check(type(vim.g.neovide_cursor_vfx_mode) == "table", "Neovide VFX must be a list")
-check(#vim.g.neovide_cursor_vfx_mode == 6, "All six Neovide VFX modes must be enabled")
+check(type(vim.g.neovide_cursor_vfx_mode) == "table", "cursor VFX mode must be a table")
+check(#vim.g.neovide_cursor_vfx_mode == 6, "all six cursor VFX modes must be enabled")
+
+local cmdline_enter = vim.api.nvim_get_autocmds({ group = "neovide_ime", event = "CmdlineEnter" })
+local cmdline_leave = vim.api.nvim_get_autocmds({ group = "neovide_ime", event = "CmdlineLeave" })
+check(#cmdline_enter == 1 and cmdline_enter[1].pattern == "[/\\?]", "IME must only enter for / and ? searches")
+check(#cmdline_leave == 1 and cmdline_leave[1].pattern == "[/\\?]", "IME must only leave for / and ? searches")
 
 if require("config.platform").is_windows then
     check(vim.g.neovide_corner_preference == "round", "Windows rounded corners are missing")

@@ -4,6 +4,8 @@
 
 local M = {}
 
+local function nonempty(value) return value ~= nil and value ~= "" end
+
 ---@class ConfigPlatformContext
 ---@field has? fun(feature: string): integer
 ---@field env? table<string, string|nil>
@@ -20,10 +22,14 @@ function M.detect(context)
     local is_windows = has("win32") == 1
     local is_linux = has("linux") == 1
     local is_wsl = is_linux
-        and (env.WSL_DISTRO_NAME ~= nil or env.WSL_INTEROP ~= nil or release:lower():find("microsoft", 1, true) ~= nil)
-    local is_ssh = env.SSH_CONNECTION ~= nil or env.SSH_CLIENT ~= nil or env.SSH_TTY ~= nil
-    local is_wayland = is_linux and env.WAYLAND_DISPLAY ~= nil and env.WAYLAND_DISPLAY ~= ""
-    local is_x11 = is_linux and env.DISPLAY ~= nil and env.DISPLAY ~= ""
+        and (
+            nonempty(env.WSL_DISTRO_NAME)
+            or nonempty(env.WSL_INTEROP)
+            or release:lower():find("microsoft", 1, true) ~= nil
+        )
+    local is_ssh = nonempty(env.SSH_CONNECTION) or nonempty(env.SSH_CLIENT) or nonempty(env.SSH_TTY)
+    local is_wayland = is_linux and nonempty(env.WAYLAND_DISPLAY)
+    local is_x11 = is_linux and nonempty(env.DISPLAY)
 
     local name = "other"
     if is_windows then
