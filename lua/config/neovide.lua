@@ -66,11 +66,11 @@ vim.api.nvim_create_autocmd("InsertLeave", {
 })
 vim.api.nvim_create_autocmd("CmdlineEnter", {
     group = ime_grp,
-    pattern = { "/", "?" },
+    pattern = { "/", "\\?" },
     callback = function() vim.g.neovide_input_ime = true end,
 })
 vim.api.nvim_create_autocmd("CmdlineLeave", {
     group = ime_grp,
-    pattern = { "/", "?" },
+    pattern = { "/", "\\?" },
     callback = function() vim.g.neovide_input_ime = false end,
 })
