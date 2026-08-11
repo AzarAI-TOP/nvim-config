@@ -1,0 +1,110 @@
+{
+  "def": {
+    "prefix": "def",
+    "body": [
+      "def ${1:name}(${2:args}):",
+      "    ${0:pass}"
+    ],
+    "description": "Function definition"
+  },
+  "class": {
+    "prefix": "class",
+    "body": [
+      "class ${1:Name}:",
+      "    def __init__(self${2:, args}):",
+      "        ${0:pass}"
+    ],
+    "description": "Class definition"
+  },
+  "if": {
+    "prefix": "if",
+    "body": [
+      "if ${1:condition}:",
+      "    ${0:pass}"
+    ],
+    "description": "If statement"
+  },
+  "for": {
+    "prefix": "for",
+    "body": [
+      "for ${1:item} in ${2:iterable}:",
+      "    ${0:pass}"
+    ],
+    "description": "For loop"
+  },
+  "while": {
+    "prefix": "while",
+    "body": [
+      "while ${1:condition}:",
+      "    ${0:pass}"
+    ],
+    "description": "While loop"
+  },
+  "try": {
+    "prefix": "try",
+    "body": [
+      "try:",
+      "    ${0:pass}",
+      "except ${1:Exception}:",
+      "    pass"
+    ],
+    "description": "Try-except block"
+  },
+  "with": {
+    "prefix": "with",
+    "body": [
+      "with open(${1:\"file\"}, \"${2:r}\") as ${3:f}:",
+      "    ${0:pass}"
+    ],
+    "description": "With statement"
+  },
+  "import": {
+    "prefix": "import",
+    "body": "import ${0:module}",
+    "description": "Import statement"
+  },
+  "from": {
+    "prefix": "from",
+    "body": "from ${1:module} import ${0:name}",
+    "description": "From import"
+  },
+  "lambda": {
+    "prefix": "lambda",
+    "body": "lambda ${1:args}: ${0:expr}",
+    "description": "Lambda expression"
+  },
+  "main": {
+    "prefix": "main",
+    "body": [
+      "if __name__ == \"__main__\":",
+      "    ${0:pass}"
+    ],
+    "description": "Main guard"
+  },
+  "print": {
+    "prefix": "print",
+    "body": "print(${0:expr})",
+    "description": "Print"
+  },
+  "listcomp": {
+    "prefix": "listcomp",
+    "body": "[${1:item} for ${2:var} in ${3:iterable}]",
+    "description": "List comprehension"
+  },
+  "docstring": {
+    "prefix": "docstring",
+    "body": [
+      "\"\"\"${1:Summary}.",
+      "",
+      "${2:Extended description.}",
+      "",
+      "Args:",
+      "    ${3:arg}: ${4:description}",
+      "",
+      "Returns:",
+      "    ${5:description}",
+      "\"\"\"${0:}"
+    ],
+    "description": "Docstring (Google Style)"
+  }
+}

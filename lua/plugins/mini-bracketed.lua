@@ -5,9 +5,9 @@
 --   treesitter → conflicts with todo-comments ]t/[t
 
 vim.pack.add({
-  { src = "https://github.com/nvim-mini/mini.bracketed" },
+    { src = "https://github.com/nvim-mini/mini.bracketed" },
 })
 
 require("mini.bracketed").setup({
-  treesitter = { suffix = "" },
+    treesitter = { suffix = "" },
 })

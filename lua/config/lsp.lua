@@ -4,6 +4,11 @@
 -- Auto-loads per-server configs from lua/lsp/<server>.lua.
 -- Mason handles installing LSP servers; mason-lspconfig provides
 -- ensure_installed convenience.
+--
+-- Mason is NOT loaded here during startup. It is lazily required only when
+-- the mason-lspconfig mapping is needed (for verification/bootstrap). The
+-- `require("mason-lspconfig").setup()` call is moved to plugins/mason.lua
+-- to keep startup fast.
 
 -- Diagnostic display configuration
 vim.diagnostic.config({
@@ -22,13 +27,6 @@ vim.diagnostic.config({
 
 -- LSP servers to install (names match mason-lspconfig registry).
 local servers = require("config.tools").lsp_servers
-
--- Installation is centralized in mason-tool-installer so bootstrap scripts can
--- synchronously install LSP servers and formatters with one command. Explicit
--- vim.lsp.enable() below remains the only activation path.
-require("mason-lspconfig").setup({
-    automatic_enable = false,
-})
 
 -- Auto-load per-server configs from lua/lsp/<server>.lua
 -- Each file must return a config table (or empty for defaults).
@@ -50,7 +48,32 @@ for _, server_name in ipairs(config_modules) do
     end
 end
 
+-- Enable native LSP completion (Neovim 0.12+).
+-- This provides <C-x><C-n> style completion using LSP sources without
+-- requiring a third-party completion plugin. Guarded with pcall because
+-- the call fails when no LSP clients are attached yet (e.g. in tests).
+pcall(vim.lsp.completion.enable, true)
+
 -- Load each server's runtime definition and enable it.
 for _, server in ipairs(servers) do
     vim.lsp.enable(server)
 end
+
+-- LSP keymaps are set per-buffer on LspAttach to avoid errors when
+-- no LSP client is attached. See config/keymaps.lua for global mappings
+-- and the LspAddgroup below for buffer-local ones.
+vim.api.nvim_create_autocmd("LspAttach", {
+    group = vim.api.nvim_create_augroup("lsp_attach_keymaps", { clear = true }),
+    callback = function(args)
+        local bufnr = args.buf
+        local function map(mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc }) end
+
+        map("n", "<leader>ld", vim.lsp.buf.definition, "Go to definition")
+        map("n", "<leader>lh", function() vim.lsp.buf.hover({ border = "rounded" }) end, "Hover documentation")
+        map("n", "<leader>lr", vim.lsp.buf.references, "Find references")
+        map("n", "<leader>lR", vim.lsp.buf.rename, "Rename symbol")
+        map("n", "<leader>la", vim.lsp.buf.code_action, "Code action")
+        map("n", "<leader>li", vim.lsp.buf.implementation, "Go to implementation")
+        map("n", "<leader>ls", function() vim.lsp.buf.signature_help({ border = "rounded" }) end, "Signature help")
+    end,
+})

@@ -32,6 +32,10 @@
       "rev": "203eb35f386b4fc9abcff1518c84d5537d41c80a",
       "src": "https://github.com/nvim-mini/mini.bracketed"
     },
+    "mini.clue": {
+      "rev": "4d506660e7030a15748ab073bebfe3ed03884000",
+      "src": "https://github.com/nvim-mini/mini.clue"
+    },
     "mini.comment": {
       "rev": "27a29d6b949b9497f80a0a03421e89fed71d8c37",
       "src": "https://github.com/nvim-mini/mini.comment"
@@ -55,6 +59,10 @@
     "mini.notify": {
       "rev": "13df5edffc3e27937b166a0f25a8329b46e15a4e",
       "src": "https://github.com/nvim-mini/mini.notify"
+    },
+    "mini.snippets": {
+      "rev": "050638170639ceb7bef4e804507cbf209e565b2c",
+      "src": "https://github.com/nvim-mini/mini.snippets"
     },
     "mini.trailspace": {
       "rev": "82c4fb7d4336f8824ca6c97068932886b56326d0",

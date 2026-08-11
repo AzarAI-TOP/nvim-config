@@ -30,6 +30,8 @@ M.mason_formatters = {
     "shfmt",
     "stylua",
     "taplo",
+    "google-java-format",
+    "ktlint",
 }
 
 -- mason-tool-installer understands both mason-lspconfig server names and

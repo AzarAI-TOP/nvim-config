@@ -8,7 +8,12 @@
 --   <leader>f  find / file
 --   <leader>w  window (forwards to <C-w>)
 --   <leader>t  toggle
--- High-frequency file/session ops stay top-level (<C-s> save, etc.).
+--   <leader>p  package management
+--   <leader>s  split
+--
+-- LSP keymaps (<leader>ld, <leader>lh, etc.) are set per-buffer on
+-- LspAttach in config/lsp.lua, not here — this avoids errors when
+-- no LSP client is attached.
 
 local function map(mode, lhs, rhs, desc, opts)
     opts = vim.tbl_extend("force", { desc = desc }, opts or {})
@@ -48,6 +53,7 @@ map("n", "<leader>cr", ":source $MYVIMRC<CR>", "Reload config")
 -- =============================================
 -- <leader>l — language (format / LSP)
 -- =============================================
+-- Format buffer (conform.nvim)
 map("n", "<leader>lf", function()
     require("conform").format({ async = true, lsp_format = "fallback" }, function(err, did_edit)
         if err then
@@ -59,15 +65,13 @@ map("n", "<leader>lf", function()
         end
     end)
 end, "Format file")
--- LSP
-map("n", "<leader>ld", vim.lsp.buf.definition, "Go to definition")
-map("n", "<leader>lh", function() vim.lsp.buf.hover({ border = "rounded" }) end, "Hover documentation")
-map("n", "<leader>lr", vim.lsp.buf.references, "Find references")
-map("n", "<leader>lR", vim.lsp.buf.rename, "Rename symbol")
-map("n", "<leader>la", vim.lsp.buf.code_action, "Code action")
+
+-- Diagnostic details (does not require an LSP client)
 map("n", "<leader>le", vim.diagnostic.open_float, "Diagnostic details")
-map("n", "<leader>li", vim.lsp.buf.implementation, "Go to implementation")
-map("n", "<leader>ls", function() vim.lsp.buf.signature_help({ border = "rounded" }) end, "Signature help")
+
+-- Diagnostic navigation (does not require an LSP client)
+map("n", "]d", function() vim.diagnostic.jump({ count = 1, float = true }) end, "Next diagnostic")
+map("n", "[d", function() vim.diagnostic.jump({ count = -1, float = true }) end, "Previous diagnostic")
 
 -- =============================================
 -- <leader>e — explorer
@@ -77,17 +81,19 @@ map("n", "<leader>e", function() require("mini.files").open() end, "File explore
 -- =============================================
 -- <leader>f — find / search
 -- =============================================
--- ff   Find files
--- fc   Find in config
--- fr   Search registers
--- fh   Search help
--- ft   Find todos
+map("n", "<Leader>ff", function() require("fzf-lua").files() end, "Find files")
+map("n", "<Leader>fc", function() require("fzf-lua").files({ cwd = vim.fn.stdpath("config") }) end, "Find in config")
+map("n", "<Leader>fr", function() require("fzf-lua").registers() end, "Search registers")
+map("n", "<Leader>fh", function() require("fzf-lua").helptags() end, "Search help")
+map("n", "<Leader>ft", ":TodoFzfLua<CR>", "Find todos")
+
+-- Todo comments navigation
+map("n", "]t", function() require("todo-comments").jump_next() end, "Next todo")
+map("n", "[t", function() require("todo-comments").jump_prev() end, "Previous todo")
 
 -- =============================================
 -- <leader>w — window (forwards to <C-w>)
 -- =============================================
--- <leader>w + <C-w> sub-commands: ws split / wv vsplit / wc close / wo only /
--- wh wj wk wl navigate / w= equal-size, etc.
 map("n", "<leader>w", "<C-w>", "Window", { remap = true })
 
 -- Direct window navigation
@@ -101,10 +107,25 @@ map("n", "<C-Left>", ":vertical resize -2<CR>", "Decrease width")
 map("n", "<C-Right>", ":vertical resize +2<CR>", "Increase width")
 
 -- =============================================
+-- <leader>s — split
+-- =============================================
+map("n", "<leader>ss", ":split<CR>", "Horizontal split")
+map("n", "<leader>sv", ":vsplit<CR>", "Vertical split")
+map("n", "<leader>sc", ":close<CR>", "Close split")
+map("n", "<leader>so", ":only<CR>", "Close other splits")
+
+-- =============================================
 -- <leader>t — toggle
 -- =============================================
 map("n", "<leader>tp", ":set paste!<CR>", "Toggle paste mode")
 map("n", "<leader>tw", ":set wrap!<CR>", "Toggle wrap")
+
+-- =============================================
+-- <leader>p — package management
+-- =============================================
+map("n", "<leader>pi", ":MasonToolsInstallSync<CR>", "Install Mason tools")
+map("n", "<leader>pu", ":MasonToolsUpdate<CR>", "Update Mason tools")
+map("n", "<leader>pc", ":Mason<CR>", "Open Mason UI")
 
 -- =============================================
 -- Other (direct keys)
@@ -122,17 +143,3 @@ map("n", "N", "Nzzzv", "Previous result, center")
 -- Comment (via mini.comment)
 map("n", "<C-/>", "gcc", "Toggle comment", { remap = true })
 map("v", "<C-/>", "gc", "Toggle comment", { remap = true })
-
--- =============================================
--- Plugin mappings
--- =============================================
--- FZF-LUA
-map("n", "<Leader>ff", function() require("fzf-lua").files() end, "Find files")
-map("n", "<Leader>fc", function() require("fzf-lua").files({ cwd = vim.fn.stdpath("config") }) end, "Find in config")
-map("n", "<Leader>fr", function() require("fzf-lua").registers() end, "Search registers")
-map("n", "<Leader>fh", function() require("fzf-lua").helptags() end, "Search help")
-
--- Todo comments
-map("n", "<Leader>ft", ":TodoFzfLua<CR>", "Find todos")
-map("n", "]t", function() require("todo-comments").jump_next() end, "Next todo")
-map("n", "[t", function() require("todo-comments").jump_prev() end, "Previous todo")

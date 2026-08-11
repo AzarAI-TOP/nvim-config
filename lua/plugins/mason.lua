@@ -4,6 +4,10 @@
 -- LSP configs are in lua/lsp/<server>.lua (loaded by config.lsp).
 -- nvim-lspconfig supplies the default cmd/filetypes/root_dir definitions;
 -- Neovim's native vim.lsp.config API loads and extends those definitions.
+--
+-- Mason and mason-lspconfig are loaded here in phase 1 (infrastructure).
+-- The mason-registry is initialized lazily by mason.nvim itself; we only
+-- call setup() to register the plugin, not to populate the registry.
 
 vim.pack.add({
     { src = "https://github.com/williamboman/mason.nvim" },
@@ -13,6 +17,12 @@ vim.pack.add({
 })
 
 require("mason").setup()
+
+-- mason-lspconfig setup: install bridge only, do not auto-enable servers.
+-- Server activation is handled by vim.lsp.enable() in config/lsp.lua.
+require("mason-lspconfig").setup({
+    automatic_enable = false,
+})
 
 local automated = vim.env.NVIM_CONFIG_TEST == "1" or vim.env.NVIM_BOOTSTRAP == "1"
 local tool_installer_options = {
