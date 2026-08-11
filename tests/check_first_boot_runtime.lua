@@ -9,11 +9,11 @@ local function verify_runtime()
     local failures = {}
 
     -- Helper: test a formatter on a scratch buffer.
-    local function test_formatter(ft, bad_content, expected_substring, formatter_name)
+    local function test_formatter(ft, bad_lines, expected_substring, formatter_name)
         local scratch = vim.api.nvim_create_buf(false, true)
         vim.api.nvim_set_current_buf(scratch)
         vim.bo[scratch].filetype = ft
-        vim.api.nvim_buf_set_lines(scratch, 0, -1, false, { bad_content })
+        vim.api.nvim_buf_set_lines(scratch, 0, -1, false, bad_lines)
 
         local finished, format_error, did_edit = false, nil, nil
         require("conform").format({ bufnr = scratch, async = true }, function(err, edited)
@@ -57,16 +57,16 @@ local function verify_runtime()
     -- 1. Lua: LSP attach + StyLua formatter
     assert(vim.fn.executable("stylua") == 1, "stylua missing")
     wait_for_lsp("lua_ls", "lua")
-    test_formatter("lua", "local   value={a=1,b=2}", "local value =", "stylua")
+    test_formatter("lua", { "local   value={a=1,b=2}" }, "local value =", "stylua")
 
     -- 2. Python: formatter (isort + black)
-    test_formatter("python", "import sys\nimport os", "import os\nimport sys", "isort+black")
+    test_formatter("python", { "import sys", "import os" }, "import os", "isort+black")
 
     -- 3. Shell: shfmt with 4-space indent
-    test_formatter("sh", "if [ $1 ];then echo hi;fi", "    echo", "shfmt")
+    test_formatter("sh", { "if [ $1 ];then echo hi;fi" }, "    echo", "shfmt")
 
     -- 4. TOML: taplo
-    test_formatter("toml", "[section]\nkey=value", "key = value", "taplo")
+    test_formatter("toml", { "[section]", "key=value" }, "key = value", "taplo")
 
     -- 5. Verify all Mason packages are installed
     local missing, unmapped = require("config.mason_verify").missing_packages()
