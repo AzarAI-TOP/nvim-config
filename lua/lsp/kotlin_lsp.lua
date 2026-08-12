@@ -1,13 +1,13 @@
--- ~/.config/nvim/lua/lsp/kotlin_lsp.lua
--- Kotlin Language Server configuration
+-- Official Kotlin Language Server configuration.
+-- Gradle and Maven markers keep each client scoped to its project.
 return {
     root_markers = {
-        "settings.gradle",
         "settings.gradle.kts",
-        "build.gradle",
+        "settings.gradle",
         "build.gradle.kts",
+        "build.gradle",
         "pom.xml",
         ".git",
     },
-    settings = {},
+    settings = { kotlin = { compiler = { jvm = { target = "21" } } } },
 }

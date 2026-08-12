@@ -1,18 +1,13 @@
--- ~/.config/nvim/lua/lsp/jsonls.lua
--- JSON Language Server configuration
+-- VS Code JSON Language Server configuration.
+-- Schema downloads and validation are enabled; formatting is owned by Conform.
 return {
-    cmd = { "vscode-json-language-server", "--stdio", "--provide-formatter" },
+    cmd = { "vscode-json-language-server", "--stdio" },
     root_markers = { "package.json", ".git" },
     settings = {
         json = {
-            format = { enable = true },
-            validate = { enable = true },
+            format = { enable = false },
             schemaDownload = { enable = true },
-            suggest = {
-                parentSkeletonShownFirst = true,
-                paths = {},
-            },
-            proposeAlts = true,
+            validate = { enable = true },
         },
     },
 }

@@ -1,18 +1,17 @@
--- ~/.config/nvim/lua/lsp/lua_ls.lua
--- Lua Language Server configuration
+-- Lua Language Server configuration for Neovim Lua development.
+-- Neovim runtime APIs are indexed without prompting for third-party setup.
 return {
+    root_markers = { ".luarc.json", ".luarc.jsonc", "stylua.toml", ".stylua.toml", ".git" },
     settings = {
         Lua = {
-            runtime = { version = "LuaJIT" },
+            completion = { callSnippet = "Replace" },
             diagnostics = { globals = { "vim" } },
-            workspace = {
-                library = {
-                    vim.fn.stdpath("data") .. "/site",
-                    vim.env.VIMRUNTIME .. "/lua",
-                },
-                checkThirdParty = false,
-            },
+            runtime = { version = "LuaJIT" },
             telemetry = { enable = false },
+            workspace = {
+                checkThirdParty = false,
+                library = { vim.env.VIMRUNTIME, vim.fn.stdpath("data") .. "/site" },
+            },
         },
     },
 }

@@ -9,16 +9,19 @@ local function verify_runtime()
     local failures = {}
 
     -- Helper: test a formatter on a scratch buffer.
-    local function test_formatter(ft, bad_lines, expected_substring, formatter_name)
+    local function test_formatter(ft, bad_lines, expected_substring, formatter_name, formatters)
         local scratch = vim.api.nvim_create_buf(false, true)
         vim.api.nvim_set_current_buf(scratch)
         vim.bo[scratch].filetype = ft
         vim.api.nvim_buf_set_lines(scratch, 0, -1, false, bad_lines)
 
         local finished, format_error, did_edit = false, nil, nil
-        require("conform").format({ bufnr = scratch, async = true }, function(err, edited)
-            format_error, did_edit, finished = err, edited, true
-        end)
+        require("conform").format(
+            { bufnr = scratch, async = true, formatters = formatters or { formatter_name } },
+            function(err, edited)
+                format_error, did_edit, finished = err, edited, true
+            end
+        )
         assert(vim.wait(15000, function() return finished end, 50), formatter_name .. " callback timed out")
 
         if format_error then
@@ -55,20 +58,46 @@ local function verify_runtime()
     end
 
     -- 1. Lua: LSP attach + StyLua formatter
+    local fixtures = vim.fs.joinpath(vim.fn.stdpath("config"), "tests", "fixtures")
+    vim.cmd.edit(vim.fs.joinpath(fixtures, "sample.lua"))
     assert(vim.fn.executable("stylua") == 1, "stylua missing")
     wait_for_lsp("lua_ls", "lua")
     test_formatter("lua", { "local   value={a=1,b=2}" }, "local value =", "stylua")
 
     -- 2. Python: formatter (isort + black)
-    test_formatter("python", { "import sys", "import os" }, "import os", "isort+black")
+    vim.cmd.edit(vim.fs.joinpath(fixtures, "sample.py"))
+    wait_for_lsp("pyright", "python")
+    test_formatter(
+        "python",
+        { "import requests", "import os", "x={1:2}" },
+        "import os",
+        "isort+black",
+        { "isort", "black" }
+    )
 
-    -- 3. Shell: shfmt with 4-space indent
-    test_formatter("sh", { "if [ $1 ];then echo hi;fi" }, "    echo", "shfmt")
+    -- 3. C++: clangd attach + Google Style formatter
+    vim.cmd.edit(vim.fs.joinpath(fixtures, "sample.cpp"))
+    wait_for_lsp("clangd", "cpp")
+    test_formatter("cpp", { "int main(){return 0;}" }, "int main() {", "clang-format")
 
-    -- 4. TOML: taplo
-    test_formatter("toml", { "[section]", "key=value" }, "key = value", "taplo")
+    -- 4. Shell: shfmt with 4-space indent
+    vim.cmd.edit(vim.fs.joinpath(fixtures, "sample.sh"))
+    wait_for_lsp("bashls", "sh")
+    test_formatter("sh", { "if true; then", "echo hi", "fi" }, "    echo", "shfmt")
 
-    -- 5. Verify all Mason packages are installed
+    -- 5. Kotlin and Java: Mason-recommended formatters
+    test_formatter("kotlin", { 'fun main(){println("hello")}' }, "fun main()", "ktlint")
+    test_formatter(
+        "java",
+        { "class Main{public static void main(String[]args){}}" },
+        "class Main",
+        "google-java-format"
+    )
+
+    -- 6. TOML: taplo
+    test_formatter("toml", { "[section]", 'key="value"' }, 'key = "value"', "taplo")
+
+    -- 7. Verify all Mason packages are installed
     local missing, unmapped = require("config.mason_verify").missing_packages()
     if #missing > 0 then table.insert(failures, "Missing Mason packages: " .. table.concat(missing, ", ")) end
     if #unmapped > 0 then table.insert(failures, "Unmapped LSP servers: " .. table.concat(unmapped, ", ")) end

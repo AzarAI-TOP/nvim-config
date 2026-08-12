@@ -38,6 +38,14 @@ for _, name in ipairs(phase_one) do
     require("plugins." .. name)
 end
 
+-- Infrastructure modules register their deferred setup handlers first. Emitting
+-- one explicit event keeps registry-heavy initialization out of module loading
+-- while guaranteeing commands are ready before feature modules and user input.
+vim.api.nvim_exec_autocmds("User", {
+    pattern = "NvimConfigInfrastructureReady",
+    modeline = false,
+})
+
 -- Phase 2: load remaining feature plugins, sorted for cross-platform determinism.
 for _, name in ipairs(all_modules) do
     if not is_phase_one[name] then require("plugins." .. name) end

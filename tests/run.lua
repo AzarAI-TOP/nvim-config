@@ -4,12 +4,16 @@ vim.g.config_test_runner = true
 
 local tests = {
     "check_buffer_keymap.lua",
+    "check_completion.lua",
+    "check_fixture_mapping.lua",
     "check_format_keymap.lua",
+    "check_formatter_options.lua",
     "check_indent_rules.lua",
     "check_lsp_config.lua",
     "check_neovide_config.lua",
     "check_platform_detection.lua",
     "check_platform_keymaps.lua",
+    "check_plugin_lifecycle.lua",
     "check_tool_inventory.lua",
     "check_windows_shell.lua",
 }

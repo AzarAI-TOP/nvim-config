@@ -11,9 +11,9 @@
 --   <leader>p  package management
 --   <leader>s  split
 --
--- LSP keymaps (<leader>ld, <leader>lh, etc.) are set per-buffer on
--- LspAttach in config/lsp.lua, not here — this avoids errors when
--- no LSP client is attached.
+-- LSP keymaps (<leader>ld, <leader>lh, etc.) are registered globally in
+-- config/lsp.lua. Neovim's vim.lsp.buf.* functions provide the standard
+-- "no client attached" feedback when used outside an LSP buffer.
 
 local function map(mode, lhs, rhs, desc, opts)
     opts = vim.tbl_extend("force", { desc = desc }, opts or {})

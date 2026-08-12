@@ -1,13 +1,9 @@
 -- ~/.config/nvim/lua/plugins/mason.lua
--- Mason: package manager for LSP servers, DAP, linters, formatters
+-- Mason infrastructure: package manager, LSP bridge, and tool installer.
 --
--- LSP configs are in lua/lsp/<server>.lua (loaded by config.lsp).
--- nvim-lspconfig supplies the default cmd/filetypes/root_dir definitions;
--- Neovim's native vim.lsp.config API loads and extends those definitions.
---
--- Mason and mason-lspconfig are loaded here in phase 1 (infrastructure).
--- The mason-registry is initialized lazily by mason.nvim itself; we only
--- call setup() to register the plugin, not to populate the registry.
+-- Phase one only adds these plugins to the runtime path. Registry-related
+-- setup is deferred to the explicit User NvimConfigInfrastructureReady event
+-- emitted by plugins/init.lua after all infrastructure modules are registered.
 
 vim.pack.add({
     { src = "https://github.com/williamboman/mason.nvim" },
@@ -16,22 +12,24 @@ vim.pack.add({
     { src = "https://github.com/neovim/nvim-lspconfig" },
 })
 
-require("mason").setup()
+vim.api.nvim_create_autocmd("User", {
+    group = vim.api.nvim_create_augroup("mason_deferred_setup", { clear = true }),
+    pattern = "NvimConfigInfrastructureReady",
+    once = true,
+    callback = function()
+        require("mason").setup()
 
--- mason-lspconfig setup: install bridge only, do not auto-enable servers.
--- Server activation is handled by vim.lsp.enable() in config/lsp.lua.
-require("mason-lspconfig").setup({
-    automatic_enable = false,
+        -- Native vim.lsp.enable() in config/lsp.lua is the sole activation owner.
+        require("mason-lspconfig").setup({ automatic_enable = false })
+
+        local automated = vim.env.NVIM_CONFIG_TEST == "1" or vim.env.NVIM_BOOTSTRAP == "1"
+        local options = {
+            ensure_installed = require("config.tools").mason_packages,
+            auto_update = false,
+            run_on_start = not automated,
+            start_delay = 1000,
+        }
+        if not automated then options.debounce_hours = 24 end
+        require("mason-tool-installer").setup(options)
+    end,
 })
-
-local automated = vim.env.NVIM_CONFIG_TEST == "1" or vim.env.NVIM_BOOTSTRAP == "1"
-local tool_installer_options = {
-    ensure_installed = require("config.tools").mason_packages,
-    auto_update = false,
-    -- Tests use disposable XDG directories and must not leave background
-    -- downloads running after assertions finish.
-    run_on_start = not automated,
-    start_delay = 1000,
-}
-if not automated then tool_installer_options.debounce_hours = 24 end
-require("mason-tool-installer").setup(tool_installer_options)

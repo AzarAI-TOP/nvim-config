@@ -65,9 +65,22 @@ by `lua/config/lsp.lua`.
   manipulating the file system. Replaces netrw by default.
 - **Fuzzy finding** — `fzf-lua` for files (`<leader>ff`), config (`<leader>fc`),
   registers (`<leader>fr`), help (`<leader>fh`).
+- **Native LSP completion + snippets** — Neovim 0.12 completion is enabled
+  per attached client with automatic trigger-character support. `mini.snippets`
+  loads the local C, C++, and Python collections from `snippets/`; type a prefix
+  and press `<C-j>` to expand, then `<C-l>` / `<C-h>` to move between fields.
+  Markdown disables both completion and snippets to keep prose input immediate.
+- **Two-stage plugin lifecycle** — infrastructure is loaded in a fixed order,
+  then feature modules are loaded deterministically. Mason initialization runs
+  on `User NvimConfigInfrastructureReady`; Tokyo Night prepares on
+  `ColorSchemePre`; TODO comments initialize on the first opened file.
+- **Key discovery** — `mini.clue` describes the `<leader>b/c/f/l/p/s/t/w`
+  groups without adding a second overlapping which-key UI.
 - **Code formatting** — `conform.nvim` formats on demand (`<leader>lf`). Mason
-  installs portable formatters automatically; `gofmt` and `rustfmt` come from
-  their native Go/Rust toolchains.
+  installs version-pinned portable formatters automatically; `gofmt` and
+  `rustfmt` come from their native Go/Rust toolchains. Java uses
+  `google-java-format`, Kotlin uses `ktlint`, shell uses four spaces, C/C++ uses
+  Google Style, and prettierd runs only when the project has Prettier config.
 - **Tree-sitter syntax highlighting** — 22 parsers installed, enabled
   automatically on matching filetypes; falls back to regex otherwise.
 - **Textobjects** — `mini.ai` extends `a`/`i` with function calls, arguments,
@@ -112,6 +125,8 @@ by `lua/config/lsp.lua`.
 | [mini.indentscope](https://github.com/nvim-mini/mini.indentscope) | Indent guides |
 | [mini.move](https://github.com/nvim-mini/mini.move) | Move lines/selections |
 | [mini.notify](https://github.com/nvim-mini/mini.notify) | Notification system |
+| [mini.snippets](https://github.com/nvim-mini/mini.snippets) | Local C/C++/Python snippet expansion |
+| [mini.clue](https://github.com/nvim-mini/mini.clue) | Leader-key discovery and groups |
 | [mini.trailspace](https://github.com/nvim-mini/mini.trailspace) | Trailing whitespace |
 | [todo-comments.nvim](https://github.com/folke/todo-comments.nvim) | TODO highlighting |
 | [tokyonight.nvim](https://github.com/folke/tokyonight.nvim) | Colorscheme (moon) |
@@ -203,6 +218,37 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\test-config.ps
 Inside Neovim, run `:checkhealth nvim_config` for platform-specific system-tool,
 clipboard, and toolchain diagnostics. `:checkhealth` provides the full plugin
 and provider report.
+
+## Key map groups
+
+Press `<Space>` and continue with a group prefix; `mini.clue` displays the
+available actions after a short delay.
+
+| Prefix | Group | Examples |
+|--------|-------|----------|
+| `<leader>p` | Package management | Mason UI/install/update |
+| `<leader>s` | Splits | create/close/keep split |
+| `<leader>f` | Find | files/config/registers/help/TODO |
+| `<leader>b` | Buffers | next/previous/delete/bento |
+| `<leader>l` | Languages | format/LSP/diagnostic details |
+| `<leader>c` | Config | edit/reload config |
+| `<leader>t` | Toggles | paste/wrap |
+| `<leader>w` | Windows | forwards to native `<C-w>` commands |
+
+Diagnostics deliberately use only `]d` and `[d` for next/previous navigation;
+there are no duplicate `<leader>ln` / `<leader>lp` aliases. LSP actions are
+global and use Neovim's built-in “no client attached” feedback outside LSP
+buffers.
+
+## Completion and snippets
+
+- LSP completion opens automatically for server trigger characters. Use
+  `<C-Space>`/`<C-x><C-o>` for manual completion and `<C-y>` to accept an item.
+- Snippets: type `main`, `for`, `if`, `def`, etc., then press `<C-j>` to expand.
+  During a snippet session, use `<C-l>` and `<C-h>` to move forward/backward.
+- Snippet files live in `snippets/c.json`, `snippets/cpp.json`, and
+  `snippets/python.json`; they use VS Code/LSP snippet JSON syntax.
+- Markdown intentionally has no LSP completion or snippet expansion.
 
 ## Future Considerations
 

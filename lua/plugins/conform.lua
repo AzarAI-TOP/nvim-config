@@ -39,14 +39,24 @@ require("conform").setup({
     -- These override the default arguments passed to each formatter.
     formatters = {
         shfmt = {
-            -- Use 4-space indentation (default is tab).
-            prepend_args = { "-i", "4" },
+            -- Use 4-space indentation regardless of buffer-local defaults or
+            -- project .editorconfig values.
+            args = { "-filename", "$FILENAME", "-i", "4" },
+        },
+        isort = {
+            -- Avoid isort 8's stricter --line-ending parsing; stdin keeps the
+            -- buffer's existing line endings and still honors project config.
+            args = { "--stdout", "--filename", "$FILENAME", "-" },
         },
         ["clang-format"] = {
             -- Google Style: 2-space indent, 80-col, specific bracket placement.
             prepend_args = { "--style=Google" },
         },
-        -- prettierd automatically reads .prettierrc from the project root.
-        -- No explicit config needed — prettierd resolves it natively.
+        prettierd = {
+            -- Conform locates .prettierrc (or another supported project config)
+            -- and supplies that directory as cwd. Refuse to format without one
+            -- so personal/global defaults never silently rewrite project files.
+            require_cwd = true,
+        },
     },
 })

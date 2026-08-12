@@ -13,10 +13,19 @@ vim.pack.add({
     { src = "https://github.com/nvim-mini/mini.snippets" },
 })
 
-require("mini.snippets").setup({
-    -- Read VS Code-style JSON snippets from the config snippets/ directory.
+local mini_snippets = require("mini.snippets")
+local gen_loader = mini_snippets.gen_loader
+
+mini_snippets.setup({
+    -- Resolve snippets/<filetype>.json from the config directory on runtimepath.
     snippets = {
-        -- mini.snippets automatically discovers files on the runtimepath.
-        -- The snippets/ directory is added to runtimepath via the config root.
+        gen_loader.from_lang(),
     },
+})
+
+-- Prose editing should stay completely unaffected by snippet matching.
+vim.api.nvim_create_autocmd("FileType", {
+    group = vim.api.nvim_create_augroup("disable_markdown_snippets", { clear = true }),
+    pattern = "markdown",
+    callback = function(args) vim.b[args.buf].minisnippets_disable = true end,
 })

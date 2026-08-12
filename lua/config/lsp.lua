@@ -48,32 +48,37 @@ for _, server_name in ipairs(config_modules) do
     end
 end
 
--- Enable native LSP completion (Neovim 0.12+).
--- This provides <C-x><C-n> style completion using LSP sources without
--- requiring a third-party completion plugin. Guarded with pcall because
--- the call fails when no LSP clients are attached yet (e.g. in tests).
-pcall(vim.lsp.completion.enable, true)
-
--- Load each server's runtime definition and enable it.
+-- Enable every server only after all native config overrides are registered.
 for _, server in ipairs(servers) do
     vim.lsp.enable(server)
 end
 
--- LSP keymaps are set per-buffer on LspAttach to avoid errors when
--- no LSP client is attached. See config/keymaps.lua for global mappings
--- and the LspAddgroup below for buffer-local ones.
-vim.api.nvim_create_autocmd("LspAttach", {
-    group = vim.api.nvim_create_augroup("lsp_attach_keymaps", { clear = true }),
-    callback = function(args)
-        local bufnr = args.buf
-        local function map(mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { buffer = bufnr, desc = desc }) end
+-- Enable native LSP completion per attached client. Markdown is intentionally
+-- excluded so prose buffers never pay for completion requests or popups.
+local function enable_completion(args)
+    if vim.bo[args.buf].filetype == "markdown" then return end
 
-        map("n", "<leader>ld", vim.lsp.buf.definition, "Go to definition")
-        map("n", "<leader>lh", function() vim.lsp.buf.hover({ border = "rounded" }) end, "Hover documentation")
-        map("n", "<leader>lr", vim.lsp.buf.references, "Find references")
-        map("n", "<leader>lR", vim.lsp.buf.rename, "Rename symbol")
-        map("n", "<leader>la", vim.lsp.buf.code_action, "Code action")
-        map("n", "<leader>li", vim.lsp.buf.implementation, "Go to implementation")
-        map("n", "<leader>ls", function() vim.lsp.buf.signature_help({ border = "rounded" }) end, "Signature help")
-    end,
+    local client = vim.lsp.get_client_by_id(args.data.client_id)
+    if client and client:supports_method("textDocument/completion") then
+        vim.lsp.completion.enable(true, client.id, args.buf, { autotrigger = true })
+    end
+end
+
+-- LSP keymaps are global on purpose: vim.lsp.buf.* already reports the native
+-- "no client attached" message when invoked in an unattached buffer.
+local function map(mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { desc = desc }) end
+map("i", "<C-Space>", function()
+    if vim.bo.filetype ~= "markdown" then vim.lsp.completion.get() end
+end, "Trigger LSP completion")
+map("n", "<leader>ld", vim.lsp.buf.definition, "Go to definition")
+map("n", "<leader>lh", function() vim.lsp.buf.hover({ border = "rounded" }) end, "Hover documentation")
+map("n", "<leader>lr", vim.lsp.buf.references, "Find references")
+map("n", "<leader>lR", vim.lsp.buf.rename, "Rename symbol")
+map("n", "<leader>la", vim.lsp.buf.code_action, "Code action")
+map("n", "<leader>li", vim.lsp.buf.implementation, "Go to implementation")
+map("n", "<leader>ls", function() vim.lsp.buf.signature_help({ border = "rounded" }) end, "Signature help")
+
+vim.api.nvim_create_autocmd("LspAttach", {
+    group = vim.api.nvim_create_augroup("lsp_completion", { clear = true }),
+    callback = enable_completion,
 })
