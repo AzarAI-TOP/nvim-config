@@ -6,6 +6,7 @@ require("config.options")
 require("config.keymaps")
 require("config.autocmds")
 require("config.neovide") -- Neovide GUI settings (no-op outside Neovide)
+require("config.pack") -- :PackUpdate / :PackList user commands
 
 -- Plugins (auto-loaded from lua/plugins/)
 require("plugins")
