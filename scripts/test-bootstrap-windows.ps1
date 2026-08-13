@@ -1,14 +1,13 @@
-# Safe logic tests for scripts/bootstrap-windows.ps1.
+﻿# scripts/bootstrap-windows.ps1 的安全逻辑测试。
 #
-# These tests NEVER run winget, rustup, installers, font downloads, or touch
-# the real user/system PATH or registry. The bootstrap script is dot-sourced
-# (it only defines functions; it must NOT auto-execute), every native command
-# is replaced by an injected fake executor, and PATH I/O is replaced by
-# in-memory fakes.
+# 这些测试绝不运行 winget、rustup、安装器、字体下载，
+# 也绝不触碰真实的用户/系统 PATH 或注册表。引导脚本被 dot-source
+# （它只定义函数；绝不允许自动执行），每个原生命令都被注入的假执行器
+# 替换，PATH I/O 被内存假实现替换。
 #
-# Runs on Windows PowerShell 5.1 and PowerShell 7 (no Pester dependency).
+# 可在 Windows PowerShell 5.1 与 PowerShell 7 上运行（不依赖 Pester）。
 #
-# Usage:
+# 用法：
 #   powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\test-bootstrap-windows.ps1
 #   pwsh -NoProfile -File ./scripts/test-bootstrap-windows.ps1
 
@@ -16,7 +15,7 @@ $ErrorActionPreference = "Stop"
 
 $bootstrapScript = Join-Path $PSScriptRoot "bootstrap-windows.ps1"
 if (-not (Test-Path -LiteralPath $bootstrapScript)) {
-    throw "bootstrap script not found at '$bootstrapScript'"
+    throw "未找到引导脚本 '$bootstrapScript'"
 }
 
 $script:originalProcessPath = $env:Path
@@ -31,7 +30,7 @@ function Assert-True {
 function Assert-Equal {
     param($Expected, $Actual, [string]$Message)
     if ($Expected -ne $Actual) {
-        throw "$Message (expected '$Expected', got '$Actual')"
+        throw "$Message（期望 '$Expected'，实际 '$Actual'）"
     }
 }
 
@@ -48,12 +47,12 @@ function Assert-Throws {
         $threw = $true
         foreach ($fragment in $ExpectedFragments) {
             if ($_.Exception.Message -notlike "*$fragment*") {
-                throw "${Message}: exception message is missing fragment '$fragment'. Got: $($_.Exception.Message)"
+                throw "${Message}：异常消息缺少片段 '$fragment'。实际：$($_.Exception.Message)"
             }
         }
     }
     if (-not $threw) {
-        throw "${Message}: expected an exception, but none was thrown"
+        throw "${Message}：期望抛出异常，但未抛出"
     }
 }
 
@@ -62,25 +61,25 @@ function Invoke-Test {
     try {
         & $Body
         $script:passCount++
-        Write-Host "[PASS] $Name"
+        Write-Host "[通过] $Name"
     } catch {
         $script:failCount++
-        Write-Host "[FAIL] $Name"
+        Write-Host "[失败] $Name"
         Write-Host "       $($_.Exception.Message)"
     }
 }
 
 # ---------------------------------------------------------------------------
-# Shared fakes. Every orchestration test resets this state first, so no test
-# depends on another and nothing touches the real environment.
+# 共享假实现。每个编排测试先重置状态，因此测试之间互不依赖，
+# 也不会触碰真实环境。
 # ---------------------------------------------------------------------------
 
-$script:calls = @()          # recorded "$command $args" invocations
-$script:notified = @()       # messages sent to the Notify sink
-$script:failPackageId = ""   # winget package id that should fail (exit 1)
-$script:userPathStore = ""   # simulated user PATH
-$script:pathWriteCount = 0   # how many times the simulated user PATH was written
-$script:neovideExePresent = $true  # does C:\Program Files\Neovide\neovide.exe exist
+$script:calls = @()          # 记录的 "$command $args" 调用
+$script:notified = @()       # 发给 Notify 接收器的消息
+$script:failPackageId = ""   # 应失败（退出码 1）的 winget 包 id
+$script:userPathStore = ""   # 模拟的用户 PATH
+$script:pathWriteCount = 0   # 模拟用户 PATH 被写入的次数
+$script:neovideExePresent = $true  # C:\Program Files\Neovide\neovide.exe 是否存在
 
 $script:runner = {
     param($command, $arguments)
@@ -92,8 +91,8 @@ $script:runner = {
     }
 }
 
-# neovide.exe exists only after its winget install has run (models a clean
-# first run, where the executable is absent before installation).
+# neovide.exe 只有在其 winget 安装运行后才存在
+# （模拟干净的首次运行：安装前可执行文件不存在）。
 $script:testPath = {
     param($path)
     if ($path -like "*neovide.exe") {
@@ -102,8 +101,8 @@ $script:testPath = {
     return $false
 }
 
-# winget/nvim are always present; neovide resolves only once its directory is
-# in the (simulated) user PATH, like a real Get-Command lookup after repair.
+# winget/nvim 始终存在；neovide 只有在其目录进入（模拟的）用户 PATH 后
+# 才可解析，如同修复后的真实 Get-Command 查找。
 $script:testCommand = {
     param($name)
     if ($name -eq "winget") { return $true }
@@ -139,27 +138,26 @@ function Reset-TestState {
 }
 
 try {
-    # Load the bootstrap helpers. Must only define functions/state: if this
-    # auto-executed, the real bootstrap would run and the tests below would
-    # either fail loudly or perform real installs.
+    # 加载引导辅助函数。必须只定义函数/状态：若自动执行，
+    # 真实引导会运行，下面的测试要么大声失败要么执行真实安装。
     . $bootstrapScript
 
     if (-not (Get-Command Invoke-BootstrapWindows -ErrorAction SilentlyContinue)) {
-        throw "dot-sourcing did not define Invoke-BootstrapWindows"
+        throw "dot-source 未定义 Invoke-BootstrapWindows"
     }
     if (-not (Get-Command Invoke-NativeChecked -ErrorAction SilentlyContinue)) {
-        throw "dot-sourcing did not define Invoke-NativeChecked"
+        throw "dot-source 未定义 Invoke-NativeChecked"
     }
 
-    # --- 1. native success: output preserved, no throw --------------------
-    Invoke-Test -Name "native success preserves output" -Body {
+    # --- 1. 原生命令成功：输出保留、不抛出 --------------------------------
+    Invoke-Test -Name "原生命令成功保留输出" -Body {
         $fake = { param($command, $arguments) $global:LASTEXITCODE = 0; "fake-native-output" }
         $output = Invoke-NativeChecked -Command "winget" -Arguments @("--version") -AcceptableExitCodes @(0) -Executor $fake
-        Assert-True ($output -match "fake-native-output") "native stdout must be preserved"
+        Assert-True ($output -match "fake-native-output") "原生 stdout 必须保留"
     }
 
-    # --- 2. native failure: throws with command and context ---------------
-    Invoke-Test -Name "native failure throws with command, exit code and context" -Body {
+    # --- 2. 原生命令失败：抛出命令与上下文 --------------------------------
+    Invoke-Test -Name "原生命令失败抛出命令、退出码与上下文" -Body {
         $fake = { param($command, $arguments) $global:LASTEXITCODE = 5 }
         Assert-Throws {
             Invoke-NativeChecked -Command "winget" `
@@ -167,12 +165,12 @@ try {
                 -AcceptableExitCodes @(0) `
                 -Context "winget package 'Git.Git'" `
                 -Executor $fake
-        } -Message "unacceptable exit code must throw" `
-          -ExpectedFragments @("winget install --id Git.Git", "exit code 5", "Git.Git")
+        } -Message "不可接受的退出码必须抛出" `
+          -ExpectedFragments @("winget install --id Git.Git", "退出码 5", "Git.Git")
     }
 
-    # --- 3. documented winget idempotent codes accepted --------------------
-    Invoke-Test -Name "documented winget idempotent exit codes are accepted" -Body {
+    # --- 3. 文档记载的 winget 幂等退出码被接受 -----------------------------
+    Invoke-Test -Name "文档记载的 winget 幂等退出码被接受" -Body {
         Assert-Equal 3 $script:WingetInstallAcceptableExitCodes.Count "0 + INSTALL_ALREADY_INSTALLED + INSTALL_DOWNGRADE"
         foreach ($code in $script:WingetInstallAcceptableExitCodes) {
             $expected = $code
@@ -185,8 +183,8 @@ try {
         }
     }
 
-    # --- 4. one failed package stops later packages and the success message -
-    Invoke-Test -Name "failed package stops later packages and no success message" -Body {
+    # --- 4. 一个包失败即停止后续包与成功消息 -------------------------------
+    Invoke-Test -Name "包失败停止后续包且不发送成功消息" -Body {
         Reset-TestState
         $script:failPackageId = "Neovim.Neovim"
         $script:userPathStore = "C:\Existing\Bin"
@@ -203,18 +201,18 @@ try {
                 -ReadUserPath $script:readUserPath `
                 -WriteUserPath $script:writeUserPath `
                 -NvimVersionOutput "NVIM v0.12.4"
-        } -Message "winget failure must abort the bootstrap" `
-          -ExpectedFragments @("Neovim.Neovim", "exit code 1")
+        } -Message "winget 失败必须中止引导" `
+          -ExpectedFragments @("Neovim.Neovim", "退出码 1")
 
-        Assert-True (($script:calls -like "*winget*Git.Git*").Count -gt 0) "first package must run"
-        Assert-True (($script:calls -like "*winget*Neovim.Neovim*").Count -gt 0) "failed package must be attempted"
-        Assert-True (($script:calls -like "*winget*Neovide.Neovide*").Count -eq 0) "packages after the failure must not run"
-        Assert-True (($script:calls -like "*MasonToolsInstallSync*").Count -eq 0) "Mason step must not run"
-        Assert-True ($script:notified.Count -eq 0) "no final success message after failure"
+        Assert-True (($script:calls -like "*winget*Git.Git*").Count -gt 0) "第一个包必须运行"
+        Assert-True (($script:calls -like "*winget*Neovim.Neovim*").Count -gt 0) "失败的包必须被尝试"
+        Assert-True (($script:calls -like "*winget*Neovide.Neovide*").Count -eq 0) "失败之后的包不得运行"
+        Assert-True (($script:calls -like "*MasonToolsInstallSync*").Count -eq 0) "Mason 步骤不得运行"
+        Assert-True ($script:notified.Count -eq 0) "失败后不得有最终成功消息"
     }
 
-    # --- 5. clean first run: Neovide PATH added AFTER simulated install ----
-    Invoke-Test -Name "clean first run adds Neovide PATH entry after simulated install" -Body {
+    # --- 5. 干净的首次运行：模拟安装后加入 Neovide PATH ---------------------
+    Invoke-Test -Name "干净的首次运行在模拟安装后加入 Neovide PATH 条目" -Body {
         Reset-TestState
         $script:userPathStore = "C:\Existing\Bin"
 
@@ -230,19 +228,19 @@ try {
             -WriteUserPath $script:writeUserPath `
             -NvimVersionOutput "NVIM v0.12.4"
 
-        Assert-Equal 1 $script:pathWriteCount "user PATH must be written exactly once"
+        Assert-Equal 1 $script:pathWriteCount "用户 PATH 必须恰好写入一次"
         $segments = @($script:userPathStore -split ";" | Where-Object { $_ })
-        Assert-Equal 2 $segments.Count "unrelated entry plus one new entry"
-        Assert-Equal "C:\Existing\Bin" $segments[0] "unrelated entry must be preserved"
-        Assert-True ($segments -contains "C:\Program Files\Neovide") "Neovide directory must be added"
-        Assert-Equal 1 $script:shortcutCalls.Count "shortcut creation must be requested on first run"
-        Assert-Equal "Ctrl+Alt+N" $script:shortcutCalls[0].Hotkey "shortcut hotkey must be Ctrl+Alt+N"
-        Assert-True ($script:notified.Count -eq 1) "success message must appear"
-        Assert-True ($script:notified[0] -like "*complete*") "success message must be the completion notice"
+        Assert-Equal 2 $segments.Count "一个无关条目加一个新条目"
+        Assert-Equal "C:\Existing\Bin" $segments[0] "无关条目必须保留"
+        Assert-True ($segments -contains "C:\Program Files\Neovide") "Neovide 目录必须被加入"
+        Assert-Equal 1 $script:shortcutCalls.Count "首次运行必须请求创建快捷方式"
+        Assert-Equal "Ctrl+Alt+N" $script:shortcutCalls[0].Hotkey "快捷方式热键必须是 Ctrl+Alt+N"
+        Assert-True ($script:notified.Count -eq 1) "必须出现成功消息"
+        Assert-True ($script:notified[0] -like "*引导完成*") "成功消息必须是完成通知"
     }
 
-    # --- 6. repeated run: no duplicate entry, no second write --------------
-    Invoke-Test -Name "repeated run adds no duplicate and does not rewrite PATH" -Body {
+    # --- 6. 重复运行：不重复添加、不再次写入 -------------------------------
+    Invoke-Test -Name "重复运行不添加重复条目且不重写 PATH" -Body {
         Reset-TestState
         $script:userPathStore = "C:\Existing\Bin"
 
@@ -257,7 +255,7 @@ try {
             -ReadUserPath $script:readUserPath `
             -WriteUserPath $script:writeUserPath `
             -NvimVersionOutput "NVIM v0.12.4"
-        Assert-Equal 1 $script:pathWriteCount "first run writes once"
+        Assert-Equal 1 $script:pathWriteCount "首次运行写入一次"
 
         $null = Invoke-BootstrapWindows `
             -Packages @("Neovide.Neovide") `
@@ -271,14 +269,14 @@ try {
             -WriteUserPath $script:writeUserPath `
             -NvimVersionOutput "NVIM v0.12.4"
 
-        Assert-Equal 1 $script:pathWriteCount "second run must not write again"
+        Assert-Equal 1 $script:pathWriteCount "第二次运行不得再写入"
         $neovideEntries = @($script:userPathStore -split ";" | Where-Object { $_ -ieq "C:\Program Files\Neovide" })
-        Assert-Equal 1 $neovideEntries.Count "exactly one Neovide entry"
-        Assert-True ($script:userPathStore -like "C:\Existing\Bin*") "unrelated entry still present"
+        Assert-Equal 1 $neovideEntries.Count "恰好一个 Neovide 条目"
+        Assert-True ($script:userPathStore -like "C:\Existing\Bin*") "无关条目仍在"
     }
 
-    # --- 7. already on PATH: preserved untouched ---------------------------
-    Invoke-Test -Name "Neovide already on PATH is preserved untouched" -Body {
+    # --- 7. 已在 PATH 上：原样保留 -----------------------------------------
+    Invoke-Test -Name "已在 PATH 上的 Neovide 原样保留" -Body {
         Reset-TestState
         $script:userPathStore = "C:\Existing\Bin;C:\Program Files\Neovide"
 
@@ -294,12 +292,12 @@ try {
             -WriteUserPath $script:writeUserPath `
             -NvimVersionOutput "NVIM v0.12.4"
 
-        Assert-Equal 0 $script:pathWriteCount "no PATH write when already resolvable"
-        Assert-Equal "C:\Existing\Bin;C:\Program Files\Neovide" $script:userPathStore "user PATH unchanged"
+        Assert-Equal 0 $script:pathWriteCount "已可解析时不写 PATH"
+        Assert-Equal "C:\Existing\Bin;C:\Program Files\Neovide" $script:userPathStore "用户 PATH 不变"
     }
 
-    # --- 8. missing executable: throws, no false success, no PATH write ----
-    Invoke-Test -Name "missing Neovide executable throws without PATH write" -Body {
+    # --- 8. 可执行文件缺失：抛出、不假装成功、不写 PATH --------------------
+    Invoke-Test -Name "Neovide 可执行文件缺失时抛出且不写 PATH" -Body {
         Reset-TestState
         $script:neovideExePresent = $false
         $script:userPathStore = "C:\Existing\Bin"
@@ -316,30 +314,30 @@ try {
                 -ReadUserPath $script:readUserPath `
                 -WriteUserPath $script:writeUserPath `
                 -NvimVersionOutput "NVIM v0.12.4"
-        } -Message "missing Neovide executable must fail the bootstrap" `
+        } -Message "Neovide 可执行文件缺失必须使引导失败" `
           -ExpectedFragments @("Neovide", "neovide.exe")
 
-        Assert-Equal 0 $script:pathWriteCount "no PATH write when executable is missing"
-        Assert-Equal "C:\Existing\Bin" $script:userPathStore "user PATH unchanged"
-        Assert-True ($script:notified.Count -eq 0) "no success message when Neovide is missing"
+        Assert-Equal 0 $script:pathWriteCount "可执行文件缺失时不写 PATH"
+        Assert-Equal "C:\Existing\Bin" $script:userPathStore "用户 PATH 不变"
+        Assert-True ($script:notified.Count -eq 0) "Neovide 缺失时无成功消息"
     }
 
-    # --- 9. Neovim 0.11 rejected, 0.12 accepted ----------------------------
-    Invoke-Test -Name "Neovim 0.11 rejected with detected and required versions" -Body {
+    # --- 9. 拒绝 Neovim 0.11，接受 0.12 ------------------------------------
+    Invoke-Test -Name "拒绝 Neovim 0.11 并报告检测到的与要求的版本" -Body {
         try {
             $null = Assert-NeovimMinimumVersion -VersionOutput "NVIM v0.11.4" -MinimumVersion "0.12.0"
-            throw "expected 0.11 to be rejected"
+            throw "期望 0.11 被拒绝"
         } catch {
             if ($_.Exception.Message -notlike "*0.11.4*") {
-                throw "error must report the detected version; got: $($_.Exception.Message)"
+                throw "错误必须报告检测到的版本；实际：$($_.Exception.Message)"
             }
             if ($_.Exception.Message -notlike "*0.12.0*") {
-                throw "error must report the required version; got: $($_.Exception.Message)"
+                throw "错误必须报告要求的版本；实际：$($_.Exception.Message)"
             }
         }
     }
 
-    Invoke-Test -Name "Neovim 0.12 accepted" -Body {
+    Invoke-Test -Name "接受 Neovim 0.12" -Body {
         $detected = Assert-NeovimMinimumVersion -VersionOutput "NVIM v0.12.4" -MinimumVersion "0.12.0"
         Assert-Equal "v0.12.4" $detected
         $devDetected = Assert-NeovimMinimumVersion -VersionOutput "NVIM v0.12.0-dev-1234+gabc1234" -MinimumVersion "0.12.0"
@@ -348,57 +346,57 @@ try {
         Assert-Equal "v0.13.1" $newerDetected
     }
 
-    # --- 11. Add-PathEntryString: idempotent, order-preserving, dedupes ----
-    Invoke-Test -Name "PATH entry helper is idempotent and preserves unrelated entries" -Body {
+    # --- 11. Add-PathEntryString：幂等、保序、去重 --------------------------
+    Invoke-Test -Name "PATH 条目辅助函数幂等且保留无关条目" -Body {
         $result = Add-PathEntryString -PathValue "C:\A;C:\B;" -Entry "C:\Program Files\Neovide"
-        Assert-Equal "C:\A;C:\B;C:\Program Files\Neovide" $result "append drops empty segments"
+        Assert-Equal "C:\A;C:\B;C:\Program Files\Neovide" $result "追加时丢弃空段"
         $again = Add-PathEntryString -PathValue $result -Entry "C:\Program Files\Neovide"
-        Assert-True ($again -ceq $result) "repeated call must be a no-op"
+        Assert-True ($again -ceq $result) "重复调用必须是空操作"
         $mixed = Add-PathEntryString -PathValue "c:\program files\neovide;C:\A" -Entry "C:\Program Files\Neovide"
-        Assert-True ($mixed -ceq "c:\program files\neovide;C:\A") "existing entry (any case) must be left untouched"
+        Assert-True ($mixed -ceq "c:\program files\neovide;C:\A") "已存在条目（不分大小写）必须原样保留"
     }
 
-    # --- 12. Read-VersionsFile: tolerant parser over the shared versions.sh --
-    Invoke-Test -Name "versions file parser tolerates CRLF, comments, and blank lines" -Body {
+    # --- 12. Read-VersionsFile：对共享 versions.sh 的宽容解析 --------------
+    Invoke-Test -Name "版本文件解析器容忍 CRLF、注释与空行" -Body {
         $tmp = [IO.Path]::GetTempFileName()
         Set-Content -LiteralPath $tmp -Value "# pinned assets`r`n`r`nNVIM_VERSION=`"0.12.4`"`r`nOXPROTO_SHA256_ZIP=`"abc123`"" -NoNewline
         try {
             $v = Read-VersionsFile -Path $tmp
-            Assert-Equal "0.12.4" $v.NVIM_VERSION "NVIM_VERSION must parse through CRLF"
-            Assert-Equal "abc123" $v.OXPROTO_SHA256_ZIP "OXPROTO_SHA256_ZIP must parse"
-            Assert-Equal 2 $v.Count "parser must yield exactly the declared keys"
+            Assert-Equal "0.12.4" $v.NVIM_VERSION "NVIM_VERSION 必须能穿过 CRLF 解析"
+            Assert-Equal "abc123" $v.OXPROTO_SHA256_ZIP "OXPROTO_SHA256_ZIP 必须能解析"
+            Assert-Equal 2 $v.Count "解析器必须恰好产出声明的键"
         } finally {
             Remove-Item -LiteralPath $tmp -Force
         }
     }
 
-    Invoke-Test -Name "malformed versions line fails loudly" -Body {
+    Invoke-Test -Name "格式错误的版本文件行大声失败" -Body {
         $tmp = [IO.Path]::GetTempFileName()
         Set-Content -LiteralPath $tmp -Value "NVIM_VERSION=0.12.4" -NoNewline
         try {
             Assert-Throws -Action { $null = Read-VersionsFile -Path $tmp } `
-                -Message "unquoted value must be rejected" -ExpectedFragments @("malformed")
+                -Message "未加引号的值必须被拒绝" -ExpectedFragments @("格式错误")
         } finally {
             Remove-Item -LiteralPath $tmp -Force
         }
     }
 
-    Invoke-Test -Name "shared versions file provides the Windows font version and hash" -Body {
+    Invoke-Test -Name "共享版本文件提供 Windows 字体版本与哈希" -Body {
         $v = Read-VersionsFile -Path (Join-Path $script:BootstrapDir "versions.sh")
-        Assert-True ($v.NERD_FONTS_VERSION -match '^\d+\.\d+\.\d+$') "NERD_FONTS_VERSION must be pinned"
-        Assert-True ($v.OXPROTO_SHA256_ZIP.Length -eq 64) "OXPROTO_SHA256_ZIP must be a SHA-256"
-        Assert-True ($v.OXPROTO_SHA256_XZ.Length -eq 64) "OXPROTO_SHA256_XZ must be a SHA-256"
-        Assert-True ($v.OXPROTO_SHA256_XZ -ne $v.OXPROTO_SHA256_ZIP) "zip/xz archives must have distinct hashes"
+        Assert-True ($v.NERD_FONTS_VERSION -match '^\d+\.\d+\.\d+$') "NERD_FONTS_VERSION 必须固定"
+        Assert-True ($v.OXPROTO_SHA256_ZIP.Length -eq 64) "OXPROTO_SHA256_ZIP 必须是 SHA-256"
+        Assert-True ($v.OXPROTO_SHA256_XZ.Length -eq 64) "OXPROTO_SHA256_XZ 必须是 SHA-256"
+        Assert-True ($v.OXPROTO_SHA256_XZ -ne $v.OXPROTO_SHA256_ZIP) "zip/xz 压缩包必须哈希不同"
     }
 
-    # --- 13. Neovide shortcut: hotkey contract + injectable COM factory -----
-    Invoke-Test -Name "hotkey normalization compares modifier order agnostically" -Body {
+    # --- 13. Neovide 快捷方式：热键契约 + 可注入 COM 工厂 -------------------
+    Invoke-Test -Name "热键归一化忽略修饰键顺序" -Body {
         Assert-Equal "alt+ctrl+n" (Get-NormalizedHotkey "Alt+Ctrl+N")
         Assert-Equal "alt+ctrl+n" (Get-NormalizedHotkey "Ctrl+Alt+N")
         Assert-Equal "" (Get-NormalizedHotkey "")
     }
 
-    Invoke-Test -Name "Neovide shortcut factory is invoked with the documented contract" -Body {
+    Invoke-Test -Name "Neovide 快捷方式工厂按文档契约被调用" -Body {
         Reset-TestState
         $factory = {
             param($path, $target, $hotkey)
@@ -407,24 +405,24 @@ try {
         }
         $result = New-NeovideShortcut -TargetPath "C:\Program Files\Neovide\neovide.exe" `
             -ShortcutFactory $factory -TestPath { param($p) $true }
-        Assert-Equal 1 $script:shortcutCalls.Count "factory must run exactly once"
-        Assert-Equal "Ctrl+Alt+N" $script:shortcutCalls[0].Hotkey "hotkey must be Ctrl+Alt+N"
-        Assert-Equal "C:\Program Files\Neovide\neovide.exe" $script:shortcutCalls[0].TargetPath "target must be neovide.exe"
-        Assert-True ($script:shortcutCalls[0].Path -like "*Neovide.lnk") "shortcut must land in the Start Menu"
-        Assert-Equal "Ctrl+Alt+N" $result.Hotkey "factory result must be returned"
+        Assert-Equal 1 $script:shortcutCalls.Count "工厂必须恰好运行一次"
+        Assert-Equal "Ctrl+Alt+N" $script:shortcutCalls[0].Hotkey "热键必须是 Ctrl+Alt+N"
+        Assert-Equal "C:\Program Files\Neovide\neovide.exe" $script:shortcutCalls[0].TargetPath "目标必须是 neovide.exe"
+        Assert-True ($script:shortcutCalls[0].Path -like "*Neovide.lnk") "快捷方式必须落在开始菜单"
+        Assert-Equal "Ctrl+Alt+N" $result.Hotkey "必须返回工厂结果"
     }
 
-    Invoke-Test -Name "Neovide shortcut refuses to create when the executable is missing" -Body {
+    Invoke-Test -Name "Neovide 快捷方式在可执行文件缺失时拒绝创建" -Body {
         Assert-Throws -Action {
             New-NeovideShortcut -TargetPath "C:\Missing\neovide.exe" -TestPath { param($p) $false }
-        } -Message "missing executable must fail" -ExpectedFragments @("not found")
+        } -Message "可执行文件缺失必须失败" -ExpectedFragments @("未找到")
     }
 } finally {
     $env:Path = $script:originalProcessPath
 }
 
 Write-Host ""
-Write-Host "PASS: $($script:passCount)  FAIL: $($script:failCount)"
+Write-Host "通过: $($script:passCount)  失败: $($script:failCount)"
 if ($script:failCount -gt 0) {
     exit 1
 }

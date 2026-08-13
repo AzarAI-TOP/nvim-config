@@ -1,5 +1,4 @@
--- ~/.config/nvim/lua/plugins/bento.lua
--- Buffer manager (bento.nvim, via vim.pack)
+-- 缓冲区管理（bento.nvim，经 vim.pack）
 
 vim.pack.add({
     { src = "https://github.com/serhez/bento.nvim" },

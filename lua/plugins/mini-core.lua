@@ -1,21 +1,19 @@
--- ~/.config/nvim/lua/plugins/mini-core.lua
--- Core mini.* plugins (via vim.pack)
+-- 核心 mini.* 插件（经 vim.pack）
 --
--- Merged from individual files for conciseness.
--- Each sub-module uses defaults unless noted otherwise.
+-- 由各自独立的小文件合并而来。除注明外均使用默认配置。
 
 local mini_plugins = {
-    -- Textobjects — extends built-in text objects (i), (a)
+    -- 文本对象 — 扩展内置文本对象 (i) (a)
     "ai",
-    -- Comment toggling — gc (toggle), gcc (current line)
+    -- 注释切换 — gc（切换）、gcc（当前行）
     "comment",
-    -- Icon provider — file/directory/LSP icons for mini.files and others
+    -- 图标提供者 — 供 mini.files 等使用的文件 / 目录 / LSP 图标
     "icons",
-    -- Indent scope visualization
+    -- 缩进范围可视化
     "indentscope",
-    -- Move lines/selections — Alt+↑/↓
+    -- 移动行 / 选区 — Alt+↑/↓
     "move",
-    -- Trailspace highlight & trim
+    -- 尾随空白高亮与清理
     "trailspace",
 }
 
@@ -26,10 +24,10 @@ for _, name in ipairs(mini_plugins) do
     require("mini." .. name).setup()
 end
 
--- :TrimTrailSpace — remove trailing whitespace and trailing blank lines
+-- :TrimTrailSpace — 删除尾随空白与尾随空行
 vim.api.nvim_create_user_command("TrimTrailSpace", function()
     local view = vim.fn.winsaveview()
     require("mini.trailspace").trim()
     require("mini.trailspace").trim_last_lines()
     vim.fn.winrestview(view)
-end, { desc = "Remove trailing whitespace and trailing blank lines in current buffer" })
+end, { desc = "删除当前缓冲区的尾随空白和尾随空行" })

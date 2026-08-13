@@ -1,4 +1,9 @@
-if vim.env.NVIM_CONFIG_TEST ~= "1" then error("Run tests through scripts/test-config.sh or scripts/test-config.ps1") end
+-- 测试运行器：必须通过 scripts/test-config.sh 或 test-config.ps1 运行。
+-- 以 NVIM_CONFIG_TEST=1 启动，逐个执行 tests/ 下的检查文件。
+
+if vim.env.NVIM_CONFIG_TEST ~= "1" then
+    error("请通过 scripts/test-config.sh 或 scripts/test-config.ps1 运行测试")
+end
 
 vim.g.config_test_runner = true
 

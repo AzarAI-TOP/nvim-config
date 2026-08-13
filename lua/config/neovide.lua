@@ -1,16 +1,15 @@
--- lua/config/neovide.lua
--- Neovide GUI configuration (only loaded when running inside Neovide)
+-- Neovide GUI 配置（仅在 Neovide 内运行时生效）
 
 if not vim.g.neovide then return end
 
 local platform = require("config.platform")
 
--- ── Font ──────────────────────────────────────────────────────────────────
--- 0xProto Nerd Font at 13pt with subpixel antialiasing
+-- ── 字体 ──
+-- 0xProto Nerd Font，13pt，亚像素抗锯齿
 vim.o.guifont = "0xProto\\ Nerd\\ Font:h13:#e-subpixelantialias:#h-full"
-vim.g.neovide_pixel_geometry = "RGBH" -- required for subpixel antialias (most monitors are RGBH)
+vim.g.neovide_pixel_geometry = "RGBH" -- 亚像素抗锯齿需要（多数显示器为 RGBH）
 
--- ── Window appearance ─────────────────────────────────────────────────────
+-- ── 窗口外观 ──
 vim.g.neovide_opacity = 0.85
 vim.g.neovide_normal_opacity = 0.85
 vim.g.neovide_remember_window_size = true
@@ -19,41 +18,41 @@ vim.g.neovide_theme = "dark"
 
 if platform.is_windows then
     vim.g.neovide_corner_preference = "round"
-    -- Match TokyoNight Moon palette (#222436 bg / #82aaff blue text).
+    -- 与 TokyoNight Moon 调色板匹配（背景 #222436 / 文字 #82aaff）
     vim.g.neovide_title_background_color = "222436"
     vim.g.neovide_title_text_color = "82aaff"
 end
 
--- Inner padding for breathing room
+-- 内边距留白
 vim.g.neovide_padding_top = 5
 vim.g.neovide_padding_bottom = 5
 vim.g.neovide_padding_left = 5
 vim.g.neovide_padding_right = 5
 
--- ── Cursor animations ─────────────────────────────────────────────────────
+-- ── 光标动画 ──
 vim.g.neovide_cursor_animation_length = 0.15
 vim.g.neovide_cursor_trail_size = 1.0
 vim.g.neovide_cursor_animate_in_insert_mode = true
 vim.g.neovide_cursor_animate_command_line = true
 vim.g.neovide_cursor_antialiasing = true
 
--- Enable every particle mode supported by Neovide 0.16.
+-- 启用 Neovide 0.16 支持的全部粒子模式
 vim.g.neovide_cursor_vfx_mode = { "railgun", "torpedo", "pixiedust", "sonicboom", "ripple", "wireframe" }
 vim.g.neovide_cursor_vfx_opacity = 200.0
 
--- ── Floating windows ──────────────────────────────────────────────────────
+-- ── 浮动窗口 ──
 vim.g.neovide_floating_blur_amount_x = 2.0
 vim.g.neovide_floating_blur_amount_y = 2.0
 vim.g.neovide_floating_shadow = true
 
--- ── Scroll animation ──────────────────────────────────────────────────────
+-- ── 滚动动画 ──
 vim.g.neovide_scroll_animation_length = 0.3
 
--- ── Quality of life ───────────────────────────────────────────────────────
+-- ── 体验优化 ──
 vim.g.neovide_hide_mouse_when_typing = true
 
--- ── IME: auto-toggle for Chinese input ────────────────────────────────────
--- IME off in Normal mode (unimpeded navigation), on in Insert / Cmdline.
+-- ── 输入法：中文输入自动切换 ──
+-- 普通模式关闭输入法（导航不受干扰），插入 / 命令行模式开启。
 vim.g.neovide_input_ime = false
 local ime_grp = vim.api.nvim_create_augroup("neovide_ime", { clear = true })
 vim.api.nvim_create_autocmd("InsertEnter", {

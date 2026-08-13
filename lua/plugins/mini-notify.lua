@@ -1,5 +1,4 @@
--- ~/.config/nvim/lua/plugins/mini-notify.lua
--- Notification system (mini.notify, via vim.pack)
+-- 通知系统（mini.notify，经 vim.pack）
 
 vim.pack.add({
     { src = "https://github.com/nvim-mini/mini.notify" },

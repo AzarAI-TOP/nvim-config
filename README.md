@@ -11,36 +11,38 @@ and portable formatters are managed by Mason (requires Neovim 0.12+).
 ├── init.lua                # entry point — loads config modules, then plugins
 ├── lua/
 │   ├── config/
-│   │   ├── options.lua      # editor options (number, indent, search, undo, ...)
-│   │   ├── keymaps.lua      # key mappings (leader = <Space>)
-│   │   ├── autocmds.lua     # autocommands + per-filetype indent rules
-│   │   ├── lsp.lua          # LSP config (native vim.lsp.config API)
-│   │   ├── lsp_completion.lua  # native LSP completion activation
-│   │   ├── neovide.lua      # shared Windows/Fedora Neovide settings
-│   │   ├── platform.lua     # Windows/Linux/WSL/SSH detection
-│   │   └── tools.lua        # shared LSP/formatter/system-tool inventory
+│   │   ├── util.lua        # shared helpers: keymap registry, map(), editorconfig
+│   │   │                   #   indent helpers, tool inventory (LSP/formatter/system)
+│   │   ├── options.lua     # editor options (number, indent, search, undo, ...)
+│   │   ├── keymaps.lua     # key mappings (leader = <Space>)
+│   │   ├── autocmds.lua    # autocommands + per-filetype indent rules
+│   │   ├── lsp.lua         # all LSP config: per-server tables, diagnostics,
+│   │   │                   #   native completion activation, LSP keymaps
+│   │   ├── neovide.lua     # shared Windows/Fedora Neovide settings
+│   │   ├── platform.lua    # Windows/Linux/WSL/SSH detection
+│   │   ├── pack.lua        # :PackUpdate / :PackList user commands
+│   │   └── reload.lua      # hot-reload of the core config layer
 │   ├── nvim_config/
-│   │   └── health.lua       # :checkhealth nvim_config
-│   ├── lsp/                 # one file per server, auto-loaded by config/lsp.lua
-│   │   └── <server>.lua     # gopls, clangd, pyright, lua_ls, ...
-│   └── plugins/             # one file per plugin: vim.pack.add + setup
-│       ├── init.lua         # loader — priority list, then alphabetical
-│       └── <name>.lua       # mason, tokyonight, fzf, mini-*, conform, ...
+│   │   └── health.lua      # :checkhealth nvim_config
+│   └── plugins/            # one file per plugin: vim.pack.add + setup
+│       ├── init.lua        # loader — priority list, then alphabetical
+│       └── <name>.lua      # mason, tokyonight, fzf, mini-*, conform, ...
 ├── scripts/
-│   ├── bootstrap-linux.sh   # Fedora/Ubuntu/WSL system prerequisites
+│   ├── bootstrap-linux.sh  # Fedora/Ubuntu/WSL system prerequisites
 │   ├── bootstrap-windows.ps1 # Windows system prerequisites
-│   ├── test-config.sh       # headless test suite (bash)
-│   └── test-config.ps1      # headless test suite (PowerShell)
-├── tests/                   # headless startup/config/platform checks
-├── .githooks/pre-commit     # auto-formats staged Lua files via StyLua
-└── .stylua.toml             # StyLua formatter config
+│   ├── test-config.sh      # headless test suite (bash)
+│   └── test-config.ps1     # headless test suite (PowerShell)
+├── tests/                  # headless startup/config/platform checks
+├── .githooks/pre-commit    # auto-formats staged Lua files via StyLua
+└── .stylua.toml            # StyLua formatter config
 ```
 
 Each file under `lua/plugins/` is self-contained — it carries its own
 `vim.pack.add` alongside its setup — and `lua/plugins/init.lua` loads them all
 automatically (a short priority list first, then alphabetically). Adding or
 removing a plugin is just adding or removing one file. Per-server LSP configs
-live in `lua/lsp/<server>.lua` and are auto-loaded by `lua/config/lsp.lua`.
+live as inline tables in `lua/config/lsp.lua`, alongside the diagnostic
+display, native completion activation, and the LSP keymaps.
 
 ## Highlights
 

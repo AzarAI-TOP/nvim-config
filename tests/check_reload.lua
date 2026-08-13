@@ -1,17 +1,17 @@
--- Real hot-reload of the core config layer: a fresh instance mutates runtime
--- state the way a user session would, runs config.reload(), and must get every
--- mutated surface restored while plugin state survives untouched.
+-- 核心配置层的真实热重载：全新实例像用户会话一样篡改运行时状态，
+-- 再执行 config.reload()，所有被篡改的表面必须恢复，
+-- 而插件状态原样保留。
 
 local failures = {}
 local function check(condition, message)
     if not condition then table.insert(failures, message) end
 end
 
--- <leader>cr must invoke the reload module (not a bare :source).
+-- <leader>cr 必须调用 reload 模块（而非裸 :source）。
 local cr = vim.fn.maparg("<leader>cr", "n", false, true)
-check(type(cr.callback) == "function", "<leader>cr must use a Lua callback (real reload)")
+check(type(cr.callback) == "function", "<leader>cr 必须使用 Lua 回调（真实重载）")
 
--- Subprocess probe: full config loads, then the probe mutates + reloads.
+-- 子进程探针：完整加载配置后，探针篡改状态并重载。
 local probe = table.concat({
     "vim.opt.number = false",
     "vim.keymap.del('n', '<leader>bd')",
@@ -25,7 +25,7 @@ local probe = table.concat({
     "assert(vim.fn.exists(':Mason') == 2, 'plugin commands must survive reload')",
     "assert(vim.g.colors_name == 'tokyonight-moon', 'colorscheme must survive reload')",
     "assert(type(require('mini.clue').config.triggers) == 'table', 'mini.clue must stay configured')",
-    "-- idempotency: a second reload must be a clean no-op",
+    "-- 幂等性：第二次重载必须是干净的空操作",
     "require('config.reload').reload()",
     "assert(vim.opt.number:get() == true, 'options must survive a second reload')",
     "assert(vim.fn.maparg('<leader>bd', 'n') ~= '', 'keymaps must survive a second reload')",
@@ -44,10 +44,10 @@ local result = vim.system(
 )
     :wait(60000)
 os.remove(probe_file)
-check(result.code == 0, "reload probe failed: " .. tostring(result.stderr))
+check(result.code == 0, "重载探针失败：" .. tostring(result.stderr))
 check(
     not tostring(result.stderr):find("重载失败", 1, true),
-    "reload must not report module failures: " .. tostring(result.stderr)
+    "重载不得报告模块失败：" .. tostring(result.stderr)
 )
 
 if #failures > 0 then

@@ -1,15 +1,13 @@
--- ~/.config/nvim/lua/plugins/todo-comments.lua
--- TODO/FIX/HACK comment highlighting & search (via vim.pack)
+-- TODO/FIX/HACK 注释高亮与搜索（经 vim.pack）
 --
--- Integrates with fzf-lua via :TodoFzfLua.
--- Lazy-loaded: setup is deferred until the first file is opened to avoid
--- unnecessary work during startup.
+-- 通过 :TodoFzfLua 与 fzf-lua 集成。
+-- 懒加载：setup 延迟到第一个文件打开，避免启动期的多余工作。
 
 vim.pack.add({
     { src = "https://github.com/folke/todo-comments.nvim" },
 })
 
--- Defer setup until a buffer is actually opened.
+-- 延迟到缓冲区实际打开后再 setup。
 vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
     group = vim.api.nvim_create_augroup("todo_comments_lazy", { clear = true }),
     once = true,

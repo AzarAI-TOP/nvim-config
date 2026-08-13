@@ -1,12 +1,10 @@
--- ~/.config/nvim/lua/plugins/completion.lua
--- Completion and snippets (mini.snippets, via vim.pack)
+-- 补全与片段（mini.snippets，经 vim.pack）
 --
--- Native vim.lsp.completion (enabled in config/lsp.lua) provides LSP-driven
--- completion via <C-x><C-n>. mini.snippets provides snippet expansion from
--- JSON snippet files in the snippets/ directory.
+-- 原生 vim.lsp.completion（在 config/lsp.lua 中启用）提供 LSP 驱动的补全；
+-- mini.snippets 从 snippets/ 目录的 JSON 片段文件提供片段展开。
 --
--- No third-party completion engine (nvim-cmp, blink.cmp) is needed.
--- Markdown is excluded only from LSP completion; snippets remain available.
+-- 不需要第三方补全引擎（nvim-cmp、blink.cmp）。
+-- Markdown 只排除 LSP 补全，片段展开仍然可用。
 
 vim.pack.add({
     { src = "https://github.com/nvim-mini/mini.snippets" },
@@ -16,7 +14,7 @@ local mini_snippets = require("mini.snippets")
 local gen_loader = mini_snippets.gen_loader
 
 mini_snippets.setup({
-    -- Resolve snippets/<filetype>.json from the config directory on runtimepath.
+    -- 从配置目录（runtimepath）解析 snippets/<filetype>.json
     snippets = {
         gen_loader.from_lang(),
     },

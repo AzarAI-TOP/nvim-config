@@ -1,15 +1,15 @@
--- Integration check for a fully bootstrapped environment.
--- Tests multiple LSP servers and formatters against real fixture content.
--- Run after Mason installation in a disposable XDG environment.
+-- 完整引导环境的集成检查。
+-- 在一次性 XDG 环境中 Mason 安装完成后运行，
+-- 用真实夹具内容测试多个 LSP 服务器与格式化器。
 
 local function verify_runtime()
-    if vim.env.NVIM_FORCE_RUNTIME_TEST_FAILURE == "1" then error("forced runtime test failure") end
+    if vim.env.NVIM_FORCE_RUNTIME_TEST_FAILURE == "1" then error("强制的运行时测试失败") end
 
     local results = {}
     local failures = {}
     local tested_formatters = {}
 
-    -- Helper: test a formatter on a scratch buffer.
+    -- 辅助函数：在临时缓冲区上测试一个格式化器。
     local function test_formatter(ft, bad_lines, expected_substring, formatter_name, formatters)
         for _, f in ipairs(formatters or { formatter_name }) do
             tested_formatters[f] = true
@@ -26,25 +26,25 @@ local function verify_runtime()
                 format_error, did_edit, finished = err, edited, true
             end
         )
-        assert(vim.wait(15000, function() return finished end, 50), formatter_name .. " callback timed out")
+        assert(vim.wait(15000, function() return finished end, 50), formatter_name .. " 回调超时")
 
         if format_error then
-            table.insert(failures, formatter_name .. " error: " .. tostring(format_error))
+            table.insert(failures, formatter_name .. " 出错：" .. tostring(format_error))
         elseif not did_edit then
-            table.insert(failures, formatter_name .. " did not edit buffer")
+            table.insert(failures, formatter_name .. " 未编辑缓冲区")
         else
             local formatted = table.concat(vim.api.nvim_buf_get_lines(scratch, 0, -1, false), "\n")
             if formatted:find(expected_substring, 1, true) then
                 table.insert(results, formatter_name .. "=ok")
             else
-                table.insert(failures, formatter_name .. " output unexpected: " .. formatted)
+                table.insert(failures, formatter_name .. " 输出异常：" .. formatted)
             end
         end
 
         vim.api.nvim_buf_delete(scratch, { force = true })
     end
 
-    -- Helper: wait for an LSP client to attach to the current buffer.
+    -- 辅助函数：等待 LSP 客户端附着到当前缓冲区。
     local function wait_for_lsp(name, filetype)
         local buf = vim.api.nvim_get_current_buf()
         if filetype then vim.bo[buf].filetype = filetype end
@@ -56,19 +56,19 @@ local function verify_runtime()
         if attached then
             table.insert(results, name .. "=attached")
         else
-            table.insert(failures, name .. " did not attach")
+            table.insert(failures, name .. " 未附着")
         end
         return attached
     end
 
-    -- 1. Lua: LSP attach + StyLua formatter
+    -- 1. Lua：LSP 附着 + StyLua 格式化器
     local fixtures = vim.fs.joinpath(vim.fn.stdpath("config"), "tests", "fixtures")
     vim.cmd.edit(vim.fs.joinpath(fixtures, "sample.lua"))
-    assert(vim.fn.executable("stylua") == 1, "stylua missing")
+    assert(vim.fn.executable("stylua") == 1, "stylua 缺失")
     wait_for_lsp("lua_ls", "lua")
     test_formatter("lua", { "local   value={a=1,b=2}" }, "local value =", "stylua")
 
-    -- 2. Python: formatter (isort + black)
+    -- 2. Python：格式化器（isort + black）
     vim.cmd.edit(vim.fs.joinpath(fixtures, "sample.py"))
     wait_for_lsp("pyright", "python")
     test_formatter(
@@ -79,7 +79,7 @@ local function verify_runtime()
         { "isort", "black" }
     )
 
-    -- 2b. Go: goimports + gofmt (Mason goimports + native toolchain gofmt)
+    -- 2b. Go：goimports + gofmt（Mason goimports + 原生工具链 gofmt）
     test_formatter(
         "go",
         { "package main", 'import "fmt"', 'func main(){fmt.Println("x")}' },
@@ -88,18 +88,17 @@ local function verify_runtime()
         { "goimports", "gofmt" }
     )
 
-    -- 2c. Rust: rustfmt (native toolchain)
+    -- 2c. Rust：rustfmt（原生工具链）
     test_formatter("rust", { 'fn main(){let x=1;println!("{}",x);}' }, "fn main() {", "rustfmt")
 
-    -- 3. C++: clangd attach + Google-fallback formatter
+    -- 3. C++：clangd 附着 + Google 兜底格式化器
     vim.cmd.edit(vim.fs.joinpath(fixtures, "sample.cpp"))
     wait_for_lsp("clangd", "cpp")
     test_formatter("cpp", { "int main(){return 0;}" }, "int main() {", "clang-format")
 
-    -- 3b. Project .clang-format wins over the Google fallback (IndentWidth 7).
-    --     The buffer must NOT be scratch (buftype=nofile): conform fabricates
-    --     an unnamed_temp filename for nofile buffers, which breaks the
-    --     clang-format project-config lookup.
+    -- 3b. 项目 .clang-format 优先于 Google 兜底（IndentWidth 7）。
+    --     缓冲区必须不是 scratch（buftype=nofile）：conform 会为 nofile
+    --     缓冲区伪造 unnamed_temp 文件名，破坏 clang-format 的项目配置查找。
     local project_dir = vim.fn.tempname()
     vim.fn.mkdir(project_dir, "p")
     vim.fn.writefile({ "IndentWidth: 7" }, vim.fs.joinpath(project_dir, ".clang-format"))
@@ -114,28 +113,28 @@ local function verify_runtime()
     require("conform").format({ bufnr = proj_buf, async = true, formatters = { "clang-format" } }, function(err, edited)
         format_error, did_edit, finished = err, edited, true
     end)
-    assert(vim.wait(15000, function() return finished end, 50), "project clang-format callback timed out")
+    assert(vim.wait(15000, function() return finished end, 50), "项目 clang-format 回调超时")
     if format_error then
-        table.insert(failures, "project clang-format error: " .. tostring(format_error))
+        table.insert(failures, "项目 clang-format 出错：" .. tostring(format_error))
     elseif not did_edit then
-        table.insert(failures, "project clang-format did not edit buffer")
+        table.insert(failures, "项目 clang-format 未编辑缓冲区")
     else
         local formatted = table.concat(vim.api.nvim_buf_get_lines(proj_buf, 0, -1, false), "\n")
         if formatted:find("\n       if (a) {", 1, true) then
             table.insert(results, "project-clang-format=ok")
         else
-            table.insert(failures, "project .clang-format IndentWidth 7 not honored: " .. formatted)
+            table.insert(failures, "项目 .clang-format IndentWidth 7 未生效：" .. formatted)
         end
     end
     vim.api.nvim_buf_delete(proj_buf, { force = true })
     vim.fn.delete(project_dir, "rf")
 
-    -- 4. Shell: shfmt with 4-space indent
+    -- 4. Shell：shfmt 4 空格缩进
     vim.cmd.edit(vim.fs.joinpath(fixtures, "sample.sh"))
     wait_for_lsp("bashls", "sh")
     test_formatter("sh", { "if true; then", "echo hi", "fi" }, "    echo", "shfmt")
 
-    -- 5. Kotlin and Java: Mason-recommended formatters
+    -- 5. Kotlin 与 Java：Mason 推荐的格式化器
     test_formatter("kotlin", { 'fun main(){println("hello")}' }, "fun main()", "ktlint")
     test_formatter(
         "java",
@@ -144,57 +143,55 @@ local function verify_runtime()
         "google-java-format"
     )
 
-    -- 6. TOML: taplo
+    -- 6. TOML：taplo
     test_formatter("toml", { "[section]", 'key="value"' }, 'key = "value"', "taplo")
 
-    -- 7. JavaScript: prettierd (daemon-based; covered only in bootstrapped CI)
+    -- 7. JavaScript：prettierd（守护进程式；仅在引导后的 CI 覆盖）
     test_formatter("javascript", { "const x={a:1}" }, "const x = {", "prettierd")
 
-    -- 8. Full inventory verification: every configured LSP server must map to
-    --    an installed Mason package; every formatter package must be installed
-    --    with a resolvable executable. Attach-level checks stay representative.
-    local tools = require("config.tools")
+    -- 8. 完整清单校验：每个配置的 LSP 服务器必须映射到已安装的 Mason 包；
+    --    每个格式化器包必须已安装且可执行。附着级检查保持代表性。
+    local util = require("config.util")
     local registry = require("mason-registry")
     local installed = {}
     for _, name in ipairs(registry.get_installed_package_names()) do
         installed[name] = true
     end
     local mappings = require("mason-lspconfig.mappings").get_mason_map().lspconfig_to_package
-    for _, server in ipairs(tools.lsp_servers) do
+    for _, server in ipairs(util.lsp_servers) do
         local package_name = mappings[server]
         if not package_name then
-            table.insert(failures, server .. ": no mason-lspconfig mapping")
+            table.insert(failures, server .. "：没有 mason-lspconfig 映射")
         elseif not installed[package_name] then
-            table.insert(failures, server .. ": package " .. package_name .. " not installed")
+            table.insert(failures, server .. "：包 " .. package_name .. " 未安装")
         else
             table.insert(results, server .. "=installed")
         end
     end
-    for _, tool in ipairs(tools.mason_formatters) do
+    for _, tool in ipairs(util.mason_formatters) do
         if not installed[tool] then
-            table.insert(failures, tool .. ": Mason package not installed")
+            table.insert(failures, tool .. "：Mason 包未安装")
         elseif vim.fn.executable(tool) ~= 1 then
-            table.insert(failures, tool .. ": installed but not executable")
+            table.insert(failures, tool .. "：已安装但不可执行")
         else
             table.insert(results, tool .. "=executable")
         end
     end
     for _, tool in ipairs({ "gofmt", "rustfmt" }) do
         if vim.fn.executable(tool) ~= 1 then
-            table.insert(failures, tool .. ": native toolchain formatter not executable")
+            table.insert(failures, tool .. "：原生工具链格式化器不可执行")
         else
             table.insert(results, tool .. "=executable")
         end
     end
 
-    -- 9. Coverage guard: every formatter configured in conform must be
-    --    exercised by the runtime checks above.
+    -- 9. 覆盖守卫：conform 配置的每个格式化器都必须被上述运行时检查执行过。
     local configured = {}
     for _, info in ipairs(require("conform").list_all_formatters()) do
         configured[info.name] = true
     end
     for name in pairs(configured) do
-        if not tested_formatters[name] then table.insert(failures, "formatter coverage gap: " .. name) end
+        if not tested_formatters[name] then table.insert(failures, "格式化器覆盖缺口：" .. name) end
     end
 
     if #failures > 0 then error(table.concat(failures, "\n")) end

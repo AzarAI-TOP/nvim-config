@@ -23,13 +23,13 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Install Neovim 0.12
+      - name: 安装 Neovim 0.12
         uses: rhysd/action-setup-vim@febef33995d6649302e9d88dda81e071b68f16a7 # v1
         with:
           neovim: true
           version: v0.12.4
 
-      - name: Prepare isolated config
+      - name: 准备隔离配置
         shell: bash
         run: |
           mkdir -p "$RUNNER_TEMP/xdg/nvim"
@@ -37,10 +37,10 @@ jobs:
           echo "XDG_CONFIG_HOME=$RUNNER_TEMP/xdg" >> "$GITHUB_ENV"
           echo "NVIM_TEST_ROOT=$RUNNER_TEMP/xdg/nvim" >> "$GITHUB_ENV"
 
-      - name: Show Neovim version
+      - name: 显示 Neovim 版本
         run: nvim --version
 
-      - name: Run config test suite
+      - name: 运行配置测试套件
         shell: bash
         run: |
           cd "$NVIM_TEST_ROOT"
@@ -48,7 +48,7 @@ jobs:
           printf '%s\n' "$output"
           printf '%s\n' "$output" | grep -q 'CONFIG_TEST_SUITE_OK'
 
-      - name: Verify SSH clipboard strategy
+      - name: 验证 SSH 剪贴板策略
         if: runner.os == 'Linux'
         shell: bash
         env:
@@ -69,13 +69,13 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      - name: Install Neovim 0.12
+      - name: 安装 Neovim 0.12
         uses: rhysd/action-setup-vim@febef33995d6649302e9d88dda81e071b68f16a7 # v1
         with:
           neovim: true
           version: v0.12.4
 
-      - name: Prepare disposable XDG environment
+      - name: 准备一次性 XDG 环境
         shell: bash
         run: |
           mkdir -p "$RUNNER_TEMP/first-boot/config/nvim" "$RUNNER_TEMP/first-boot/data" "$RUNNER_TEMP/first-boot/state" "$RUNNER_TEMP/first-boot/cache"
@@ -88,13 +88,13 @@ jobs:
             echo "NVIM_TEST_ROOT=$RUNNER_TEMP/first-boot/config/nvim"
           } >> "$GITHUB_ENV"
 
-      - name: Run Linux bootstrap and install all Mason packages
+      - name: 运行 Linux 引导并安装全部 Mason 包
         shell: bash
         run: |
           cd "$NVIM_TEST_ROOT"
           bash scripts/bootstrap-linux.sh
 
-      - name: Attach representative LSP servers and run formatters
+      - name: 附着代表性 LSP 服务器并运行格式化器
         shell: bash
         run: |
           cd "$NVIM_TEST_ROOT"
@@ -109,15 +109,15 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      # Runs only the safe logic tests for scripts/bootstrap-windows.ps1 with
-      # fake native commands. Never runs the destructive full bootstrap.
-      - name: Run safe Windows bootstrap logic tests (PowerShell 7)
+      # 只运行 scripts/bootstrap-windows.ps1 的安全逻辑测试（模拟原生命令）。
+      # 绝不运行破坏性的完整引导。
+      - name: 运行安全的 Windows 引导逻辑测试（PowerShell 7）
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
           & "$env:GITHUB_WORKSPACE/scripts/test-bootstrap-windows.ps1"
 
-      - name: Run safe Windows bootstrap logic tests (Windows PowerShell 5.1)
+      - name: 运行安全的 Windows 引导逻辑测试（Windows PowerShell 5.1）
         shell: powershell
         run: |
           $ErrorActionPreference = "Stop"
@@ -127,12 +127,11 @@ jobs:
         shell: pwsh
         run: |
           Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
-          # Production script: full rule set, must be clean.
+          # 生产脚本：全规则集，必须干净。
           $prod = Invoke-ScriptAnalyzer -Path scripts/bootstrap-windows.ps1
-          # Test script: fake-executor scriptblocks legitimately ignore their
-          # parameters, Assert-Throws has an intentionally plural noun,
-          # Reset-TestState mutates in-memory test state, and test output is
-          # written to the host.
+          # 测试脚本：fake-executor scriptblock 合法地忽略参数，
+          # Assert-Throws 有意使用复数名词，Reset-TestState 修改内存测试状态，
+          # 测试输出写到 host——这些都是合法误报。
           $test = Invoke-ScriptAnalyzer -Path scripts/test-bootstrap-windows.ps1 `
             -Severity Warning `
             -ExcludeRule PSUseSingularNouns, PSReviewUnusedParameter, PSAvoidUsingWriteHost, PSUseShouldProcessForStateChangingFunctions
@@ -145,13 +144,13 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
-      # Official StyLua action. Tag v4 instead of a SHA pin: the pinning SHA
-      # could not be resolved at authoring time — resolve at the next pass.
+      # 官方 StyLua action。用 v4 标签而非 SHA 固定：
+      # 编写时 SHA 无法解析——下次迭代时再固定。
       - uses: JohnnyMorganz/stylua-action@v4
         with:
           args: --check .
 
-      - name: Bash syntax, diff check, version drift
+      - name: Bash 语法、diff 检查、版本一致性
         run: |
           for f in scripts/*.sh .githooks/pre-commit; do bash -n "$f" || exit 1; done
           git diff --check
@@ -166,11 +165,10 @@ jobs:
           shellcheck -x scripts/*.sh .githooks/pre-commit
 
   windows-first-boot:
-    # Manual (workflow_dispatch) integration channel: a real Windows first
-    # boot without the expensive winget system installs. Validates Mason
-    # package installation and the full first-boot runtime checks on native
-    # Windows (shims, .CMD resolution, PATH). Guarded so it never runs on
-    # push/PR — it is triggered explicitly from the Actions tab.
+    # 手动（workflow_dispatch）集成通道：真实 Windows 首次引导，
+    # 但不做昂贵的 winget 系统安装。验证 Mason 包安装与原生 Windows
+    # 上的完整 first-boot 运行时检查（shim、.CMD 解析、PATH）。
+    # 仅手动触发，绝不在 push/PR 上运行。
     if: github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     timeout-minutes: 30
@@ -184,10 +182,10 @@ jobs:
           neovim: true
           version: v0.12.4
 
-      - name: Ensure rustfmt component (runner toolchain may lack it)
+      - name: 确保 rustfmt 组件（运行器工具链可能缺失）
         run: rustup component add rustfmt
 
-      - name: Prepare disposable XDG environment
+      - name: 准备一次性 XDG 环境
         shell: bash
         run: |
           mkdir -p "$RUNNER_TEMP/cfg/nvim"
@@ -200,12 +198,12 @@ jobs:
             echo "NVIM_TEST_ROOT=$RUNNER_TEMP/cfg/nvim"
           } >> "$GITHUB_ENV"
 
-      - name: Install Mason packages (synchronous)
+      - name: 同步安装 Mason 包
         run: |
           cd "$NVIM_TEST_ROOT"
           nvim --headless "+MasonToolsInstallSync" "+qa!"
 
-      - name: First-boot runtime checks
+      - name: First-boot 运行时检查
         run: |
           cd "$NVIM_TEST_ROOT"
           output=$(nvim --headless init.lua "+luafile tests/check_first_boot_runtime.lua" 2>&1)

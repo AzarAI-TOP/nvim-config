@@ -1,6 +1,6 @@
--- Shared tool inventory sanity: unique, non-empty names, complete coverage.
+-- 工具清单健全性：名称唯一、非空、覆盖完整。
 
-local tools = require("config.tools")
+local util = require("config.util")
 local failures = {}
 local function check(condition, message)
     if not condition then table.insert(failures, message) end
@@ -9,19 +9,19 @@ end
 local function validate_unique(values, label)
     local seen = {}
     for _, value in ipairs(values) do
-        check(type(value) == "string" and value ~= "", label .. " contains an invalid name")
-        check(not seen[value], label .. " contains duplicate: " .. tostring(value))
+        check(type(value) == "string" and value ~= "", label .. " 含非法名称")
+        check(not seen[value], label .. " 含重复项：" .. tostring(value))
         seen[value] = true
     end
 end
 
-validate_unique(tools.lsp_servers, "lsp_servers")
-validate_unique(tools.mason_formatters, "mason_formatters")
-validate_unique(tools.mason_packages, "mason_packages")
-validate_unique(tools.system_tools, "system_tools")
+validate_unique(util.lsp_servers, "lsp_servers")
+validate_unique(util.mason_formatters, "mason_formatters")
+validate_unique(util.mason_packages, "mason_packages")
+validate_unique(util.system_tools, "system_tools")
 check(
-    #tools.mason_packages == #tools.lsp_servers + #tools.mason_formatters,
-    "mason_packages must cover every LSP server and formatter exactly once"
+    #util.mason_packages == #util.lsp_servers + #util.mason_formatters,
+    "mason_packages 必须恰好覆盖每个 LSP 服务器与格式化器一次"
 )
 
 if #failures > 0 then
@@ -31,9 +31,9 @@ end
 
 io.stdout:write(
     ("TOOL_INVENTORY_CHECK_OK lsp=%d formatters=%d system=%d\n"):format(
-        #tools.lsp_servers,
-        #tools.mason_formatters,
-        #tools.system_tools
+        #util.lsp_servers,
+        #util.mason_formatters,
+        #util.system_tools
     )
 )
 if not vim.g.config_test_runner then vim.cmd("qa") end

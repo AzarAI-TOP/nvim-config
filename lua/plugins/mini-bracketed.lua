@@ -1,8 +1,7 @@
--- ~/.config/nvim/lua/plugins/mini-bracketed.lua
--- Bracket navigation (mini.bracketed, via vim.pack)
+-- 括号导航（mini.bracketed，经 vim.pack）
 --
--- Disabled targets:
---   treesitter → conflicts with todo-comments ]t/[t
+-- 禁用的目标：
+--   treesitter → 与 todo-comments 的 ]t/[t 冲突
 
 vim.pack.add({
     { src = "https://github.com/nvim-mini/mini.bracketed" },

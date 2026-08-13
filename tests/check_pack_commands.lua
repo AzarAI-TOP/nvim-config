@@ -1,15 +1,15 @@
--- Pack command checks: :PackUpdate / :PackList exist and entries() is a pure,
--- testable row builder over vim.pack.get().
+-- pack 命令检查：:PackUpdate / :PackList 必须存在，
+-- entries() 是基于 vim.pack.get() 的纯、可测试行构建器。
 
 local failures = {}
 local function check(condition, message)
     if not condition then table.insert(failures, message) end
 end
 
-check(vim.fn.exists(":PackUpdate") == 2, ":PackUpdate must be defined")
-check(vim.fn.exists(":PackList") == 2, ":PackList must be defined")
+check(vim.fn.exists(":PackUpdate") == 2, ":PackUpdate 必须已定义")
+check(vim.fn.exists(":PackList") == 2, ":PackList 必须已定义")
 
--- entries(): pure builder, vim.pack.get() injectable at call time.
+-- entries()：纯构建器，vim.pack.get() 可在调用时注入。
 local pack = require("config.pack")
 local orig_get = vim.pack.get
 vim.pack.get = function()
@@ -21,11 +21,11 @@ end
 local rows = pack.entries()
 vim.pack.get = orig_get
 
-check(type(rows) == "table" and #rows == 2, "entries must return one row per plugin")
+check(type(rows) == "table" and #rows == 2, "entries 必须每个插件返回一行")
 if type(rows) == "table" and #rows == 2 then
-    check(rows[1]:find("a.nvim", 1, true) ~= nil, "entries must be sorted by plugin name")
-    check(rows[1]:find("https://example.com/a", 1, true) ~= nil, "row must contain src")
-    check(rows[1]:find("bbb", 1, true) ~= nil, "row must contain rev")
+    check(rows[1]:find("a.nvim", 1, true) ~= nil, "entries 必须按插件名排序")
+    check(rows[1]:find("https://example.com/a", 1, true) ~= nil, "行必须包含来源")
+    check(rows[1]:find("bbb", 1, true) ~= nil, "行必须包含版本")
 end
 
 if #failures > 0 then

@@ -1,11 +1,11 @@
--- Formatter configuration (conform options) and per-filetype indent rules.
+-- 格式化器配置（conform 选项）与按文件类型的缩进规则。
 
 local failures = {}
 local function check(condition, message)
     if not condition then table.insert(failures, message) end
 end
 
--- --- Conform options ---------------------------------------------------------
+-- ── conform 选项 ──
 
 local conform = require("conform")
 local clang = conform.get_formatter_config("clang-format")
@@ -16,25 +16,28 @@ local java = conform.get_formatter_config("google-java-format")
 
 check(
     vim.tbl_contains(clang.prepend_args or {}, "--fallback-style=Google"),
-    "clang-format must prefer project config with Google fallback"
+    "clang-format 必须以项目配置优先、Google 兜底"
 )
-check(vim.tbl_contains(shfmt.args or {}, "4"), "shfmt must use four spaces")
-check(vim.tbl_contains(isort.args or {}, "--stdout"), "isort must support the pinned Mason version")
-check(type(prettierd.cwd) == "function", "prettierd must resolve the project config directory")
-check(prettierd.require_cwd == false, "prettierd must fall back to default formatting without project config")
-check(type(java.args) == "table" and java.args[1] == "-", "google-java-format must use Conform's stdin configuration")
+check(vim.tbl_contains(shfmt.args or {}, "4"), "shfmt 必须使用 4 空格")
+check(vim.tbl_contains(isort.args or {}, "--stdout"), "isort 必须兼容固定的 Mason 版本")
+check(type(prettierd.cwd) == "function", "prettierd 必须解析项目配置目录")
+check(prettierd.require_cwd == false, "prettierd 无项目配置时必须回退默认格式化")
+check(type(java.args) == "table" and java.args[1] == "-", "google-java-format 必须使用 conform 的 stdin 配置")
 
 local kotlin_buf = vim.api.nvim_create_buf(false, true)
 vim.bo[kotlin_buf].filetype = "kotlin"
-check(vim.tbl_contains(conform.list_formatters_for_buffer(kotlin_buf), "ktlint"), "Kotlin buffers must route to ktlint")
+check(
+    vim.tbl_contains(conform.list_formatters_for_buffer(kotlin_buf), "ktlint"),
+    "Kotlin 缓冲区必须路由到 ktlint"
+)
 vim.api.nvim_buf_delete(kotlin_buf, { force = true })
 
--- --- Indent rules ------------------------------------------------------------
+-- ── 缩进规则 ──
 
--- Must match the indent_groups table in config/autocmds.lua:
+-- 必须与 config/autocmds.lua 的 indent_groups 表一致：
 -- [tabstop, shiftwidth, expandtab]
 local expected = {
-    -- 2 spaces
+    -- 2 空格
     lua = { 2, 2, true },
     vim = { 2, 2, true },
     javascript = { 2, 2, true },
@@ -46,14 +49,14 @@ local expected = {
     markdown = { 2, 2, true },
     sh = { 2, 2, true },
     toml = { 2, 2, true },
-    -- 4 spaces
+    -- 4 空格
     python = { 4, 4, true },
     rust = { 4, 4, true },
     c = { 4, 4, true },
     cpp = { 4, 4, true },
     java = { 4, 4, true },
     kotlin = { 4, 4, true },
-    -- Tabs
+    -- Tab
     go = { 4, 4, false },
     make = { 4, 4, false },
 }
@@ -62,9 +65,9 @@ for ft, exp in pairs(expected) do
     vim.api.nvim_set_current_buf(buf)
     vim.bo[buf].filetype = ft
     vim.api.nvim_exec_autocmds("FileType", { buffer = buf })
-    check(vim.bo[buf].tabstop == exp[1], ft .. ": tabstop mismatch")
-    check(vim.bo[buf].shiftwidth == exp[2], ft .. ": shiftwidth mismatch")
-    check(vim.bo[buf].expandtab == exp[3], ft .. ": expandtab mismatch")
+    check(vim.bo[buf].tabstop == exp[1], ft .. "：tabstop 不匹配")
+    check(vim.bo[buf].shiftwidth == exp[2], ft .. "：shiftwidth 不匹配")
+    check(vim.bo[buf].expandtab == exp[3], ft .. "：expandtab 不匹配")
     vim.api.nvim_buf_delete(buf, { force = true })
 end
 
