@@ -123,9 +123,11 @@ map("n", "<leader>tw", ":set wrap!<CR>", "Toggle wrap")
 -- =============================================
 -- <leader>p — package management
 -- =============================================
+map("n", "<leader>pm", ":Mason<CR>", "Open Mason UI")
+map("n", "<leader>pu", ":PackUpdate<CR>", "Update plugins")
+map("n", "<leader>pU", ":MasonToolsUpdate<CR>", "Update Mason tools")
+map("n", "<leader>pp", ":PackList<CR>", "List plugins")
 map("n", "<leader>pi", ":MasonToolsInstallSync<CR>", "Install Mason tools")
-map("n", "<leader>pu", ":MasonToolsUpdate<CR>", "Update Mason tools")
-map("n", "<leader>pc", ":Mason<CR>", "Open Mason UI")
 
 -- =============================================
 -- Other (direct keys)

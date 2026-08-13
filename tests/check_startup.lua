@@ -46,6 +46,14 @@ check(vim.fn.maparg("<leader>lf", "n") ~= "", "<leader>lf must be mapped")
 check(vim.fn.maparg("]d", "n") ~= "", "]d diagnostic navigation must be mapped")
 check(vim.fn.maparg("[d", "n") ~= "", "[d diagnostic navigation must be mapped")
 
+-- Package management keymaps.
+check(vim.fn.maparg("<leader>pm", "n") == ":Mason<CR>", "<leader>pm must open Mason")
+check(vim.fn.maparg("<leader>pu", "n") == ":PackUpdate<CR>", "<leader>pu must update plugins")
+check(vim.fn.maparg("<leader>pU", "n") == ":MasonToolsUpdate<CR>", "<leader>pU must update Mason tools")
+check(vim.fn.maparg("<leader>pp", "n") == ":PackList<CR>", "<leader>pp must list plugins")
+check(vim.fn.maparg("<leader>pc", "n") == "", "<leader>pc must be removed (superseded by pm)")
+check(vim.fn.maparg("<leader>pi", "n") == ":MasonToolsInstallSync<CR>", "<leader>pi must install Mason tools")
+
 -- --- Shell (Windows) -------------------------------------------------------
 
 if vim.fn.has("win32") == 1 then
