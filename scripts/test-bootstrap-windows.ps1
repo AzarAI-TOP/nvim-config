@@ -121,6 +121,12 @@ $script:writeUserPath = {
     $script:pathWriteCount++
 }
 $script:notify = { param($message) $script:notified += $message }
+$script:shortcutCalls = @()
+$script:fakeShortcutFactory = {
+    param($path, $target, $hotkey)
+    $script:shortcutCalls += @{ Path = $path; TargetPath = $target; Hotkey = $hotkey }
+    return $null
+}
 
 function Reset-TestState {
     $script:calls = @()
@@ -129,6 +135,7 @@ function Reset-TestState {
     $script:userPathStore = ""
     $script:pathWriteCount = 0
     $script:neovideExePresent = $true
+    $script:shortcutCalls = @()
 }
 
 try {
@@ -189,6 +196,7 @@ try {
                 -Packages @("Git.Git", "Neovim.Neovim", "Neovide.Neovide") `
                 -Executor $script:runner `
                 -SkipFont `
+                -ShortcutFactory $script:fakeShortcutFactory `
                 -Notify $script:notify `
                 -TestCommand $script:testCommand `
                 -TestPath $script:testPath `
@@ -214,6 +222,7 @@ try {
             -Packages @("Neovide.Neovide") `
             -Executor $script:runner `
             -SkipFont `
+            -ShortcutFactory $script:fakeShortcutFactory `
             -Notify $script:notify `
             -TestCommand $script:testCommand `
             -TestPath $script:testPath `
@@ -226,6 +235,8 @@ try {
         Assert-Equal 2 $segments.Count "unrelated entry plus one new entry"
         Assert-Equal "C:\Existing\Bin" $segments[0] "unrelated entry must be preserved"
         Assert-True ($segments -contains "C:\Program Files\Neovide") "Neovide directory must be added"
+        Assert-Equal 1 $script:shortcutCalls.Count "shortcut creation must be requested on first run"
+        Assert-Equal "Ctrl+Alt+N" $script:shortcutCalls[0].Hotkey "shortcut hotkey must be Ctrl+Alt+N"
         Assert-True ($script:notified.Count -eq 1) "success message must appear"
         Assert-True ($script:notified[0] -like "*complete*") "success message must be the completion notice"
     }
@@ -239,6 +250,7 @@ try {
             -Packages @("Neovide.Neovide") `
             -Executor $script:runner `
             -SkipFont `
+            -ShortcutFactory $script:fakeShortcutFactory `
             -Notify $script:notify `
             -TestCommand $script:testCommand `
             -TestPath $script:testPath `
@@ -251,6 +263,7 @@ try {
             -Packages @("Neovide.Neovide") `
             -Executor $script:runner `
             -SkipFont `
+            -ShortcutFactory $script:fakeShortcutFactory `
             -Notify $script:notify `
             -TestCommand $script:testCommand `
             -TestPath $script:testPath `
@@ -273,6 +286,7 @@ try {
             -Packages @("Neovide.Neovide") `
             -Executor $script:runner `
             -SkipFont `
+            -ShortcutFactory $script:fakeShortcutFactory `
             -Notify $script:notify `
             -TestCommand $script:testCommand `
             -TestPath $script:testPath `
@@ -295,6 +309,7 @@ try {
                 -Packages @("Neovide.Neovide") `
                 -Executor $script:runner `
                 -SkipFont `
+                -ShortcutFactory $script:fakeShortcutFactory `
                 -Notify $script:notify `
                 -TestCommand $script:testCommand `
                 -TestPath $script:testPath `
@@ -374,6 +389,35 @@ try {
         Assert-True ($v.OXPROTO_SHA256_ZIP.Length -eq 64) "OXPROTO_SHA256_ZIP must be a SHA-256"
         Assert-True ($v.OXPROTO_SHA256_XZ.Length -eq 64) "OXPROTO_SHA256_XZ must be a SHA-256"
         Assert-True ($v.OXPROTO_SHA256_XZ -ne $v.OXPROTO_SHA256_ZIP) "zip/xz archives must have distinct hashes"
+    }
+
+    # --- 13. Neovide shortcut: hotkey contract + injectable COM factory -----
+    Invoke-Test -Name "hotkey normalization compares modifier order agnostically" -Body {
+        Assert-Equal "alt+ctrl+n" (Get-NormalizedHotkey "Alt+Ctrl+N")
+        Assert-Equal "alt+ctrl+n" (Get-NormalizedHotkey "Ctrl+Alt+N")
+        Assert-Equal "" (Get-NormalizedHotkey "")
+    }
+
+    Invoke-Test -Name "Neovide shortcut factory is invoked with the documented contract" -Body {
+        Reset-TestState
+        $factory = {
+            param($path, $target, $hotkey)
+            $script:shortcutCalls += @{ Path = $path; TargetPath = $target; Hotkey = $hotkey }
+            return @{ Path = $path; TargetPath = $target; Hotkey = $hotkey }
+        }
+        $result = New-NeovideShortcut -TargetPath "C:\Program Files\Neovide\neovide.exe" `
+            -ShortcutFactory $factory -TestPath { param($p) $true }
+        Assert-Equal 1 $script:shortcutCalls.Count "factory must run exactly once"
+        Assert-Equal "Ctrl+Alt+N" $script:shortcutCalls[0].Hotkey "hotkey must be Ctrl+Alt+N"
+        Assert-Equal "C:\Program Files\Neovide\neovide.exe" $script:shortcutCalls[0].TargetPath "target must be neovide.exe"
+        Assert-True ($script:shortcutCalls[0].Path -like "*Neovide.lnk") "shortcut must land in the Start Menu"
+        Assert-Equal "Ctrl+Alt+N" $result.Hotkey "factory result must be returned"
+    }
+
+    Invoke-Test -Name "Neovide shortcut refuses to create when the executable is missing" -Body {
+        Assert-Throws -Action {
+            New-NeovideShortcut -TargetPath "C:\Missing\neovide.exe" -TestPath { param($p) $false }
+        } -Message "missing executable must fail" -ExpectedFragments @("not found")
     }
 } finally {
     $env:Path = $script:originalProcessPath

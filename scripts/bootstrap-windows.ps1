@@ -71,6 +71,59 @@ function Read-VersionsFile {
     return $result
 }
 
+function Get-NormalizedHotkey {
+    # WScript.Shell serializes .lnk hotkeys with a modifier order of its own
+    # (e.g. "Alt+Ctrl+N" for a written "Ctrl+Alt+N"); compare semantic key
+    # sets instead of strings.
+    param([AllowEmptyString()][string]$Value)
+    return (@($Value.ToLowerInvariant() -split "\+" | Where-Object { $_ } | Sort-Object) -join "+")
+}
+
+$script:DefaultShortcutFactory = {
+    # Creates the shortcut, or skips it (returns $null) when one with the
+    # requested hotkey already exists. Uses WScript.Shell COM.
+    param($lnkPath, $target, $hotkey)
+    $shell = New-Object -ComObject WScript.Shell
+    if (Test-Path -LiteralPath $lnkPath) {
+        $existing = $shell.CreateShortcut($lnkPath)
+        if ((Get-NormalizedHotkey $existing.Hotkey) -eq (Get-NormalizedHotkey $hotkey)) {
+            return $null
+        }
+    }
+    $dir = Split-Path -Parent $lnkPath
+    if (-not (Test-Path -LiteralPath $dir)) {
+        New-Item -ItemType Directory -Force -Path $dir | Out-Null
+    }
+    $shortcut = $shell.CreateShortcut($lnkPath)
+    $shortcut.TargetPath = $target
+    $shortcut.Hotkey = $hotkey
+    $shortcut.Save()
+    return @{ Path = $lnkPath; TargetPath = $target; Hotkey = $hotkey }
+}
+
+function New-NeovideShortcut {
+    # Creates the documented Ctrl+Alt+N Start Menu launcher for Neovide.
+    # The COM factory is injectable so logic tests never touch the real
+    # Start Menu or registry.
+    param(
+        [string]$TargetPath = "C:\Program Files\Neovide\neovide.exe",
+        [string]$ShortcutPath = "",
+        [string]$Hotkey = "Ctrl+Alt+N",
+        [scriptblock]$ShortcutFactory = $null,
+        [scriptblock]$TestPath = { param($path) Test-Path -LiteralPath $path }
+    )
+    if (-not $ShortcutPath) {
+        $ShortcutPath = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\Neovide.lnk"
+    }
+    if (-not (& $TestPath $TargetPath)) {
+        throw "Neovide executable not found at '$TargetPath'; cannot create its Start Menu shortcut."
+    }
+    if ($null -eq $ShortcutFactory) {
+        $ShortcutFactory = $script:DefaultShortcutFactory
+    }
+    return & $ShortcutFactory $ShortcutPath $TargetPath $Hotkey
+}
+
 $script:WingetInstallAcceptableExitCodes = @(
     0,
     (ConvertTo-Int32FromHex32 "8A15010D"),
@@ -201,7 +254,8 @@ function Invoke-BootstrapWindows {
         [switch]$SkipFont,
         [string]$NvimVersionOutput = "",
         [scriptblock]$Notify = { param($message) Write-Host $message },
-        [string]$VersionsPath = ""
+        [string]$VersionsPath = "",
+        [scriptblock]$ShortcutFactory = $null
     )
     if ($null -eq $Packages) { $Packages = $script:DefaultPackages }
 
@@ -234,6 +288,13 @@ function Invoke-BootstrapWindows {
     Repair-NeovidePath -NeovideDirectory "C:\Program Files\Neovide" `
         -TestPath $TestPath -TestCommand $TestCommand `
         -ReadUserPath $ReadUserPath -WriteUserPath $WriteUserPath
+
+    # Start Menu shortcut with the documented Ctrl+Alt+N hotkey. Idempotent:
+    # the factory skips creation when a shortcut with that hotkey exists.
+    $null = New-NeovideShortcut `
+        -TargetPath "C:\Program Files\Neovide\neovide.exe" `
+        -ShortcutFactory $ShortcutFactory `
+        -TestPath $TestPath
 
     # Some winget versions create the portable fzf package but omit its directory
     # from PATH. Repair it idempotently for both this process and future shells.
