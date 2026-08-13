@@ -2,13 +2,11 @@
 -- LSP configuration (pure Neovim 0.11+ native API)
 --
 -- Auto-loads per-server configs from lua/lsp/<server>.lua.
--- Mason handles installing LSP servers; mason-lspconfig provides
--- ensure_installed convenience.
---
--- Mason is NOT loaded here during startup. It is lazily required only when
--- the mason-lspconfig mapping is needed (for verification/bootstrap). The
--- `require("mason-lspconfig").setup()` call is moved to plugins/mason.lua
--- to keep startup fast.
+-- Mason is already initialized synchronously in the plugin phase
+-- (plugins/mason.lua, loaded before this module); it only installs servers.
+-- This module registers native vim.lsp.config() overrides, enables each
+-- configured server, and wires completion. The mason-lspconfig package
+-- mapping is consumed by health checks and the first-boot test only.
 
 -- Diagnostic display configuration
 vim.diagnostic.config({
