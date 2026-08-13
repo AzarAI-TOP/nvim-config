@@ -45,7 +45,9 @@ live in `lua/lsp/<server>.lua` and are auto-loaded by `lua/config/lsp.lua`.
 ## Highlights
 
 - **No third-party plugin manager** — plugins are installed via
-  Neovim's built-in `vim.pack`; update with `:Pack update`.
+  Neovim's built-in `vim.pack`; update with `:PackUpdate` (opens the official
+  vim.pack review buffer — `:write` applies, `:quit` discards), list them with
+  `:PackList`.
 - **Buffer manager** — `bento.nvim` (`<leader>bb`) provides a floating buffer switcher
   with actions (open, delete, split, lock).
 - **File explorer** — `mini.files` uses Miller columns for navigating and
@@ -70,9 +72,10 @@ live in `lua/lsp/<server>.lua` and are auto-loaded by `lua/config/lsp.lua`.
 - **Code formatting** — `conform.nvim` formats on demand (`<leader>lf`). Mason
   installs portable formatters automatically; `gofmt` and `rustfmt` come from
   their native Go/Rust toolchains. Java uses `google-java-format`, Kotlin uses
-  `ktlint`, shell uses four spaces, C/C++ uses Google Style, and prettierd
-  prefers project configuration while falling back to Prettier's built-in
-  defaults when no project configuration exists.
+  `ktlint`, shell uses four spaces, C/C++ prefers the project `.clang-format`
+  (Google Style only as fallback outside any configured project), and
+  prettierd prefers project configuration while falling back to Prettier's
+  built-in defaults when no project configuration exists.
 - **Tree-sitter syntax highlighting** — 22 parsers installed, enabled
   automatically on matching filetypes; falls back to regex otherwise.
 - **Textobjects** — `mini.ai` extends `a`/`i` with function calls, arguments,
@@ -85,7 +88,14 @@ live in `lua/lsp/<server>.lua` and are auto-loaded by `lua/config/lsp.lua`.
   `<leader>e` explorer, `<leader>f` find/search, `<leader>t` toggle.
   Direct window navigation via `<M-h/j/k/l>`.
 - **Per-filetype indentation** — 2 spaces for web/scripting/markup languages,
-  4 spaces for systems languages, tabs for Go/Make.
+  4 spaces for systems languages, tabs for Go/Make. Project `.editorconfig`
+  values (full property and glob support via the runtime module) take
+  precedence over these defaults.
+- **Real config reload** — `<leader>cr` reloads the core config layer
+  (options, keymaps, autocmds, LSP, Neovide settings, pack commands) for
+  real: tracked keymaps are re-created, owned commands rebuilt, config
+  modules re-required in startup order. Plugin-file changes (setup options,
+  parsers, colorscheme style) still require a restart.
 - **Quality-of-life autocmds** — highlight on yank, restore last cursor
   position.
 - **TODO highlighting** — `todo-comments.nvim` highlights and searches for
@@ -133,8 +143,12 @@ winget install --id Git.Git --exact --accept-package-agreements --accept-source-
 $env:Path = @([Environment]::GetEnvironmentVariable("Path", "Machine"), [Environment]::GetEnvironmentVariable("Path", "User")) -join ";"
 git clone https://github.com/AzarAI-TOP/nvim-config "$env:LOCALAPPDATA\nvim"
 Set-Location "$env:LOCALAPPDATA\nvim"
+git config core.hooksPath .githooks
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\bootstrap-windows.ps1
 ```
+
+The pre-commit hook is fail-closed: commits touching Lua files are aborted
+unless StyLua (PATH, Mason packages, or Mason bin) can format them.
 
 The Windows bootstrap installs Neovim, Neovide, Git, Node, Python, Go, Rust,
 Java, LLVM, fzf, ripgrep, 7-Zip, and the 0xProto Nerd Font before synchronizing
@@ -146,6 +160,7 @@ all Mason-managed LSP servers and formatters.
 if command -v dnf >/dev/null; then sudo dnf install -y git curl; else sudo apt-get update && sudo apt-get install -y git curl; fi
 git clone https://github.com/AzarAI-TOP/nvim-config "${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
 cd "${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
+git config core.hooksPath .githooks
 bash scripts/bootstrap-linux.sh
 ```
 
@@ -225,6 +240,24 @@ clangd, bashls), and executes every configured formatter against fixture
 content — the same checks run locally by
 `tests/check_first_boot_runtime.lua` after a bootstrap.
 
+## Verification tiers
+
+- **Ubuntu first boot (CI, every push)** — full bootstrap in a disposable
+  environment: every Mason LSP server maps to an installed package, every
+  formatter resolves to an executable, representative servers attach, and all
+  configured formatters run against fixture content (including
+  gofmt/goimports, rustfmt, and a project-`.clang-format` precedence check).
+- **Windows bootstrap (CI, every push)** — control-flow logic tests with fake
+  executors (never touches real installers, PATH, or the registry), on
+  PowerShell 5.1 and 7, plus PSScriptAnalyzer.
+- **Windows first boot (manual, `workflow_dispatch`)** — real Mason install
+  and first-boot runtime checks on native Windows (shims, `.CMD` resolution).
+- **Lint gates (CI, every push)** — StyLua `--check`, `bash -n`, ShellCheck,
+  `git diff --check`, and a workflow-vs-`versions.sh` drift check.
+- **Manual tier** — Fedora desktop Wayland/X11 clipboard, WSL/SSH OSC52,
+  Neovide GUI/IME: covered by platform-detection unit tests and
+  `:checkhealth`, verified by hand on real sessions.
+
 ## Key map groups
 
 Press `<Space>` and continue with a group prefix; `mini.clue` displays the
@@ -232,13 +265,13 @@ available actions after a short delay.
 
 | Prefix | Group | Examples |
 |--------|-------|----------|
-| `<leader>p` | Package management | Mason UI/install/update |
+| `<leader>p` | Package management | `pm` Mason UI / `pu` plugin update / `pU` Mason tools update / `pp` plugin list / `pi` install |
 | `<leader>s` | Splits | create/close/keep split |
 | `<leader>f` | Find | files/config/registers/help/TODO |
 | `<leader>b` | Buffers | next/previous/delete/bento |
 | `<leader>l` | Languages | format/LSP/diagnostic details |
 | `<leader>c` | Config | edit/reload config |
-| `<leader>t` | Toggles | paste/wrap |
+| `<leader>t` | Toggles | wrap |
 | `<leader>w` | Windows | forwards to native `<C-w>` commands |
 
 Diagnostics deliberately use only `]d` and `[d` for next/previous navigation;
