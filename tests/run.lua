@@ -5,6 +5,7 @@ vim.g.config_test_runner = true
 local tests = {
     "check_startup.lua",
     "check_platform.lua",
+    "check_editorconfig.lua",
     "check_completion.lua",
     "check_mini_clue.lua",
     "check_formatters.lua",

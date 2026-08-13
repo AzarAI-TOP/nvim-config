@@ -31,6 +31,12 @@ vim.api.nvim_create_autocmd("BufReadPost", {
 -- Global defaults in options.lua: 4-space indent, expandtab.
 -- Only non-default filetypes are overridden here.
 -- Unlisted filetypes inherit the global default.
+--
+-- Project .editorconfig values take precedence: they are applied on
+-- BufRead/BufNewFile (config/editorconfig.lua) and the FileType callback
+-- below yields whenever the buffer already has applied indent props.
+
+require("config.editorconfig").setup()
 
 local indent_augroup = vim.api.nvim_create_augroup("indent_settings", { clear = true })
 
@@ -120,7 +126,14 @@ for _, group in ipairs(indent_groups) do
     vim.api.nvim_create_autocmd("FileType", {
         group = indent_augroup,
         pattern = fts,
-        callback = function()
+        callback = function(args)
+            -- Project .editorconfig wins: re-assert its values after any
+            -- runtime ftplugin/indent handlers, otherwise apply defaults.
+            local editorconfig = require("config.editorconfig")
+            if editorconfig.has_indent(args.buf) then
+                editorconfig.reapply(args.buf)
+                return
+            end
             vim.opt_local.tabstop = ts
             vim.opt_local.shiftwidth = sw
             vim.opt_local.expandtab = et
