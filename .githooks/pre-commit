@@ -1,23 +1,23 @@
 #!/bin/sh
-# Pre-commit 钩子：用 StyLua 格式化暂存的 Lua 文件（fail-closed）。
-# 通过 `git config core.hooksPath .githooks` 自行配置。
+# Pre-commit hook: formats staged Lua files with StyLua (fail-closed).
+# Enable it with `git config core.hooksPath .githooks`.
 #
-# 以下情况提交会被中止：
-#   - 到处都找不到 StyLua（PATH、Mason packages、Mason bin），或
-#   - 格式化失败，或
-#   - 格式化后的 `stylua --check` 失败。
-# 没有静默跳过路径：无法格式化的提交就是失败的提交。
+# The commit is aborted when:
+#   - StyLua cannot be found anywhere (PATH, Mason packages, Mason bin), or
+#   - formatting fails, or
+#   - the formatted `stylua --check` fails.
+# There is no silent skip path: an unformattable commit is a failed commit.
 
 set -e
 
-# 只处理 Lua 文件
+# Only handle Lua files
 staged=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.lua$' || true)
 if [ -z "$staged" ]; then
     exit 0
 fi
 
-# 查找 StyLua：先 PATH，再 Mason 包目录下的真实可执行文件
-# （优先于 .CMD shim），最后 Mason 的 bin 目录。
+# Find StyLua: PATH first, then the real executable inside the Mason packages
+# dir (preferred over the .CMD shim), and finally Mason's bin dir.
 stylua_cmd=$(command -v stylua 2>/dev/null || true)
 if [ -z "$stylua_cmd" ]; then
     mason_dirs=
@@ -43,28 +43,28 @@ if [ -z "$stylua_cmd" ]; then
     [ -x "$candidate" ] && stylua_cmd=$candidate
 fi
 if [ -z "$stylua_cmd" ]; then
-    echo "❌ 找不到 stylua——提交已中止。"
-    echo "   安装方式：在 Neovim 中运行 :MasonToolsInstallSync，"
-    echo "   或把 stylua 加入 PATH（例如 cargo install stylua）。"
+    echo "❌ stylua not found — commit aborted."
+    echo "    Install it with :MasonToolsInstallSync in Neovim,"
+    echo "    or add stylua to PATH (e.g. cargo install stylua)."
     exit 1
 fi
 
-# 拒绝部分暂存的 Lua 文件。否则格式化工作区副本再重新 add，
-# 会把无关的未暂存修改一并吸进提交。
+# Reject partially staged Lua files. Otherwise formatting the worktree copy
+# and re-adding would sweep unrelated unstaged changes into the commit.
 for file in $staged; do
     if ! git diff --quiet -- "$file"; then
-        echo "❌ $file 同时有暂存与未暂存的修改。提交前请先 stage 或 stash 它。"
+        echo "❌ $file has both staged and unstaged changes. Stage or stash it before committing."
         exit 1
     fi
 done
 
-# 原地格式化暂存的 Lua 文件，再验证结果确实通过干净的 --check
-# （不允许静默的部分失败）。
+# Format the staged Lua files in place, then verify the result passes a clean
+# --check (no silent partial failures allowed).
 echo "$staged" | tr '\n' '\0' | xargs -0 "$stylua_cmd"
 if ! echo "$staged" | tr '\n' '\0' | xargs -0 "$stylua_cmd" --check; then
-    echo "❌ 格式化后 stylua --check 失败——提交已中止。"
+    echo "❌ stylua --check failed after formatting — commit aborted."
     exit 1
 fi
 
-# 重新暂存发生变化的文件
+# Re-stage the files that changed
 echo "$staged" | tr '\n' '\0' | xargs -0 git add
