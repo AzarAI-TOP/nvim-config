@@ -35,10 +35,8 @@ local parsers = {
     "java",
 }
 
--- 异步安装 / 更新解析器（已安装的自动跳过）
-if vim.env.NVIM_CONFIG_TEST ~= "1" and vim.env.NVIM_BOOTSTRAP ~= "1" then
-    require("nvim-treesitter").install(parsers)
-end
+-- 异步安装 / 更新解析器（已安装的自动跳过）；引导模式跳过
+if vim.env.NVIM_BOOTSTRAP ~= "1" then require("nvim-treesitter").install(parsers) end
 
 -- 文件类型 → 解析器映射（名称不一致时）
 vim.treesitter.language.register("javascript", { "javascriptreact" })

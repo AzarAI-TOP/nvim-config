@@ -29,10 +29,7 @@ and portable formatters are managed by Mason (requires Neovim 0.12+).
 │       └── <name>.lua      # mason, tokyonight, fzf, mini-*, conform, ...
 ├── scripts/
 │   ├── bootstrap-linux.sh  # Fedora/Ubuntu/WSL system prerequisites
-│   ├── bootstrap-windows.ps1 # Windows system prerequisites
-│   ├── test-config.sh      # headless test suite (bash)
-│   └── test-config.ps1     # headless test suite (PowerShell)
-├── tests/                  # headless startup/config/platform checks
+│   └── bootstrap-windows.ps1 # Windows system prerequisites
 ├── .githooks/pre-commit    # auto-formats staged Lua files via StyLua
 └── .stylua.toml            # StyLua formatter config
 ```
@@ -208,57 +205,22 @@ On Fedora, launch `neovide` from a terminal or your application launcher.
 IME auto-toggles for Chinese input: on in Insert mode and `/` / `?` search,
 off in Normal mode and `:` commands.
 
-## Verification
+## Troubleshooting
 
-Run the isolated headless suite from the repository root. The wrapper copies
-the working tree into a disposable XDG directory, disables background tool
-downloads, and removes it afterwards.
+This config ships no automated test suite — verify by using the editor and
+checking its built-in diagnostics:
 
-```sh
-bash scripts/test-config.sh
+```vim
+:checkhealth nvim_config   " platform, system tools, Mason LSPs, formatters, clipboard
+:checkhealth               " full plugin and provider report
+:MasonToolsInstallSync     " (re)install all Mason-managed LSP servers and formatters
+:Mason                     " inspect package state in the Mason UI
+:PackUpdate                " update plugins via the vim.pack review buffer
 ```
 
-On Windows PowerShell:
-
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\test-config.ps1
-```
-
-Set `TEST_DATA_HOME` to a persistent directory to reuse the already-downloaded
-plugin install across runs (a fresh data dir makes `vim.pack` download all 21
-plugins every time):
-
-```sh
-TEST_DATA_HOME="$HOME/.cache/nvim-config-test-data" bash scripts/test-config.sh
-```
-
-Inside Neovim, run `:checkhealth nvim_config` for platform-specific system-tool,
-clipboard, and toolchain diagnostics. `:checkhealth` provides the full plugin
-and provider report.
-
-The `ubuntu-mason-first-boot` CI job additionally runs a real bootstrap in a
-disposable environment, attaches representative LSP servers (lua_ls, pyright,
-clangd, bashls), and executes every configured formatter against fixture
-content — the same checks run locally by
-`tests/check_first_boot_runtime.lua` after a bootstrap.
-
-## Verification tiers
-
-- **Ubuntu first boot (CI, every push)** — full bootstrap in a disposable
-  environment: every Mason LSP server maps to an installed package, every
-  formatter resolves to an executable, representative servers attach, and all
-  configured formatters run against fixture content (including
-  gofmt/goimports, rustfmt, and a project-`.clang-format` precedence check).
-- **Windows bootstrap (CI, every push)** — control-flow logic tests with fake
-  executors (never touches real installers, PATH, or the registry), on
-  PowerShell 5.1 and 7, plus PSScriptAnalyzer.
-- **Windows first boot (manual, `workflow_dispatch`)** — real Mason install
-  and first-boot runtime checks on native Windows (shims, `.CMD` resolution).
-- **Lint gates (CI, every push)** — StyLua `--check`, `bash -n`, ShellCheck,
-  `git diff --check`, and a workflow-vs-`versions.sh` drift check.
-- **Manual tier** — Fedora desktop Wayland/X11 clipboard, WSL/SSH OSC52,
-  Neovide GUI/IME: covered by platform-detection unit tests and
-  `:checkhealth`, verified by hand on real sessions.
+The bootstrap scripts install every dependency they declare and fail fast on
+any unacceptable exit code (winget, dnf, apt, curl checksums). If something is
+missing afterwards, `:checkhealth nvim_config` names the tool and the fix.
 
 ## Key map groups
 

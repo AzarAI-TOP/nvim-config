@@ -1,9 +1,7 @@
 ﻿# 引导 Windows 的系统级依赖。在 PowerShell 中运行。
 # Mason 负责安装 LSP 服务器与便携格式化器。
 #
-# 脚本被 dot-source 时只定义函数与状态，因此
-# scripts/test-bootstrap-windows.ps1 可以用注入的假实现安全加载它，
-# 绝不触碰真实的安装器、注册表或用户 PATH。
+# 脚本被 dot-source 时只定义函数与状态，便于在隔离环境中安全加载；
 # 只有直接调用时才执行 Invoke-BootstrapWindows。
 #
 # 行为保证：

@@ -9,9 +9,9 @@ vim.pack.add({
     { src = "https://github.com/neovim/nvim-lspconfig" },
 })
 
--- 测试 / 引导模式关闭自动安装检查，headless 运行绝不联网；
--- 引导流程仍通过 `+MasonToolsInstallSync` 立即安装（NVIM_BOOTSTRAP=1）。
-local automated = vim.env.NVIM_CONFIG_TEST == "1" or vim.env.NVIM_BOOTSTRAP == "1"
+-- 引导模式关闭自动安装检查：installer 只注册命令与界面，不联网；
+-- 引导流程通过 `+MasonToolsInstallSync` 立即完成安装（NVIM_BOOTSTRAP=1）。
+local automated = vim.env.NVIM_BOOTSTRAP == "1"
 
 local ok, err = pcall(function()
     require("mason").setup()
