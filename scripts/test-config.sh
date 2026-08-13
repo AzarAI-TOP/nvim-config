@@ -34,10 +34,14 @@ native_path() {
     fi
 }
 
-export XDG_CONFIG_HOME="$(native_path "$tmp_dir/xdg")"
-export XDG_DATA_HOME="$(native_path "$data_home")"
-export XDG_STATE_HOME="$(native_path "$tmp_dir/state")"
-export XDG_CACHE_HOME="$(native_path "$tmp_dir/cache")"
+native_xdg_config=$(native_path "$tmp_dir/xdg")
+native_xdg_data=$(native_path "$data_home")
+native_xdg_state=$(native_path "$tmp_dir/state")
+native_xdg_cache=$(native_path "$tmp_dir/cache")
+export XDG_CONFIG_HOME="$native_xdg_config"
+export XDG_DATA_HOME="$native_xdg_data"
+export XDG_STATE_HOME="$native_xdg_state"
+export XDG_CACHE_HOME="$native_xdg_cache"
 export NVIM_CONFIG_TEST=1
 export GIT_CONFIG_COUNT=1
 export GIT_CONFIG_KEY_0=core.longpaths

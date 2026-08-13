@@ -2,6 +2,8 @@
 # and checked by the CI drift guard. SHA-256 values come from the corresponding
 # GitHub Release asset digest fields. The Windows font archive (0xProto.zip)
 # differs from the Linux one (0xProto.tar.xz), hence two hashes.
+# shellcheck shell=bash
+# shellcheck disable=SC2034 # values are consumed by the sourcing bootstrap scripts
 
 NVIM_VERSION="0.12.4"
 NVIM_SHA256_X86_64="012bf3fcac5ade43914df3f174668bf64d05e049a4f032a388c027b1ebd78628"

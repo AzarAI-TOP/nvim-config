@@ -5,6 +5,7 @@
 set -euo pipefail
 
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+# shellcheck source-path=scripts
 # shellcheck source=versions.sh
 source "$script_dir/versions.sh"
 
@@ -149,4 +150,5 @@ fi
 python3 -c 'import venv'
 NVIM_BOOTSTRAP=1 nvim --headless "+MasonToolsInstallSync" "+qa!"
 printf 'Linux bootstrap complete. Run :checkhealth nvim_config inside Neovim.\n'
+# shellcheck disable=SC2016 # the $HOME/$PATH text is literal advice, not expansion
 printf 'For future shells, ensure your profile contains: export PATH="$HOME/.local/bin:$PATH"\n'

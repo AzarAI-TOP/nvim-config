@@ -1,6 +1,12 @@
 #!/bin/sh
-# Pre-commit hook: format staged Lua files with StyLua
+# Pre-commit hook: format staged Lua files with StyLua (fail-closed).
 # Configures itself via `git config core.hooksPath .githooks`
+#
+# The commit is aborted when:
+#   - StyLua cannot be found anywhere (PATH, Mason packages, Mason bin), or
+#   - formatting fails, or
+#   - the post-format `stylua --check` fails.
+# There is no silent skip path: an unformattable commit is a failed commit.
 
 set -e
 
@@ -10,10 +16,26 @@ if [ -z "$staged" ]; then
     exit 0
 fi
 
-# Find StyLua on PATH or in Mason's platform-specific data directory.
+# Find StyLua: PATH first, then the real executable under Mason's package
+# directory (preferred over the .CMD shim), then Mason's bin directory.
 stylua_cmd=$(command -v stylua 2>/dev/null || true)
-if [ -z "$stylua_cmd" ] && [ -n "${LOCALAPPDATA:-}" ] && command -v cygpath >/dev/null 2>&1; then
-    candidate="$(cygpath -u "$LOCALAPPDATA")/nvim-data/mason/bin/stylua.CMD"
+if [ -z "$stylua_cmd" ]; then
+    mason_dirs=
+    [ -n "${LOCALAPPDATA:-}" ] && mason_dirs="$mason_dirs $LOCALAPPDATA/nvim-data/mason"
+    [ -n "${XDG_DATA_HOME:-}" ] && mason_dirs="$mason_dirs $XDG_DATA_HOME/nvim/mason"
+    mason_dirs="$mason_dirs ${HOME:-$HOME}/.local/share/nvim/mason"
+    for dir in $mason_dirs; do
+        for exe in "$dir"/packages/stylua/stylua.exe "$dir"/packages/stylua/*/stylua.exe \
+            "$dir"/packages/stylua/stylua "$dir"/packages/stylua/*/stylua; do
+            if [ -x "$exe" ] || [ -f "$exe" ]; then
+                stylua_cmd=$exe
+                break 2
+            fi
+        done
+    done
+fi
+if [ -z "$stylua_cmd" ] && [ -n "${LOCALAPPDATA:-}" ]; then
+    candidate="${LOCALAPPDATA}/nvim-data/mason/bin/stylua.CMD"
     [ -f "$candidate" ] && stylua_cmd=$candidate
 fi
 if [ -z "$stylua_cmd" ]; then
@@ -21,8 +43,10 @@ if [ -z "$stylua_cmd" ]; then
     [ -x "$candidate" ] && stylua_cmd=$candidate
 fi
 if [ -z "$stylua_cmd" ]; then
-    echo "⚠️  stylua not found — skipping Lua formatting"
-    exit 0
+    echo "❌ stylua not found — commit aborted."
+    echo "   Install it: run :MasonToolsInstallSync inside Neovim,"
+    echo "   or add stylua to PATH (e.g. cargo install stylua)."
+    exit 1
 fi
 
 # Refuse partially staged Lua files. Formatting the working-tree copy and then
@@ -34,8 +58,13 @@ for file in $staged; do
     fi
 done
 
-# Format staged Lua files in-place
+# Format staged Lua files in-place, then verify the result actually passes
+# a clean --check (no silent partial failures).
 echo "$staged" | tr '\n' '\0' | xargs -0 "$stylua_cmd"
+if ! echo "$staged" | tr '\n' '\0' | xargs -0 "$stylua_cmd" --check; then
+    echo "❌ stylua --check failed after formatting — commit aborted."
+    exit 1
+fi
 
 # Re-stage any files that changed
 echo "$staged" | tr '\n' '\0' | xargs -0 git add
