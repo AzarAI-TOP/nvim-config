@@ -1,16 +1,18 @@
-﻿# 引导 Windows 的系统级依赖。在 PowerShell 中运行。
-# Mason 负责安装 LSP 服务器与便携格式化器。
+﻿# Bootstraps Windows system-level dependencies. Run in PowerShell.
+# Mason installs the LSP servers and portable formatters.
 #
-# 脚本被 dot-source 时只定义函数与状态，便于在隔离环境中安全加载；
-# 只有直接调用时才执行 Invoke-BootstrapWindows。
+# When dot-sourced, the script only defines functions and state, so it can be
+# loaded safely in an isolated environment; Invoke-BootstrapWindows only runs
+# when the script is invoked directly.
 #
-# 行为保证：
-#  - 每个关键原生命令（winget、rustup、nvim）都经 Invoke-NativeChecked
-#    执行，遇到不可接受的退出码立即失败。
-#  - 一个包失败即中止引导：后续包、Mason 步骤与最终成功消息全部跳过。
-#  - Neovide PATH 修复在安装与进程 PATH 刷新之后执行，
-#    干净的首次运行才能真正修复。
-#  - 安装后要求 Neovim 0.12.0 或更新。
+# Behavior guarantees:
+#  - Every key native command (winget, rustup, nvim) runs through
+#    Invoke-NativeChecked and fails immediately on unacceptable exit codes.
+#  - One package failure aborts the bootstrap: remaining packages, the Mason
+#    step, and the final success message are all skipped.
+#  - The Neovide PATH repair runs after installation and process-PATH refresh,
+#    so a clean first run actually fixes it.
+#  - Neovim 0.12.0 or newer is required after installation.
 
 $ErrorActionPreference = "Stop"
 
@@ -29,14 +31,15 @@ $script:DefaultPackages = @(
     "7zip.7zip"
 )
 
-# 有文档记载的 winget 安装退出码：对幂等引导而言仍代表"包已就位"。
-# 来源：microsoft/winget-cli，src/AppInstallerSharedLib/Public/AppInstallerErrors.h
+# Documented winget install exit codes: for an idempotent bootstrap they still
+# mean "the package is already in place".
+# Source: microsoft/winget-cli, src/AppInstallerSharedLib/Public/AppInstallerErrors.h
 #   0x8A15010D APPINSTALLER_CLI_ERROR_INSTALL_ALREADY_INSTALLED
 #   0x8A15010E APPINSTALLER_CLI_ERROR_INSTALL_DOWNGRADE
-#              （已安装更新版本）
-# 其余退出码一律使引导失败。十六进制值通过位模式转换，
-# 使有符号 Int32 结果在 PowerShell 5.1 与 7 上完全一致
-# （5.1 拒绝直接的收窄 [int] 转换）。
+#              (a newer version is already installed)
+# All other exit codes fail the bootstrap. Hex values are converted through a
+# bit pattern so the signed Int32 result is identical on PowerShell 5.1 and 7
+# (5.1 rejects a direct narrowing [int] conversion).
 function ConvertTo-Int32FromHex32 {
     param([Parameter(Mandatory)][string]$Hex)
     return [BitConverter]::ToInt32(
@@ -47,12 +50,13 @@ function ConvertTo-Int32FromHex32 {
 $script:BootstrapDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 
 function Read-VersionsFile {
-    # 解析 KEY="VALUE" 形式的版本文件（scripts/versions.sh），但不执行它。
-    # 容忍 CRLF 行尾、空行与 # 注释。
-    # 未知或格式错误的行视为错误，避免版本漂移静默失效。
+    # Parses the KEY="VALUE" versions file (scripts/versions.sh) without
+    # executing it. Tolerates CRLF line endings, blank lines, and # comments.
+    # Unknown or malformed lines are treated as errors so version drift can't
+    # fail silently.
     param([Parameter(Mandatory)][string]$Path)
     if (-not (Test-Path -LiteralPath $Path)) {
-        throw "未找到版本文件 '$Path'"
+        throw "Versions file '$Path' not found"
     }
     $result = @{}
     foreach ($line in (Get-Content -LiteralPath $Path)) {
@@ -61,23 +65,23 @@ function Read-VersionsFile {
         if ($trimmed -match '^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"([^"]*)"$') {
             $result[$Matches[1]] = $Matches[2]
         } else {
-            throw "版本文件行格式错误：'$line'"
+            throw "Malformed line in versions file: '$line'"
         }
     }
     return $result
 }
 
 function Get-NormalizedHotkey {
-    # WScript.Shell 用自己的一套修饰键顺序序列化 .lnk 热键
-    # （例如写入 "Ctrl+Alt+N" 读回 "Alt+Ctrl+N"）；
-    # 因此比较语义键集合而非字符串。
+    # WScript.Shell serializes .lnk hotkeys with its own modifier-key order
+    # (e.g. writing "Ctrl+Alt+N" reads back "Alt+Ctrl+N");
+    # so compare normalized key sets instead of strings.
     param([AllowEmptyString()][string]$Value)
     return (@($Value.ToLowerInvariant() -split "\+" | Where-Object { $_ } | Sort-Object) -join "+")
 }
 
 $script:DefaultShortcutFactory = {
-    # 创建快捷方式；当已存在带请求热键的快捷方式时跳过（返回 $null）。
-    # 使用 WScript.Shell COM。
+    # Creates a shortcut; skips when a shortcut with the requested hotkey
+    # already exists (returns $null). Uses the WScript.Shell COM object.
     param($lnkPath, $target, $hotkey)
     $shell = New-Object -ComObject WScript.Shell
     if (Test-Path -LiteralPath $lnkPath) {
@@ -98,8 +102,9 @@ $script:DefaultShortcutFactory = {
 }
 
 function New-NeovideShortcut {
-    # 创建文档记载的 Ctrl+Alt+N 开始菜单 Neovide 启动器。
-    # COM 工厂可注入，逻辑测试因此绝不触碰真实的开始菜单或注册表。
+    # Creates the documented Ctrl+Alt+N Start Menu Neovide launcher.
+    # The COM factory is injectable, so the logic tests never touch the real
+    # Start Menu or registry.
     [CmdletBinding(SupportsShouldProcess)]
     param(
         [string]$TargetPath = "C:\Program Files\Neovide\neovide.exe",
@@ -112,12 +117,12 @@ function New-NeovideShortcut {
         $ShortcutPath = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\Neovide.lnk"
     }
     if (-not (& $TestPath $TargetPath)) {
-        throw "在 '$TargetPath' 未找到 Neovide 可执行文件，无法创建开始菜单快捷方式。"
+        throw "Neovide executable not found at '$TargetPath'; cannot create the Start Menu shortcut."
     }
     if ($null -eq $ShortcutFactory) {
         $ShortcutFactory = $script:DefaultShortcutFactory
     }
-    if (-not $PSCmdlet.ShouldProcess($ShortcutPath, "创建带热键 $Hotkey 的 Neovide 快捷方式")) {
+    if (-not $PSCmdlet.ShouldProcess($ShortcutPath, "Create Neovide shortcut with hotkey $Hotkey")) {
         return $null
     }
     return & $ShortcutFactory $ShortcutPath $TargetPath $Hotkey
@@ -130,10 +135,10 @@ $script:WingetInstallAcceptableExitCodes = @(
 )
 
 function Invoke-NativeChecked {
-    # 运行原生命令（或注入的假执行器）、保留其输出，
-    # 退出码不可接受时抛出带命令/上下文信息的异常。
-    # 仅靠 $ErrorActionPreference = "Stop" 不会在
-    # 原生命令非零退出码时失败。
+    # Runs a native command (or an injected fake executor), preserves its
+    # output, and throws an exception with command/context info when the exit
+    # code is unacceptable. $ErrorActionPreference = "Stop" alone does not
+    # fail on non-zero native exit codes.
     param(
         [Parameter(Mandatory)][string]$Command,
         [string[]]$Arguments = @(),
@@ -149,15 +154,16 @@ function Invoke-NativeChecked {
     $exitCode = $LASTEXITCODE
     if ($AcceptableExitCodes -notcontains $exitCode) {
         $argumentsText = if ($Arguments.Count -gt 0) { " $($Arguments -join ' ')" } else { "" }
-        $contextText = if ($Context) { "（$Context）" } else { "" }
-        throw "命令 '$Command$argumentsText' 失败，退出码 $exitCode。$contextText"
+        $contextText = if ($Context) { " ($Context)" } else { "" }
+        throw "Command '$Command$argumentsText' failed with exit code $exitCode.$contextText"
     }
 }
 
 function Add-PathEntryString {
-    # 纯辅助函数：返回恰好包含 $Entry 一次的 PATH 字符串。
-    # 无关条目保持原顺序；仅追加时丢弃空段。
-    # 已存在的条目（不分大小写）原样保留，重复调用为空操作。
+    # Pure helper: returns a PATH string containing $Entry exactly once.
+    # Unrelated entries keep their original order; only appending drops empty
+    # segments. Existing entries (case-insensitive) are kept as-is; repeated
+    # calls are no-ops.
     param(
         [Parameter(Mandatory)][string]$PathValue,
         [Parameter(Mandatory)][string]$Entry
@@ -175,8 +181,8 @@ function Add-PathEntryString {
 }
 
 function Add-UserPathEntry {
-    # 把 $Directory 恰好一次加入用户 PATH，保留无关条目。
-    # I/O 可注入，测试因此绝不触碰真实的用户 PATH。
+    # Adds $Directory to the user PATH exactly once, preserving unrelated
+    # entries. I/O is injectable, so tests never touch the real user PATH.
     param(
         [Parameter(Mandatory)][string]$Directory,
         [scriptblock]$ReadPath = { [Environment]::GetEnvironmentVariable("Path", "User") },
@@ -192,9 +198,10 @@ function Add-UserPathEntry {
 }
 
 function Repair-NeovidePath {
-    # Neovide 安装到 $NeovideDirectory，但 winget 包不把它加入 PATH。
-    # 把目录恰好一次加入用户 PATH、刷新进程 PATH，
-    # 之后若可执行文件缺失或仍无法解析则抛出异常（不假装成功）。
+    # Neovide installs to $NeovideDirectory, but the winget package does not
+    # add it to PATH. Adds the directory to the user PATH exactly once and
+    # refreshes the process PATH; then throws if the executable is missing or
+    # still unresolvable (no fake success).
     param(
         [string]$NeovideDirectory = "C:\Program Files\Neovide",
         [scriptblock]$TestPath = { param($path) Test-Path -LiteralPath $path },
@@ -204,7 +211,7 @@ function Repair-NeovidePath {
     )
     $neovideExe = Join-Path $NeovideDirectory "neovide.exe"
     if (-not (& $TestPath $neovideExe)) {
-        throw "winget 安装后在 '$neovideExe' 未找到 Neovide 可执行文件。Neovide 安装不正确；请重新运行引导。"
+        throw "Neovide executable not found at '$neovideExe' after winget install. Neovide is not installed correctly; please re-run the bootstrap."
     }
     if (& $TestCommand "neovide") {
         return
@@ -212,20 +219,20 @@ function Repair-NeovidePath {
     $null = Add-UserPathEntry -Directory $NeovideDirectory -ReadPath $ReadUserPath -WritePath $WriteUserPath
     $env:Path = Add-PathEntryString -PathValue $env:Path -Entry $NeovideDirectory
     if (-not (& $TestCommand "neovide")) {
-        throw "Neovide 已安装，但更新 PATH 后仍无法解析。请打开新的 PowerShell 窗口并重新运行引导。"
+        throw "Neovide is installed, but still cannot be resolved after updating PATH. Open a new PowerShell window and re-run the bootstrap."
     }
 }
 
 function Assert-NeovimMinimumVersion {
-    # 已安装 Neovim 低于 $MinimumVersion 时抛出检测到的与要求的版本；
-    # 成功时返回检测到的版本。
+    # Throws with the detected and required versions when the installed Neovim
+    # is below $MinimumVersion; returns the detected version on success.
     param(
         [Parameter(Mandatory)][string]$VersionOutput,
         [string]$MinimumVersion = "0.12.0"
     )
     if ($VersionOutput -notmatch "NVIM v(?<major>[0-9]+)\.(?<minor>[0-9]+)\.(?<patch>[0-9]+)") {
         $firstLine = ($VersionOutput -split "`r?`n" | Where-Object { $_ } | Select-Object -First 1)
-        throw "无法从输出（'$firstLine'）确定 Neovim 版本，无法验证 $MinimumVersion 最低要求。"
+        throw "Could not determine the Neovim version from the output ('$firstLine'); cannot verify the $MinimumVersion minimum requirement."
     }
     $detectedVersion = "v$($Matches['major']).$($Matches['minor']).$($Matches['patch'])"
     $minimumParts = $MinimumVersion -split "\."
@@ -235,7 +242,7 @@ function Assert-NeovimMinimumVersion {
     $minimumMinor = [int]$minimumParts[1]
     if ($detectedMajor -lt $minimumMajor -or
         ($detectedMajor -eq $minimumMajor -and $detectedMinor -lt $minimumMinor)) {
-        throw "检测到 Neovim $detectedVersion，但需要 $MinimumVersion 或更新版本。请更新 Neovim 后重新运行引导。"
+        throw "Detected Neovim $detectedVersion, but $MinimumVersion or newer is required. Update Neovim and re-run the bootstrap."
     }
     return $detectedVersion
 }
@@ -263,7 +270,7 @@ function Invoke-BootstrapWindows {
     }
 
     if (-not (& $TestCommand "winget")) {
-        throw "需要 winget。请先安装或更新 Microsoft App Installer。"
+        throw "winget is required. Install or update Microsoft App Installer first."
     }
 
     foreach ($package in $Packages) {
@@ -274,27 +281,27 @@ function Invoke-BootstrapWindows {
             -Executor $Executor
     }
 
-    # 安装器更新注册表环境后刷新当前进程。
+    # Refresh the current process after installers update the registry env.
     $env:Path = @(
         [Environment]::GetEnvironmentVariable("Path", "Machine"),
         [Environment]::GetEnvironmentVariable("Path", "User")
     ) -join ";"
 
-    # Neovide PATH 修复必须在安装与 PATH 刷新之后执行，
-    # 干净的首次运行才能真正修复。
+    # The Neovide PATH repair must run after installation and the PATH refresh,
+    # so a clean first run actually fixes it.
     Repair-NeovidePath -NeovideDirectory "C:\Program Files\Neovide" `
         -TestPath $TestPath -TestCommand $TestCommand `
         -ReadUserPath $ReadUserPath -WriteUserPath $WriteUserPath
 
-    # 带文档记载的 Ctrl+Alt+N 热键的开始菜单快捷方式。幂等：
-    # 已存在该热键的快捷方式时工厂跳过创建。
+    # Start Menu shortcut with the documented Ctrl+Alt+N hotkey. Idempotent:
+    # the factory skips creation when a shortcut with that hotkey exists.
     $null = New-NeovideShortcut `
         -TargetPath "C:\Program Files\Neovide\neovide.exe" `
         -ShortcutFactory $ShortcutFactory `
         -TestPath $TestPath
 
-    # 部分 winget 版本创建便携 fzf 包但遗漏其 PATH 目录。
-    # 幂等地为当前进程与未来 shell 修复。
+    # Some winget versions create the portable fzf package but miss its PATH
+    # directory. Fix it idempotently for the current process and future shells.
     $fzfDirectory = Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Packages\junegunn.fzf_Microsoft.Winget.Source_8wekyb3d8bbwe"
     if ((& $TestPath (Join-Path $fzfDirectory "fzf.exe")) -and -not (& $TestCommand "fzf")) {
         $null = Add-UserPathEntry -Directory $fzfDirectory -ReadPath $ReadUserPath -WritePath $WriteUserPath
@@ -302,7 +309,7 @@ function Invoke-BootstrapWindows {
     }
 
     if (-not $SkipFont) {
-        # 安装与 Fedora 上 Neovide 相同的按用户 Nerd Font。
+        # Install the same per-user Nerd Font that Neovide uses on Fedora.
         $fontRegistry = "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts"
         $fontInstalled = @(
             "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts",
@@ -318,7 +325,7 @@ function Invoke-BootstrapWindows {
                 Invoke-WebRequest "https://github.com/ryanoasis/nerd-fonts/releases/download/v$($script:Versions.NERD_FONTS_VERSION)/0xProto.zip" -OutFile $fontArchive
                 $fontHash = (Get-FileHash -Path $fontArchive -Algorithm SHA256).Hash.ToLowerInvariant()
                 if ($fontHash -ne $script:Versions.OXPROTO_SHA256_ZIP) {
-                    throw "0xProto 压缩包校验和不匹配"
+                    throw "0xProto archive checksum mismatch"
                 }
                 Expand-Archive -Path $fontArchive -DestinationPath $fontSource -Force
                 New-Item -Path $fontRegistry -Force | Out-Null
@@ -341,7 +348,7 @@ function Invoke-BootstrapWindows {
     }
 
     if (-not (& $TestCommand "nvim")) {
-        throw "PATH 中还看不到 nvim。请打开新的 PowerShell 窗口后重新运行本脚本。"
+        throw "nvim is still not on PATH. Open a new PowerShell window and re-run this script."
     }
 
     if (-not $NvimVersionOutput) {
@@ -359,7 +366,7 @@ function Invoke-BootstrapWindows {
         $env:NVIM_BOOTSTRAP = $null
     }
 
-    & $Notify "Windows 引导完成。在 Neovim 中运行 :checkhealth 检查环境。"
+    & $Notify "Windows bootstrap complete. Run :checkhealth in Neovim to verify the environment."
 }
 
 if ($MyInvocation.InvocationName -ne ".") {

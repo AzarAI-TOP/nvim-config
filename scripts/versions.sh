@@ -1,9 +1,10 @@
-# 固定的引导资产版本，供 Linux 与 Windows 引导脚本共用，
-# 并由 CI 版本漂移守卫检查。SHA-256 值取自对应 GitHub Release
-# 资产的摘要字段。Windows 字体压缩包（0xProto.zip）与 Linux
-# （0xProto.tar.xz）不同，因此有两个哈希。
+# Pinned bootstrap asset versions, shared by the Linux and Windows bootstrap
+# scripts, and checked by the CI version-drift guard. SHA-256 values come from
+# the digest fields of the corresponding GitHub Release assets. The Windows
+# font archive (0xProto.zip) and the Linux one (0xProto.tar.xz) differ,
+# hence two hashes.
 # shellcheck shell=bash
-# shellcheck disable=SC2034 # 值由 source 本文件的引导脚本消费
+# shellcheck disable=SC2034 # values consumed by the bootstrap scripts that source this file
 
 NVIM_VERSION="0.12.4"
 NVIM_SHA256_X86_64="012bf3fcac5ade43914df3f174668bf64d05e049a4f032a388c027b1ebd78628"
