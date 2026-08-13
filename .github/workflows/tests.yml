@@ -169,7 +169,9 @@ jobs:
     # Manual (workflow_dispatch) integration channel: a real Windows first
     # boot without the expensive winget system installs. Validates Mason
     # package installation and the full first-boot runtime checks on native
-    # Windows (shims, .CMD resolution, PATH).
+    # Windows (shims, .CMD resolution, PATH). Guarded so it never runs on
+    # push/PR — it is triggered explicitly from the Actions tab.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: windows-latest
     timeout-minutes: 30
     env:
