@@ -342,6 +342,39 @@ try {
         $mixed = Add-PathEntryString -PathValue "c:\program files\neovide;C:\A" -Entry "C:\Program Files\Neovide"
         Assert-True ($mixed -ceq "c:\program files\neovide;C:\A") "existing entry (any case) must be left untouched"
     }
+
+    # --- 12. Read-VersionsFile: tolerant parser over the shared versions.sh --
+    Invoke-Test -Name "versions file parser tolerates CRLF, comments, and blank lines" -Body {
+        $tmp = [IO.Path]::GetTempFileName()
+        Set-Content -LiteralPath $tmp -Value "# pinned assets`r`n`r`nNVIM_VERSION=`"0.12.4`"`r`nOXPROTO_SHA256_ZIP=`"abc123`"" -NoNewline
+        try {
+            $v = Read-VersionsFile -Path $tmp
+            Assert-Equal "0.12.4" $v.NVIM_VERSION "NVIM_VERSION must parse through CRLF"
+            Assert-Equal "abc123" $v.OXPROTO_SHA256_ZIP "OXPROTO_SHA256_ZIP must parse"
+            Assert-Equal 2 $v.Count "parser must yield exactly the declared keys"
+        } finally {
+            Remove-Item -LiteralPath $tmp -Force
+        }
+    }
+
+    Invoke-Test -Name "malformed versions line fails loudly" -Body {
+        $tmp = [IO.Path]::GetTempFileName()
+        Set-Content -LiteralPath $tmp -Value "NVIM_VERSION=0.12.4" -NoNewline
+        try {
+            Assert-Throws -Action { $null = Read-VersionsFile -Path $tmp } `
+                -Message "unquoted value must be rejected" -ExpectedFragments @("malformed")
+        } finally {
+            Remove-Item -LiteralPath $tmp -Force
+        }
+    }
+
+    Invoke-Test -Name "shared versions file provides the Windows font version and hash" -Body {
+        $v = Read-VersionsFile -Path (Join-Path $script:BootstrapDir "versions.sh")
+        Assert-True ($v.NERD_FONTS_VERSION -match '^\d+\.\d+\.\d+$') "NERD_FONTS_VERSION must be pinned"
+        Assert-True ($v.OXPROTO_SHA256_ZIP.Length -eq 64) "OXPROTO_SHA256_ZIP must be a SHA-256"
+        Assert-True ($v.OXPROTO_SHA256_XZ.Length -eq 64) "OXPROTO_SHA256_XZ must be a SHA-256"
+        Assert-True ($v.OXPROTO_SHA256_XZ -ne $v.OXPROTO_SHA256_ZIP) "zip/xz archives must have distinct hashes"
+    }
 } finally {
     $env:Path = $script:originalProcessPath
 }

@@ -137,7 +137,7 @@ if [[ $is_fedora == true && $is_wsl == false && ${INSTALL_DESKTOP_DEPS:-1} == 1 
         tmp_font=$(mktemp -d)
         cleanup_dirs+=("$tmp_font")
         curl -fL "https://github.com/ryanoasis/nerd-fonts/releases/download/v${NERD_FONTS_VERSION}/0xProto.tar.xz" -o "$tmp_font/0xProto.tar.xz"
-        printf '%s  %s\n' "$OXPROTO_SHA256" "$tmp_font/0xProto.tar.xz" | sha256sum -c -
+        printf '%s  %s\n' "$OXPROTO_SHA256_XZ" "$tmp_font/0xProto.tar.xz" | sha256sum -c -
         mkdir -p "$font_dir"
         tar -xJf "$tmp_font/0xProto.tar.xz" -C "$font_dir"
         fc-cache -f "$font_dir"

@@ -48,6 +48,29 @@ function ConvertTo-Int32FromHex32 {
         0)
 }
 
+$script:BootstrapDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+
+function Read-VersionsFile {
+    # Parses a KEY="VALUE" versions file (scripts/versions.sh) WITHOUT
+    # executing it. Tolerates CRLF line endings, blank lines, and # comments.
+    # Unknown or malformed lines are an error so a drift never fails silently.
+    param([Parameter(Mandatory)][string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) {
+        throw "versions file not found at '$Path'"
+    }
+    $result = @{}
+    foreach ($line in (Get-Content -LiteralPath $Path)) {
+        $trimmed = $line.Trim()
+        if ($trimmed -eq "" -or $trimmed.StartsWith("#")) { continue }
+        if ($trimmed -match '^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*"([^"]*)"$') {
+            $result[$Matches[1]] = $Matches[2]
+        } else {
+            throw "malformed versions line: '$line'"
+        }
+    }
+    return $result
+}
+
 $script:WingetInstallAcceptableExitCodes = @(
     0,
     (ConvertTo-Int32FromHex32 "8A15010D"),
@@ -177,9 +200,16 @@ function Invoke-BootstrapWindows {
         [scriptblock]$WriteUserPath = { param($value) [Environment]::SetEnvironmentVariable("Path", $value, "User") },
         [switch]$SkipFont,
         [string]$NvimVersionOutput = "",
-        [scriptblock]$Notify = { param($message) Write-Host $message }
+        [scriptblock]$Notify = { param($message) Write-Host $message },
+        [string]$VersionsPath = ""
     )
     if ($null -eq $Packages) { $Packages = $script:DefaultPackages }
+
+    if ($VersionsPath) {
+        $script:Versions = Read-VersionsFile -Path $VersionsPath
+    } else {
+        $script:Versions = Read-VersionsFile -Path (Join-Path $script:BootstrapDir "versions.sh")
+    }
 
     if (-not (& $TestCommand "winget")) {
         throw "winget is required. Install or update Microsoft App Installer first."
@@ -227,9 +257,9 @@ function Invoke-BootstrapWindows {
             $fontTarget = Join-Path $env:LOCALAPPDATA "Microsoft\Windows\Fonts"
             New-Item -ItemType Directory -Force -Path $fontSource, $fontTarget | Out-Null
             try {
-                Invoke-WebRequest "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.0/0xProto.zip" -OutFile $fontArchive
+                Invoke-WebRequest "https://github.com/ryanoasis/nerd-fonts/releases/download/v$($script:Versions.NERD_FONTS_VERSION)/0xProto.zip" -OutFile $fontArchive
                 $fontHash = (Get-FileHash -Path $fontArchive -Algorithm SHA256).Hash.ToLowerInvariant()
-                if ($fontHash -ne "96044c9b041dbe6341a2e8b831259ba8e60f4646e55b721b5f6577505381df1f") {
+                if ($fontHash -ne $script:Versions.OXPROTO_SHA256_ZIP) {
                     throw "0xProto archive checksum mismatch"
                 }
                 Expand-Archive -Path $fontArchive -DestinationPath $fontSource -Force
