@@ -124,10 +124,12 @@ jobs:
           # Production script: full rule set, must be clean.
           $prod = Invoke-ScriptAnalyzer -Path scripts/bootstrap-windows.ps1
           # Test script: fake-executor scriptblocks legitimately ignore their
-          # parameters and Assert-Throws has an intentionally plural noun.
+          # parameters, Assert-Throws has an intentionally plural noun,
+          # Reset-TestState mutates in-memory test state, and test output is
+          # written to the host.
           $test = Invoke-ScriptAnalyzer -Path scripts/test-bootstrap-windows.ps1 `
             -Severity Warning `
-            -ExcludeRule PSUseSingularNouns, PSReviewUnusedParameter
+            -ExcludeRule PSUseSingularNouns, PSReviewUnusedParameter, PSAvoidUsingWriteHost, PSUseShouldProcessForStateChangingFunctions
           $prod | Format-Table -AutoSize
           $test | Format-Table -AutoSize
           if ($prod -or $test) { exit 1 }
