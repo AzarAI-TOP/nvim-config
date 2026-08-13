@@ -55,6 +55,45 @@ local result = vim.system(
 os.remove(probe_file)
 check(result.code == 0, "bootstrap probe failed: " .. tostring(result.stderr))
 
+-- 4. Priority loader probe: each plugin module must be required exactly once
+--    in a fresh instance. The alphabetical pass must not re-queue priority
+--    modules (mini-core/mason/tokyonight).
+local probe = table.concat({
+    "local counts = _G.__loader_counts",
+    "for _, name in ipairs({ 'plugins.mini-core', 'plugins.mason', 'plugins.tokyonight' }) do",
+    "  assert(counts[name] == 1, name .. ' required ' .. tostring(counts[name]) .. ' times')",
+    "end",
+    "io.stdout:write('PRIORITY_LOADER_OK\\n')",
+    "vim.cmd('qa!')",
+}, "\n")
+local probe_file = vim.fn.tempname() .. ".lua"
+vim.fn.writefile(vim.split(probe, "\n", { plain = true }), probe_file)
+local preload = table.concat({
+    "local counts = {}",
+    "_G.__loader_counts = counts",
+    "local orig = require",
+    "_G.require = function(name)",
+    "  counts[name] = (counts[name] or 0) + 1",
+    "  return orig(name)",
+    "end",
+}, "\n")
+local preload_file = vim.fn.tempname() .. ".lua"
+vim.fn.writefile(vim.split(preload, "\n", { plain = true }), preload_file)
+local env = vim.fn.environ()
+env["NVIM_CONFIG_TEST"] = "1"
+env["NVIM_BOOTSTRAP"] = nil
+local result2 = vim.system({
+    vim.fn.exepath("nvim"),
+    "--headless",
+    "-n",
+    "--cmd",
+    "luafile " .. preload_file,
+    "+luafile " .. probe_file,
+}, { env = env, text = true }):wait(60000)
+os.remove(probe_file)
+os.remove(preload_file)
+check(result2.code == 0, "priority loader probe failed: " .. tostring(result2.stderr))
+
 if #failures > 0 then
     io.stderr:write("LIFECYCLE_CHECK_FAILED:\n- " .. table.concat(failures, "\n- ") .. "\n")
     vim.cmd("cquit 1")

@@ -19,11 +19,12 @@ end
 
 local rest = {}
 for name, ftype in vim.fs.dir(dir) do
-    if ftype == "file" and name:match("%.lua$") and name ~= "init.lua" and not loaded[name] then
-        table.insert(rest, name)
+    if ftype == "file" and name:match("%.lua$") and name ~= "init.lua" then
+        local module_name = name:gsub("%.lua$", "")
+        if not loaded[module_name] then table.insert(rest, module_name) end
     end
 end
 table.sort(rest)
 for _, name in ipairs(rest) do
-    require("plugins." .. (name:gsub("%.lua$", "")))
+    require("plugins." .. name)
 end
