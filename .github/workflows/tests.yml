@@ -76,11 +76,13 @@ jobs:
         run: |
           mkdir -p "$RUNNER_TEMP/first-boot/config/nvim" "$RUNNER_TEMP/first-boot/data" "$RUNNER_TEMP/first-boot/state" "$RUNNER_TEMP/first-boot/cache"
           cp -R . "$RUNNER_TEMP/first-boot/config/nvim"
-          echo "XDG_CONFIG_HOME=$RUNNER_TEMP/first-boot/config" >> "$GITHUB_ENV"
-          echo "XDG_DATA_HOME=$RUNNER_TEMP/first-boot/data" >> "$GITHUB_ENV"
-          echo "XDG_STATE_HOME=$RUNNER_TEMP/first-boot/state" >> "$GITHUB_ENV"
-          echo "XDG_CACHE_HOME=$RUNNER_TEMP/first-boot/cache" >> "$GITHUB_ENV"
-          echo "NVIM_TEST_ROOT=$RUNNER_TEMP/first-boot/config/nvim" >> "$GITHUB_ENV"
+          {
+            echo "XDG_CONFIG_HOME=$RUNNER_TEMP/first-boot/config"
+            echo "XDG_DATA_HOME=$RUNNER_TEMP/first-boot/data"
+            echo "XDG_STATE_HOME=$RUNNER_TEMP/first-boot/state"
+            echo "XDG_CACHE_HOME=$RUNNER_TEMP/first-boot/cache"
+            echo "NVIM_TEST_ROOT=$RUNNER_TEMP/first-boot/config/nvim"
+          } >> "$GITHUB_ENV"
 
       - name: Run Linux bootstrap and install all Mason packages
         shell: bash
