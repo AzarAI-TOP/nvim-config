@@ -10,6 +10,8 @@ local tests = {
     "check_formatter_options.lua",
     "check_indent_rules.lua",
     "check_lsp_config.lua",
+    "check_mason_verify.lua",
+    "check_mini_clue.lua",
     "check_neovide_config.lua",
     "check_platform_detection.lua",
     "check_platform_keymaps.lua",

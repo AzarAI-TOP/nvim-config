@@ -1,6 +1,12 @@
 # Run the config suite from a disposable XDG environment.
 
 $ErrorActionPreference = "Stop"
+
+# The ordinary suite must always run in deferred (non-bootstrap) mode. A
+# leaked NVIM_BOOTSTRAP=1 from a bootstrap probe would flip the config into
+# synchronous Mason setup and falsify the lifecycle checks.
+Remove-Item Env:NVIM_BOOTSTRAP -ErrorAction SilentlyContinue
+
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $testId = [guid]::NewGuid().ToString("N").Substring(0, 8)
 $tempRoot = Join-Path ([IO.Path]::GetTempPath()) ("nv-" + $testId)

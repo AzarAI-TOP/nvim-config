@@ -6,8 +6,7 @@
 -- JSON snippet files in the snippets/ directory.
 --
 -- No third-party completion engine (nvim-cmp, blink.cmp) is needed.
--- Markdown is intentionally excluded from snippet/completion scope to
--- preserve typing speed in prose.
+-- Markdown is excluded only from LSP completion; snippets remain available.
 
 vim.pack.add({
     { src = "https://github.com/nvim-mini/mini.snippets" },
@@ -21,11 +20,4 @@ mini_snippets.setup({
     snippets = {
         gen_loader.from_lang(),
     },
-})
-
--- Prose editing should stay completely unaffected by snippet matching.
-vim.api.nvim_create_autocmd("FileType", {
-    group = vim.api.nvim_create_augroup("disable_markdown_snippets", { clear = true }),
-    pattern = "markdown",
-    callback = function(args) vim.b[args.buf].minisnippets_disable = true end,
 })

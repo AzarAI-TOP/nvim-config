@@ -5,9 +5,6 @@ local function check(condition, message)
 end
 
 local conform = require("conform")
-local config_root = vim.fn.stdpath("config")
-local conform_source =
-    table.concat(vim.fn.readfile(vim.fs.joinpath(config_root, "lua", "plugins", "conform.lua")), "\n")
 
 local clang = conform.get_formatter_config("clang-format")
 local shfmt = conform.get_formatter_config("shfmt")
@@ -20,12 +17,18 @@ check(vim.tbl_contains(shfmt.args or {}, "4"), "shfmt must use four spaces")
 check(vim.tbl_contains(isort.args or {}, "--stdout"), "isort must support the pinned Mason version")
 check(not vim.tbl_contains(isort.args or {}, "--line-ending"), "isort must avoid the incompatible line-ending argument")
 check(type(prettierd.cwd) == "function", "prettierd must resolve the project config directory")
-check(
-    type(prettierd.require_cwd) == "boolean" and prettierd.require_cwd,
-    "prettierd must require a project Prettier config"
-)
+check(prettierd.require_cwd == false, "prettierd must fall back to default formatting when project config is absent")
 check(type(java.args) == "table" and java.args[1] == "-", "google-java-format must use Conform's stdin configuration")
-check(conform_source:find('kotlin = { "ktlint" }', 1, true), "Kotlin must use ktlint")
+
+-- Behavioral filetype routing: a Kotlin buffer must resolve to ktlint.
+local kotlin_buf = vim.api.nvim_create_buf(false, true)
+vim.bo[kotlin_buf].filetype = "kotlin"
+local kotlin_formatters = conform.list_formatters_for_buffer(kotlin_buf)
+check(
+    vim.tbl_contains(kotlin_formatters, "ktlint"),
+    "Kotlin buffers must route to ktlint (got: " .. table.concat(kotlin_formatters or {}, ", ") .. ")"
+)
+vim.api.nvim_buf_delete(kotlin_buf, { force = true })
 
 if #failures > 0 then
     io.stderr:write("FORMATTER_OPTIONS_CHECK_FAILED:\n- " .. table.concat(failures, "\n- ") .. "\n")

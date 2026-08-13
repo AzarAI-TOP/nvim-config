@@ -53,10 +53,9 @@ require("conform").setup({
             prepend_args = { "--style=Google" },
         },
         prettierd = {
-            -- Conform locates .prettierrc (or another supported project config)
-            -- and supplies that directory as cwd. Refuse to format without one
-            -- so personal/global defaults never silently rewrite project files.
-            require_cwd = true,
+            -- Prefer project .prettierrc / prettier.config files when present;
+            -- otherwise let prettierd apply Prettier's built-in defaults.
+            require_cwd = false,
         },
     },
 })

@@ -68,19 +68,35 @@ by `lua/config/lsp.lua`.
 - **Native LSP completion + snippets** — Neovim 0.12 completion is enabled
   per attached client with automatic trigger-character support. `mini.snippets`
   loads the local C, C++, and Python collections from `snippets/`; type a prefix
-  and press `<C-j>` to expand, then `<C-l>` / `<C-h>` to move between fields.
-  Markdown disables both completion and snippets to keep prose input immediate.
-- **Two-stage plugin lifecycle** — infrastructure is loaded in a fixed order,
-  then feature modules are loaded deterministically. Mason initialization runs
-  on `User NvimConfigInfrastructureReady`; Tokyo Night prepares on
-  `ColorSchemePre`; TODO comments initialize on the first opened file.
+  and press `<C-j>` to expand, then `<C-l>` / `<C-h>` to move between fields and
+  `<C-c>` to stop the session.
+  Markdown disables LSP completion to keep prose input immediate, while snippet expansion remains available.
+- **Two-stage plugin lifecycle** — phase one registers infrastructure
+  (icons, Mason, Tokyo Night) in a fixed order; phase two loads every remaining
+  feature module in sorted order for cross-platform determinism. Mason's
+  registry-heavy setup is kept out of module loading and out of startup events:
+  module load only prepends `stdpath('data')/mason/bin` to PATH (so native LSP
+  servers resolve before any attach), and the `require("mason").setup()` chain
+  runs exactly once after the interactive startup boundary — scheduled from
+  `VimEnter` via `vim.schedule()` (after all VimEnter callbacks return), which
+  also deletes mason-tool-installer's built-in `mti_start` autocmd so its
+  default-settings auto-check cannot run, then invokes the configured
+  `run_on_start()` exactly once. A core `:Mason*` command invoked before that
+  uses `CmdUndefined` to initialize synchronously before Neovim retries it;
+  pre-registered `:MasonTools*` commands use guarded wrappers that initialize
+  first and then run the requested action. A failed setup is recorded and rethrown by later
+  triggers — never silently retried or double-run. Bootstrap mode
+  (`NVIM_BOOTSTRAP=1`) keeps synchronous setup so `:MasonToolsInstallSync`
+  works. This is an ordering guarantee, not a startup-performance claim.
+  Tokyo Night prepares on `ColorSchemePre`; TODO comments initialize on the
+  first opened file.
 - **Key discovery** — `mini.clue` describes the `<leader>b/c/f/l/p/s/t/w`
   groups without adding a second overlapping which-key UI.
 - **Code formatting** — `conform.nvim` formats on demand (`<leader>lf`). Mason
   installs version-pinned portable formatters automatically; `gofmt` and
   `rustfmt` come from their native Go/Rust toolchains. Java uses
   `google-java-format`, Kotlin uses `ktlint`, shell uses four spaces, C/C++ uses
-  Google Style, and prettierd runs only when the project has Prettier config.
+  Google Style, and prettierd prefers project configuration while falling back to Prettier's built-in defaults when no project configuration exists.
 - **Tree-sitter syntax highlighting** — 22 parsers installed, enabled
   automatically on matching filetypes; falls back to regex otherwise.
 - **Textobjects** — `mini.ai` extends `a`/`i` with function calls, arguments,
@@ -219,6 +235,19 @@ Inside Neovim, run `:checkhealth nvim_config` for platform-specific system-tool,
 clipboard, and toolchain diagnostics. `:checkhealth` provides the full plugin
 and provider report.
 
+The formatter runtime probe is NOT part of the offline suite: it needs a real
+prettierd, which exists only after Mason has installed it (local bootstrap or
+the Linux first-boot CI job). Run it from the repository root:
+
+```sh
+bash scripts/run-formatter-runtime-probe.sh
+```
+
+It must print `FORMATTER_RUNTIME_CHECK_OK`. The deliberate RED variant
+(`NVIM_FORMATTER_RUNTIME_MUTATION=1 bash scripts/run-formatter-runtime-probe.sh`)
+corrupts prettierd in memory and must fail with `FORMATTER_RUNTIME_CHECK_FAILED`;
+the Mason first-boot CI runs both GREEN and deliberate RED paths.
+
 ## Key map groups
 
 Press `<Space>` and continue with a group prefix; `mini.clue` displays the
@@ -245,10 +274,15 @@ buffers.
 - LSP completion opens automatically for server trigger characters. Use
   `<C-Space>`/`<C-x><C-o>` for manual completion and `<C-y>` to accept an item.
 - Snippets: type `main`, `for`, `if`, `def`, etc., then press `<C-j>` to expand.
-  During a snippet session, use `<C-l>` and `<C-h>` to move forward/backward.
+  During a snippet session, use `<C-l>` and `<C-h>` to move forward/backward,
+  and `<C-c>` to stop the session.
 - Snippet files live in `snippets/c.json`, `snippets/cpp.json`, and
-  `snippets/python.json`; they use VS Code/LSP snippet JSON syntax.
-- Markdown intentionally has no LSP completion or snippet expansion.
+  `snippets/python.json`; they use VS Code/LSP snippet JSON syntax. Loaders
+  cache file contents, so after editing a snippet file restart Neovim or run
+  `MiniSnippets.setup(MiniSnippets.config)` to clear the cached loaders.
+- Markdown disables LSP completion to keep prose input immediate, but retains
+  the snippet mechanism and its `<C-j>` mapping. No `markdown.json` snippet
+  file is bundled; add one under `snippets/` to use snippets in Markdown.
 
 ## Future Considerations
 

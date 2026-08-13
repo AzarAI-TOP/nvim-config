@@ -1,6 +1,8 @@
 # Local tool-generated state (not part of the config)
 .codegraph/
 .reasonix/
+.hermes/
+.serena/
 
 # Neovim runtime artifacts
 plugin/

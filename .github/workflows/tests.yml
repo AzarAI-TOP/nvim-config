@@ -96,3 +96,41 @@ jobs:
         run: |
           cd "$NVIM_TEST_ROOT"
           nvim --headless init.lua "+luafile $NVIM_TEST_ROOT/tests/check_first_boot_runtime.lua"
+
+      - name: Run formatter runtime probe (GREEN)
+        shell: bash
+        run: bash "$NVIM_TEST_ROOT/scripts/run-formatter-runtime-probe.sh"
+
+      - name: Prove formatter runtime probe detects a broken command (RED)
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$RUNNER_TEMP/formatter-mutation.log"
+          if NVIM_FORMATTER_RUNTIME_MUTATION=1 bash "$NVIM_TEST_ROOT/scripts/run-formatter-runtime-probe.sh" >"$output" 2>&1; then
+            cat "$output"
+            echo "Formatter mutation unexpectedly passed" >&2
+            exit 1
+          fi
+          cat "$output"
+          grep -F "FORMATTER_RUNTIME_CHECK_FAILED" "$output"
+
+  bootstrap-windows-logic:
+    name: windows-bootstrap-logic
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # Runs only the safe logic tests for scripts/bootstrap-windows.ps1 with
+      # fake native commands. Never runs the destructive full bootstrap.
+      - name: Run safe Windows bootstrap logic tests (PowerShell 7)
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          & "$env:GITHUB_WORKSPACE/scripts/test-bootstrap-windows.ps1"
+
+      - name: Run safe Windows bootstrap logic tests (Windows PowerShell 5.1)
+        shell: powershell
+        run: |
+          $ErrorActionPreference = "Stop"
+          & "$env:GITHUB_WORKSPACE/scripts/test-bootstrap-windows.ps1"

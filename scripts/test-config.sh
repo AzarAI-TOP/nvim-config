@@ -3,6 +3,11 @@
 
 set -euo pipefail
 
+# The ordinary suite must always run in deferred (non-bootstrap) mode. A
+# leaked NVIM_BOOTSTRAP=1 from a bootstrap probe or shell would flip the
+# config into synchronous Mason setup and falsify the lifecycle checks.
+unset NVIM_BOOTSTRAP 2>/dev/null || true
+
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 tmp_dir=$(mktemp -d)
 cleanup() { rm -rf -- "$tmp_dir"; }

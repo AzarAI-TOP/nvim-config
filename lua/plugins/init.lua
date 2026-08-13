@@ -1,7 +1,11 @@
 -- Plugin loader with explicit two-phase loading.
 --
--- Phase 1 — Infrastructure: icons, mason, lspconfig, colorscheme.
---   Must load before any plugin that depends on them.
+-- Phase 1 — Infrastructure: icons, mason, colorscheme.
+--   Registers pack declarations and cheap deferred-setup hooks only. Mason's
+--   registry setup is NOT run here; plugins/mason.lua keeps it after the
+--   interactive startup boundary (scheduled from VimEnter, or synchronously
+--   on a pre-VimEnter :Mason* command via CmdUndefined), with a cheap PATH
+--   prepend of stdpath('data')/mason/bin covering native LSP before attach.
 --
 -- Phase 2 — Features: everything else, sorted for determinism.
 --
@@ -12,7 +16,7 @@
 -- Plugins that must load before any feature plugin.
 local phase_one = {
     "mini-core", -- mini.icons and other core mini.* modules
-    "mason", -- Mason + mason-tool-installer + nvim-lspconfig
+    "mason", -- Mason + mason-tool-installer + nvim-lspconfig (deferred setup)
     "tokyonight", -- Colorscheme (applied immediately to avoid flash)
 }
 
@@ -37,14 +41,6 @@ table.sort(all_modules)
 for _, name in ipairs(phase_one) do
     require("plugins." .. name)
 end
-
--- Infrastructure modules register their deferred setup handlers first. Emitting
--- one explicit event keeps registry-heavy initialization out of module loading
--- while guaranteeing commands are ready before feature modules and user input.
-vim.api.nvim_exec_autocmds("User", {
-    pattern = "NvimConfigInfrastructureReady",
-    modeline = false,
-})
 
 -- Phase 2: load remaining feature plugins, sorted for cross-platform determinism.
 for _, name in ipairs(all_modules) do

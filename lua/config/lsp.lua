@@ -54,22 +54,15 @@ for _, server in ipairs(servers) do
 end
 
 -- Enable native LSP completion per attached client. Markdown is intentionally
--- excluded so prose buffers never pay for completion requests or popups.
-local function enable_completion(args)
-    if vim.bo[args.buf].filetype == "markdown" then return end
-
-    local client = vim.lsp.get_client_by_id(args.data.client_id)
-    if client and client:supports_method("textDocument/completion") then
-        vim.lsp.completion.enable(true, client.id, args.buf, { autotrigger = true })
-    end
-end
+-- excluded so prose buffers never pay for completion requests or popups. The
+-- behavior lives in config/lsp_completion.lua and is covered by behavioral
+-- tests (tests/check_completion.lua).
+local completion = require("config.lsp_completion")
 
 -- LSP keymaps are global on purpose: vim.lsp.buf.* already reports the native
 -- "no client attached" message when invoked in an unattached buffer.
 local function map(mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { desc = desc }) end
-map("i", "<C-Space>", function()
-    if vim.bo.filetype ~= "markdown" then vim.lsp.completion.get() end
-end, "Trigger LSP completion")
+map("i", "<C-Space>", completion.trigger, "Trigger LSP completion")
 map("n", "<leader>ld", vim.lsp.buf.definition, "Go to definition")
 map("n", "<leader>lh", function() vim.lsp.buf.hover({ border = "rounded" }) end, "Hover documentation")
 map("n", "<leader>lr", vim.lsp.buf.references, "Find references")
@@ -78,7 +71,4 @@ map("n", "<leader>la", vim.lsp.buf.code_action, "Code action")
 map("n", "<leader>li", vim.lsp.buf.implementation, "Go to implementation")
 map("n", "<leader>ls", function() vim.lsp.buf.signature_help({ border = "rounded" }) end, "Signature help")
 
-vim.api.nvim_create_autocmd("LspAttach", {
-    group = vim.api.nvim_create_augroup("lsp_completion", { clear = true }),
-    callback = enable_completion,
-})
+completion.register()
