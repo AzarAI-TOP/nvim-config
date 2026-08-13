@@ -1,8 +1,10 @@
--- Tokyo Night 主题，事件范围的 setup。
+-- Tokyo Night colorscheme, event-scoped setup.
 --
--- vim.pack 使配色加载器在第一阶段可用；插件的 Lua setup 只在请求
--- Tokyo Night 配色时执行；随后启动流程正常请求配置的主题。
--- ColorScheme（加载之后）不能作为加载触发器，否则会形成循环依赖。
+-- vim.pack makes the colorscheme loader available in the first phase; the
+-- plugin's Lua setup only runs when the Tokyo Night colorscheme is requested;
+-- the startup flow then requests the configured colorscheme normally.
+-- ColorScheme (after loading) cannot serve as the load trigger — that would
+-- create a circular dependency.
 
 vim.pack.add({
     { src = "https://github.com/folke/tokyonight.nvim" },

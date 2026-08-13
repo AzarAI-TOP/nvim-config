@@ -1,6 +1,6 @@
--- Mason：包管理器、LSP 桥接与工具安装器。
--- 同步 setup：只注册命令 / 界面（不联网）；安装发生在启动之后，
--- 由 mason-tool-installer 配置的 run_on_start 触发。
+-- Mason: package manager, LSP bridge, and tool installer.
+-- Synchronous setup: only registers commands / UI (no network); installation
+-- happens after startup, triggered by mason-tool-installer's run_on_start.
 
 vim.pack.add({
     { src = "https://github.com/williamboman/mason.nvim" },
@@ -9,13 +9,14 @@ vim.pack.add({
     { src = "https://github.com/neovim/nvim-lspconfig" },
 })
 
--- 引导模式关闭自动安装检查：installer 只注册命令与界面，不联网；
--- 引导流程通过 `+MasonToolsInstallSync` 立即完成安装（NVIM_BOOTSTRAP=1）。
+-- Bootstrap mode disables the automatic install check: the installer only
+-- registers commands and UI without touching the network; the bootstrap flow
+-- completes installation right away via `+MasonToolsInstallSync` (NVIM_BOOTSTRAP=1).
 local automated = vim.env.NVIM_BOOTSTRAP == "1"
 
 local ok, err = pcall(function()
     require("mason").setup()
-    -- 激活由 config/lsp.lua 通过 vim.lsp.enable() 负责。
+    -- Activation is handled by config/lsp.lua via vim.lsp.enable().
     require("mason-lspconfig").setup({ automatic_enable = false })
     require("mason-tool-installer").setup({
         ensure_installed = require("config.util").mason_packages,
@@ -25,4 +26,4 @@ local ok, err = pcall(function()
         debounce_hours = 24,
     })
 end)
-if not ok then vim.notify("Mason 初始化失败: " .. tostring(err), vim.log.levels.ERROR, { title = "mason" }) end
+if not ok then vim.notify("Mason init failed: " .. tostring(err), vim.log.levels.ERROR, { title = "mason" }) end

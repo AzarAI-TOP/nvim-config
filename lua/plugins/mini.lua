@@ -1,19 +1,19 @@
--- mini.nvim 生态插件（经 vim.pack），全部集中在这一个文件。
--- 除注明外均使用默认配置。
+-- mini.nvim ecosystem plugins (via vim.pack), all consolidated in this file.
+-- Everything uses default config unless noted otherwise.
 
--- ── 核心 mini.* 插件 ──
+-- ── Core mini.* plugins ──
 local core_plugins = {
-    -- 文本对象 — 扩展内置文本对象 (i) (a)
+    -- Text objects — extends built-in text objects (i) (a)
     "ai",
-    -- 注释切换 — gc（切换）、gcc（当前行）
+    -- Comment toggling — gc (toggle), gcc (current line)
     "comment",
-    -- 图标提供者 — 供 mini.files 等使用的文件 / 目录 / LSP 图标
+    -- Icon provider — file / directory / LSP icons for mini.files and others
     "icons",
-    -- 缩进范围可视化
+    -- Indent scope visualization
     "indentscope",
-    -- 移动行 / 选区 — Alt+↑/↓
+    -- Move lines / selections — Alt+Up/Down
     "move",
-    -- 尾随空白高亮与清理
+    -- Trailing whitespace highlight and cleanup
     "trailspace",
 }
 
@@ -24,8 +24,8 @@ for _, name in ipairs(core_plugins) do
     require("mini." .. name).setup()
 end
 
--- ── 括号导航 ──
--- treesitter 目标禁用：与 todo-comments 的 ]t/[t 冲突
+-- ── Bracket navigation ──
+-- Treesitter targets disabled: conflicts with todo-comments' ]t/[t
 vim.pack.add({
     { src = "https://github.com/nvim-mini/mini.bracketed" },
 })
@@ -34,10 +34,11 @@ require("mini.bracketed").setup({
     treesitter = { suffix = "" },
 })
 
--- ── 键位发现 ──
--- 按下前缀键时在浮动窗口显示可用键位，覆盖本配置的全部 <leader> 分组。
--- 复制到宿主机的 <leader>y / <leader>Y 只在远端（WSL/SSH）注册，
--- 因此只在远端平台作为提示展示。
+-- ── Keymap discovery ──
+-- Shows available keymaps in a floating window when a prefix key is pressed,
+-- covering every <leader> group in this config.
+-- The host-clipboard copies <leader>y / <leader>Y are only registered on remote
+-- platforms (WSL/SSH), so they only appear as hints there.
 vim.pack.add({
     { src = "https://github.com/nvim-mini/mini.clue" },
 })
@@ -45,22 +46,22 @@ vim.pack.add({
 local miniclue = require("mini.clue")
 
 local clue_triggers = {
-    { mode = "n", keys = "<leader>b", desc = "+缓冲区" },
-    { mode = "n", keys = "<leader>c", desc = "+配置" },
-    { mode = "n", keys = "<leader>l", desc = "+语言" },
-    { mode = "n", keys = "<leader>f", desc = "+查找" },
-    { mode = "n", keys = "<leader>w", desc = "+窗口" },
-    { mode = "n", keys = "<leader>t", desc = "+开关" },
-    { mode = "n", keys = "<leader>p", desc = "+包管理" },
-    { mode = "n", keys = "<leader>s", desc = "+分屏" },
-    { mode = "n", keys = "<leader>e", desc = "文件浏览" },
-    { mode = "n", keys = "<leader>nh", desc = "清除搜索高亮" },
-    { mode = "n", keys = "<leader>q", desc = "退出" },
-    { mode = "n", keys = "<leader>Q", desc = "全部退出" },
+    { mode = "n", keys = "<leader>b", desc = "+Buffers" },
+    { mode = "n", keys = "<leader>c", desc = "+Config" },
+    { mode = "n", keys = "<leader>l", desc = "+Language" },
+    { mode = "n", keys = "<leader>f", desc = "+Find" },
+    { mode = "n", keys = "<leader>w", desc = "+Windows" },
+    { mode = "n", keys = "<leader>t", desc = "+Toggles" },
+    { mode = "n", keys = "<leader>p", desc = "+Packages" },
+    { mode = "n", keys = "<leader>s", desc = "+Splits" },
+    { mode = "n", keys = "<leader>e", desc = "File explorer" },
+    { mode = "n", keys = "<leader>nh", desc = "Clear search highlight" },
+    { mode = "n", keys = "<leader>q", desc = "Quit" },
+    { mode = "n", keys = "<leader>Q", desc = "Quit all" },
 }
 if require("config.platform").is_remote then
-    table.insert(clue_triggers, { mode = "n", keys = "<leader>y", desc = "复制到宿主机剪贴板" })
-    table.insert(clue_triggers, { mode = "n", keys = "<leader>Y", desc = "复制整行到宿主机剪贴板" })
+    table.insert(clue_triggers, { mode = "n", keys = "<leader>y", desc = "Copy to host clipboard" })
+    table.insert(clue_triggers, { mode = "n", keys = "<leader>Y", desc = "Copy line to host clipboard" })
 end
 
 miniclue.setup({
@@ -78,24 +79,24 @@ miniclue.setup({
     },
 })
 
--- ── 文件浏览器 ──
--- Miller 列式导航；替代 netrw 成为默认文件浏览器；
--- 可用时自动使用 mini.icons 提供文件图标。
+-- ── File explorer ──
+-- Miller column navigation; replaces netrw as the default file explorer;
+-- automatically uses mini.icons for file icons when available.
 vim.pack.add({
     { src = "https://github.com/nvim-mini/mini.files" },
 })
 
 require("mini.files").setup({
     options = {
-        -- 替代 `:e <目录>` 等场景中的 netrw
+        -- Replace netrw in scenarios like `:e <dir>`
         use_as_default_explorer = true,
     },
     windows = {
-        preview = true, -- 显示光标下文件的预览
+        preview = true, -- show a preview of the file under the cursor
     },
 })
 
--- ── 通知系统 ──
+-- ── Notification system ──
 vim.pack.add({
     { src = "https://github.com/nvim-mini/mini.notify" },
 })
@@ -108,30 +109,32 @@ require("mini.notify").setup({
     },
 })
 
--- ── 补全与片段（mini.snippets） ──
--- 原生 vim.lsp.completion（在 config/lsp.lua 中启用）提供 LSP 驱动的补全；
--- mini.snippets 从 snippets/ 目录的 JSON 片段文件提供片段展开。
--- 不需要第三方补全引擎（nvim-cmp、blink.cmp）。
--- Markdown 只排除 LSP 补全，片段展开仍然可用。
+-- ── Completion and snippets (mini.snippets) ──
+-- Native vim.lsp.completion (enabled in config/lsp.lua) provides LSP-driven
+-- completion; mini.snippets expands snippets from the JSON snippet files in
+-- the snippets/ directory. No third-party completion engine (nvim-cmp,
+-- blink.cmp) is needed. Markdown only excludes LSP completion; snippet
+-- expansion still works there.
 vim.pack.add({
     { src = "https://github.com/nvim-mini/mini.snippets" },
 })
 
 local mini_snippets = require("mini.snippets")
 mini_snippets.setup({
-    -- 从配置目录（runtimepath）解析 snippets/<filetype>.json
+    -- Resolve snippets/<filetype>.json from the config dir (runtimepath)
     snippets = {
         mini_snippets.gen_loader.from_lang(),
     },
 })
 
--- ── 命令 ──
+-- ── Commands ──
 
--- :TrimTrailSpace — 删除尾随空白与尾随空行
--- force=true：config.reload 重跑本文件时可覆盖重建，不会报"命令已存在"。
+-- :TrimTrailSpace — remove trailing whitespace and trailing blank lines
+-- force=true: config.reload re-runs this file and can rebuild it without a
+-- "command already exists" error.
 vim.api.nvim_create_user_command("TrimTrailSpace", function()
     local view = vim.fn.winsaveview()
     require("mini.trailspace").trim()
     require("mini.trailspace").trim_last_lines()
     vim.fn.winrestview(view)
-end, { desc = "删除当前缓冲区的尾随空白和尾随空行", force = true })
+end, { desc = "Trim trailing whitespace and blank lines in the current buffer", force = true })

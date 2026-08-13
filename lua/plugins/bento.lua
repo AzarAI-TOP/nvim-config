@@ -1,4 +1,4 @@
--- 缓冲区管理（bento.nvim，经 vim.pack）
+-- Buffer management (bento.nvim, via vim.pack)
 
 vim.pack.add({
     { src = "https://github.com/serhez/bento.nvim" },

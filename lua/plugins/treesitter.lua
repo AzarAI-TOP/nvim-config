@@ -1,14 +1,15 @@
--- Tree-sitter 语法高亮（经 vim.pack）
+-- Tree-sitter syntax highlighting (via vim.pack)
 --
--- Neovim 内置的 7 个解析器不覆盖 JavaScript 等语言；
--- 缺失的解析器回退到基础正则高亮。
+-- Neovim's built-in 7 parsers don't cover languages like JavaScript;
+-- missing parsers fall back to basic regex highlighting.
 
--- nvim-treesitter 的新 API 在 main 分支（Neovim 0.11+）
+-- nvim-treesitter's new API lives on the main branch (Neovim 0.11+)
 vim.pack.add({
     { src = "https://github.com/nvim-treesitter/nvim-treesitter", version = "main" },
 })
 
--- 要安装的解析器（语言名，非文件类型名）。需要 PATH 上有 C 编译器（cc/gcc）。
+-- Parsers to install (language names, not filetype names). Requires a C
+-- compiler (cc/gcc) on PATH.
 local parsers = {
     "lua",
     "vim",
@@ -21,7 +22,7 @@ local parsers = {
     "css",
     "scss",
     "json",
-    -- "jsonc" 不受支持
+    -- "jsonc" is unsupported
     "yaml",
     "toml",
     "bash",
@@ -35,16 +36,18 @@ local parsers = {
     "java",
 }
 
--- 异步安装 / 更新解析器（已安装的自动跳过）；引导模式跳过
+-- Install / update parsers asynchronously (already installed ones are skipped);
+-- bootstrap mode skips this
 if vim.env.NVIM_BOOTSTRAP ~= "1" then require("nvim-treesitter").install(parsers) end
 
--- 文件类型 → 解析器映射（名称不一致时）
+-- Filetype → parser mapping (when names differ)
 vim.treesitter.language.register("javascript", { "javascriptreact" })
 vim.treesitter.language.register("tsx", { "typescriptreact" })
 vim.treesitter.language.register("bash", { "sh" })
 
--- 按文件类型自动启用 Tree-sitter 高亮：
--- 仅在解析器已安装时激活，否则静默回退到正则高亮。
+-- Enable Tree-sitter highlighting per filetype:
+-- only activates when the parser is installed, otherwise silently falls back
+-- to regex highlighting.
 vim.api.nvim_create_autocmd("FileType", {
     group = vim.api.nvim_create_augroup("treesitter_highlight", { clear = true }),
     callback = function(args)

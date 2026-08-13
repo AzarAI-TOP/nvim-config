@@ -1,11 +1,12 @@
--- 插件加载器。lua/plugins/ 下每个文件声明自己的 vim.pack.add 和 setup；
--- 加一个插件就是加一个文件。少量基础设施插件按优先级先加载，
--- 其余按字母序加载，保证跨平台顺序确定。
+-- Plugin loader. Every file under lua/plugins/ declares its own vim.pack.add
+-- and setup; adding a plugin means adding a file. A few infrastructure plugins
+-- load first by priority, the rest load alphabetically, keeping the order
+-- deterministic across platforms.
 
 local priority = {
-    "mini", -- 全部 mini.* 插件（图标、键位提示等基础设施）
-    "mason", -- 包管理器（同时尽早定义 :MasonTools*）
-    "tokyonight", -- 配色方案（立即应用，避免闪屏）
+    "mini", -- all mini.* plugins (icons, keymap hints, and other infrastructure)
+    "mason", -- package manager (also defines :MasonTools* early)
+    "tokyonight", -- colorscheme (applied immediately to avoid flash)
 }
 
 local dir = vim.fn.stdpath("config") .. "/lua/plugins"
