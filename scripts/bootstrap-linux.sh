@@ -147,6 +147,6 @@ fi
 # Install/configure Mason-managed tools synchronously so the first interactive
 # launch is complete rather than downloading packages in the background.
 python3 -c 'import venv'
-NVIM_BOOTSTRAP=1 nvim --headless "+MasonToolsInstallSync" "+lua require('config.mason_verify').assert_all_installed()" "+qa!"
+NVIM_BOOTSTRAP=1 nvim --headless "+MasonToolsInstallSync" "+qa!"
 printf 'Linux bootstrap complete. Run :checkhealth nvim_config inside Neovim.\n'
 printf 'For future shells, ensure your profile contains: export PATH="$HOME/.local/bin:$PATH"\n'

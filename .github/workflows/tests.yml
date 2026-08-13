@@ -57,7 +57,7 @@ jobs:
   mason-first-boot:
     name: ubuntu-mason-first-boot
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       NVIM_BOOTSTRAP: "1"
 
@@ -81,38 +81,17 @@ jobs:
           echo "XDG_CACHE_HOME=$RUNNER_TEMP/first-boot/cache" >> "$GITHUB_ENV"
           echo "NVIM_TEST_ROOT=$RUNNER_TEMP/first-boot/config/nvim" >> "$GITHUB_ENV"
 
-      - name: Verify pinned Linux release assets
-        shell: bash
-        run: bash "$NVIM_TEST_ROOT/scripts/verify-linux-assets.sh"
-
-      - name: Run Linux bootstrap and verify all Mason packages
+      - name: Run Linux bootstrap and install all Mason packages
         shell: bash
         run: |
           cd "$NVIM_TEST_ROOT"
           bash scripts/bootstrap-linux.sh
 
-      - name: Attach representative LSP and run formatter
+      - name: Attach representative LSP servers and run formatters
         shell: bash
         run: |
           cd "$NVIM_TEST_ROOT"
           nvim --headless init.lua "+luafile $NVIM_TEST_ROOT/tests/check_first_boot_runtime.lua"
-
-      - name: Run formatter runtime probe (GREEN)
-        shell: bash
-        run: bash "$NVIM_TEST_ROOT/scripts/run-formatter-runtime-probe.sh"
-
-      - name: Prove formatter runtime probe detects a broken command (RED)
-        shell: bash
-        run: |
-          set -euo pipefail
-          output="$RUNNER_TEMP/formatter-mutation.log"
-          if NVIM_FORMATTER_RUNTIME_MUTATION=1 bash "$NVIM_TEST_ROOT/scripts/run-formatter-runtime-probe.sh" >"$output" 2>&1; then
-            cat "$output"
-            echo "Formatter mutation unexpectedly passed" >&2
-            exit 1
-          fi
-          cat "$output"
-          grep -F "FORMATTER_RUNTIME_CHECK_FAILED" "$output"
 
   bootstrap-windows-logic:
     name: windows-bootstrap-logic

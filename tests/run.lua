@@ -3,21 +3,13 @@ if vim.env.NVIM_CONFIG_TEST ~= "1" then error("Run tests through scripts/test-co
 vim.g.config_test_runner = true
 
 local tests = {
-    "check_buffer_keymap.lua",
+    "check_startup.lua",
+    "check_platform.lua",
     "check_completion.lua",
-    "check_fixture_mapping.lua",
-    "check_format_keymap.lua",
-    "check_formatter_options.lua",
-    "check_indent_rules.lua",
-    "check_lsp_config.lua",
-    "check_mason_verify.lua",
     "check_mini_clue.lua",
-    "check_neovide_config.lua",
-    "check_platform_detection.lua",
-    "check_platform_keymaps.lua",
-    "check_plugin_lifecycle.lua",
+    "check_formatters.lua",
     "check_tool_inventory.lua",
-    "check_windows_shell.lua",
+    "check_plugin_lifecycle.lua",
 }
 
 local test_dir = vim.fs.joinpath(vim.fn.getcwd(), "tests")

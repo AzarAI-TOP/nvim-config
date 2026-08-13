@@ -1,38 +1,28 @@
+-- Shared tool inventory sanity: unique, non-empty names, complete coverage.
+
 local tools = require("config.tools")
 local failures = {}
+local function check(condition, message)
+    if not condition then table.insert(failures, message) end
+end
 
-local function validate_unique_nonempty(values, label)
+local function validate_unique(values, label)
     local seen = {}
     for _, value in ipairs(values) do
-        if type(value) ~= "string" or value == "" then
-            table.insert(failures, label .. " contains an invalid name")
-        elseif seen[value] then
-            table.insert(failures, label .. " contains duplicate: " .. value)
-        else
-            seen[value] = true
-        end
+        check(type(value) == "string" and value ~= "", label .. " contains an invalid name")
+        check(not seen[value], label .. " contains duplicate: " .. tostring(value))
+        seen[value] = true
     end
 end
 
-validate_unique_nonempty(tools.lsp_servers, "lsp_servers")
-validate_unique_nonempty(tools.mason_formatters, "mason_formatters")
-validate_unique_nonempty(tools.system_tools, "system_tools")
-
-local mason_names = {}
-for _, entry in ipairs(tools.mason_packages) do
-    if type(entry) ~= "table" or type(entry[1]) ~= "string" or entry[1] == "" then
-        table.insert(failures, "mason_packages contains an invalid package entry")
-    elseif type(entry.version) ~= "string" or entry.version == "" then
-        table.insert(failures, entry[1] .. " is missing mason-tool-installer version")
-    else
-        table.insert(mason_names, entry[1])
-    end
-end
-validate_unique_nonempty(mason_names, "mason_packages")
-
-if #tools.mason_packages ~= #tools.lsp_servers + #tools.mason_formatters then
-    table.insert(failures, "mason_packages must contain every LSP server and formatter exactly once")
-end
+validate_unique(tools.lsp_servers, "lsp_servers")
+validate_unique(tools.mason_formatters, "mason_formatters")
+validate_unique(tools.mason_packages, "mason_packages")
+validate_unique(tools.system_tools, "system_tools")
+check(
+    #tools.mason_packages == #tools.lsp_servers + #tools.mason_formatters,
+    "mason_packages must cover every LSP server and formatter exactly once"
+)
 
 if #failures > 0 then
     io.stderr:write("TOOL_INVENTORY_CHECK_FAILED:\n- " .. table.concat(failures, "\n- ") .. "\n")

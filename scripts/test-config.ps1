@@ -2,9 +2,9 @@
 
 $ErrorActionPreference = "Stop"
 
-# The ordinary suite must always run in deferred (non-bootstrap) mode. A
-# leaked NVIM_BOOTSTRAP=1 from a bootstrap probe would flip the config into
-# synchronous Mason setup and falsify the lifecycle checks.
+# The suite runs in test mode (NVIM_CONFIG_TEST=1): Mason setup stays
+# synchronous but the automatic install check is disabled, so headless runs
+# never hit the network.
 Remove-Item Env:NVIM_BOOTSTRAP -ErrorAction SilentlyContinue
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
@@ -19,7 +19,15 @@ try {
     }
 
     $env:XDG_CONFIG_HOME = Join-Path $tempRoot "c"
-    $env:XDG_DATA_HOME = Join-Path $tempRoot "d"
+    # TEST_DATA_HOME reuses a persistent plugin install (vim.pack downloads
+    # all 21 plugins on a fresh data dir, which dominates suite runtime).
+    # The suite never installs Mason packages, so a shared data dir is safe.
+    if ($env:TEST_DATA_HOME) {
+        New-Item -ItemType Directory -Force -Path $env:TEST_DATA_HOME | Out-Null
+        $env:XDG_DATA_HOME = $env:TEST_DATA_HOME
+    } else {
+        $env:XDG_DATA_HOME = Join-Path $tempRoot "d"
+    }
     $env:XDG_STATE_HOME = Join-Path $tempRoot "s"
     $env:XDG_CACHE_HOME = Join-Path $tempRoot "x"
     $env:NVIM_CONFIG_TEST = "1"

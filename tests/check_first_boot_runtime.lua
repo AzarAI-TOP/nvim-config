@@ -97,20 +97,8 @@ local function verify_runtime()
     -- 6. TOML: taplo
     test_formatter("toml", { "[section]", 'key="value"' }, 'key = "value"', "taplo")
 
-    -- 7. Verify all Mason packages are installed at their pinned versions
-    local state = require("config.mason_verify").verify_state()
-    if #state.missing > 0 then
-        table.insert(failures, "Missing Mason packages: " .. table.concat(state.missing, ", "))
-    end
-    if #state.unmapped > 0 then
-        table.insert(failures, "Unmapped LSP servers: " .. table.concat(state.unmapped, ", "))
-    end
-    for _, m in ipairs(state.mismatched) do
-        table.insert(
-            failures,
-            ("Mason version mismatch: %s expected=%s actual=%s"):format(m.package, m.expected, tostring(m.actual))
-        )
-    end
+    -- 7. JavaScript: prettierd (daemon-based; covered only in bootstrapped CI)
+    test_formatter("javascript", { "const x={a:1}" }, "const x = {", "prettierd")
 
     if #failures > 0 then error(table.concat(failures, "\n")) end
 

@@ -1,4 +1,4 @@
-# nvim-config-mini
+# nvim-config
 
 A minimal, pure-Lua Neovim configuration for Windows, Fedora desktop, WSL, and
 Ubuntu servers. Plugins are managed by Neovim's built-in `vim.pack`; LSP servers
@@ -15,45 +15,32 @@ and portable formatters are managed by Mason (requires Neovim 0.12+).
 │   │   ├── keymaps.lua      # key mappings (leader = <Space>)
 │   │   ├── autocmds.lua     # autocommands + per-filetype indent rules
 │   │   ├── lsp.lua          # LSP config (native vim.lsp.config API)
+│   │   ├── lsp_completion.lua  # native LSP completion activation
 │   │   ├── neovide.lua      # shared Windows/Fedora Neovide settings
 │   │   ├── platform.lua     # Windows/Linux/WSL/SSH detection
 │   │   └── tools.lua        # shared LSP/formatter/system-tool inventory
 │   ├── nvim_config/
 │   │   └── health.lua       # :checkhealth nvim_config
-│   ├── lsp/
-│   │   ├── gopls.lua        # Go Language Server config
-│   │   ├── lua_ls.lua       # Lua Language Server config
-│   │   ├── pyright.lua      # Pyright config
-│   │   ├── rust_analyzer.lua # rust-analyzer config
-│   │   └── yamlls.lua       # YAML Language Server config
-│   └── plugins/
-│       ├── init.lua         # auto-loader — requires every other file in this dir
-│       ├── bento.lua        # bento.nvim — buffer manager
-│       ├── conform.lua      # conform.nvim — code formatting
-│       ├── fzf.lua          # fzf-lua — fuzzy finding
-│       ├── mason.lua        # mason + mason-lspconfig plugin declarations
-│       ├── mini-bracketed.lua  # mini.bracketed — bracket navigation
-│       ├── mini-core.lua    # mini.ai / .comment / .icons / .indentscope / .move / .trailspace
-│       ├── mini-files.lua   # mini.files — file explorer
-│       ├── mini-notify.lua  # mini.notify — notification system
-│       ├── todo-comments.lua    # todo-comments.nvim — TODO highlighting
-│       ├── tokyonight.lua   # tokyonight (moon) colorscheme
-│       └── treesitter.lua   # nvim-treesitter — syntax highlighting
+│   ├── lsp/                 # one file per server, auto-loaded by config/lsp.lua
+│   │   └── <server>.lua     # gopls, clangd, pyright, lua_ls, ...
+│   └── plugins/             # one file per plugin: vim.pack.add + setup
+│       ├── init.lua         # loader — priority list, then alphabetical
+│       └── <name>.lua       # mason, tokyonight, fzf, mini-*, conform, ...
 ├── scripts/
 │   ├── bootstrap-linux.sh   # Fedora/Ubuntu/WSL system prerequisites
-│   └── bootstrap-windows.ps1 # Windows system prerequisites
+│   ├── bootstrap-windows.ps1 # Windows system prerequisites
+│   ├── test-config.sh       # headless test suite (bash)
+│   └── test-config.ps1      # headless test suite (PowerShell)
 ├── tests/                   # headless startup/config/platform checks
-├── .githooks/
-│   ├── pre-commit           # auto-format staged Lua files via StyLua
-│   └── README.md
-└── .stylua.toml            # StyLua formatter config
+├── .githooks/pre-commit     # auto-formats staged Lua files via StyLua
+└── .stylua.toml             # StyLua formatter config
 ```
 
 Each file under `lua/plugins/` is self-contained — it carries its own
 `vim.pack.add` alongside its setup — and `lua/plugins/init.lua` loads them all
-automatically. Adding or removing a plugin is just adding or removing one file.
-Per-server LSP configs live in `lua/lsp/<server>.lua` and are auto-loaded
-by `lua/config/lsp.lua`.
+automatically (a short priority list first, then alphabetically). Adding or
+removing a plugin is just adding or removing one file. Per-server LSP configs
+live in `lua/lsp/<server>.lua` and are auto-loaded by `lua/config/lsp.lua`.
 
 ## Highlights
 
@@ -71,32 +58,21 @@ by `lua/config/lsp.lua`.
   and press `<C-j>` to expand, then `<C-l>` / `<C-h>` to move between fields and
   `<C-c>` to stop the session.
   Markdown disables LSP completion to keep prose input immediate, while snippet expansion remains available.
-- **Two-stage plugin lifecycle** — phase one registers infrastructure
-  (icons, Mason, Tokyo Night) in a fixed order; phase two loads every remaining
-  feature module in sorted order for cross-platform determinism. Mason's
-  registry-heavy setup is kept out of module loading and out of startup events:
-  module load only prepends `stdpath('data')/mason/bin` to PATH (so native LSP
-  servers resolve before any attach), and the `require("mason").setup()` chain
-  runs exactly once after the interactive startup boundary — scheduled from
-  `VimEnter` via `vim.schedule()` (after all VimEnter callbacks return), which
-  also deletes mason-tool-installer's built-in `mti_start` autocmd so its
-  default-settings auto-check cannot run, then invokes the configured
-  `run_on_start()` exactly once. A core `:Mason*` command invoked before that
-  uses `CmdUndefined` to initialize synchronously before Neovim retries it;
-  pre-registered `:MasonTools*` commands use guarded wrappers that initialize
-  first and then run the requested action. A failed setup is recorded and rethrown by later
-  triggers — never silently retried or double-run. Bootstrap mode
-  (`NVIM_BOOTSTRAP=1`) keeps synchronous setup so `:MasonToolsInstallSync`
-  works. This is an ordering guarantee, not a startup-performance claim.
-  Tokyo Night prepares on `ColorSchemePre`; TODO comments initialize on the
-  first opened file.
+- **Simple plugin lifecycle** — every plugin registers its own
+  `vim.pack.add` and setup; Mason sets up synchronously at startup (registry
+  and command registration only — tool installs happen after startup via the
+  configured `run_on_start`). Bootstrap mode (`NVIM_BOOTSTRAP=1`) keeps the
+  automatic check disabled so `+MasonToolsInstallSync` runs eagerly and
+  headless runs never hit the network. Tokyo Night prepares on
+  `ColorSchemePre`; TODO comments initialize on the first opened file.
 - **Key discovery** — `mini.clue` describes the `<leader>b/c/f/l/p/s/t/w`
   groups without adding a second overlapping which-key UI.
 - **Code formatting** — `conform.nvim` formats on demand (`<leader>lf`). Mason
-  installs version-pinned portable formatters automatically; `gofmt` and
-  `rustfmt` come from their native Go/Rust toolchains. Java uses
-  `google-java-format`, Kotlin uses `ktlint`, shell uses four spaces, C/C++ uses
-  Google Style, and prettierd prefers project configuration while falling back to Prettier's built-in defaults when no project configuration exists.
+  installs portable formatters automatically; `gofmt` and `rustfmt` come from
+  their native Go/Rust toolchains. Java uses `google-java-format`, Kotlin uses
+  `ktlint`, shell uses four spaces, C/C++ uses Google Style, and prettierd
+  prefers project configuration while falling back to Prettier's built-in
+  defaults when no project configuration exists.
 - **Tree-sitter syntax highlighting** — 22 parsers installed, enabled
   automatically on matching filetypes; falls back to regex otherwise.
 - **Textobjects** — `mini.ai` extends `a`/`i` with function calls, arguments,
@@ -231,22 +207,23 @@ On Windows PowerShell:
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\test-config.ps1
 ```
 
+Set `TEST_DATA_HOME` to a persistent directory to reuse the already-downloaded
+plugin install across runs (a fresh data dir makes `vim.pack` download all 21
+plugins every time):
+
+```sh
+TEST_DATA_HOME="$HOME/.cache/nvim-config-test-data" bash scripts/test-config.sh
+```
+
 Inside Neovim, run `:checkhealth nvim_config` for platform-specific system-tool,
 clipboard, and toolchain diagnostics. `:checkhealth` provides the full plugin
 and provider report.
 
-The formatter runtime probe is NOT part of the offline suite: it needs a real
-prettierd, which exists only after Mason has installed it (local bootstrap or
-the Linux first-boot CI job). Run it from the repository root:
-
-```sh
-bash scripts/run-formatter-runtime-probe.sh
-```
-
-It must print `FORMATTER_RUNTIME_CHECK_OK`. The deliberate RED variant
-(`NVIM_FORMATTER_RUNTIME_MUTATION=1 bash scripts/run-formatter-runtime-probe.sh`)
-corrupts prettierd in memory and must fail with `FORMATTER_RUNTIME_CHECK_FAILED`;
-the Mason first-boot CI runs both GREEN and deliberate RED paths.
+The `ubuntu-mason-first-boot` CI job additionally runs a real bootstrap in a
+disposable environment, attaches representative LSP servers (lua_ls, pyright,
+clangd, bashls), and executes every configured formatter against fixture
+content — the same checks run locally by
+`tests/check_first_boot_runtime.lua` after a bootstrap.
 
 ## Key map groups
 
@@ -266,7 +243,7 @@ available actions after a short delay.
 
 Diagnostics deliberately use only `]d` and `[d` for next/previous navigation;
 there are no duplicate `<leader>ln` / `<leader>lp` aliases. LSP actions are
-global and use Neovim's built-in “no client attached” feedback outside LSP
+global and use Neovim's built-in "no client attached" feedback outside LSP
 buffers.
 
 ## Completion and snippets

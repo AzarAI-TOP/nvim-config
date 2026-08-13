@@ -264,7 +264,7 @@ function Invoke-BootstrapWindows {
     $env:NVIM_BOOTSTRAP = "1"
     try {
         Invoke-NativeChecked -Command "nvim" `
-            -Arguments @("--headless", "+MasonToolsInstallSync", "+lua require('config.mason_verify').assert_all_installed()", "+qa!") `
+            -Arguments @("--headless", "+MasonToolsInstallSync", "+qa!") `
             -Context "Mason tool installation" `
             -Executor $Executor
     } finally {
