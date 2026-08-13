@@ -118,7 +118,8 @@ map("n", "<leader>so", ":only<CR>", "Close other splits")
 -- =============================================
 -- <leader>t — toggle
 -- =============================================
-map("n", "<leader>tp", ":set paste!<CR>", "Toggle paste mode")
+-- No paste-mode toggle: 'paste' is undocumented in Neovim 0.12+ docs and
+-- bracketed paste handles pasting automatically.
 map("n", "<leader>tw", ":set wrap!<CR>", "Toggle wrap")
 
 -- =============================================

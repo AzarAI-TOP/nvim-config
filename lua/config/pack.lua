@@ -24,17 +24,16 @@ local function list_plugins()
     fzf.fzf_exec(M.entries(), { prompt = "Plugins> " })
 end
 
--- vim.pack.update() is asynchronous; force=true applies updates directly
--- instead of opening its interactive confirmation buffer. Its built-in
--- progress and feedback notifications report the result.
+-- Follows the official vim.pack update workflow (:help pack-update):
+-- downloads updates and opens a confirmation buffer in a separate tabpage —
+-- review the changes, :write to apply them, :quit to discard, optionally
+-- :restart to load updated plugin code.
 vim.api.nvim_create_user_command("PackUpdate", function()
-    local ok, err = pcall(vim.pack.update, nil, { force = true })
-    if ok then
-        vim.notify("插件更新已启动（vim.pack 后台执行）", vim.log.levels.INFO)
-    else
+    local ok, err = pcall(vim.pack.update)
+    if not ok then
         vim.notify("插件更新失败: " .. tostring(err), vim.log.levels.ERROR, { title = "PackUpdate" })
     end
-end, { desc = "Update all vim.pack plugins", nargs = 0 })
+end, { desc = "Update vim.pack plugins (review buffer)", nargs = 0 })
 
 vim.api.nvim_create_user_command("PackList", list_plugins, { desc = "List vim.pack plugins", nargs = 0 })
 
