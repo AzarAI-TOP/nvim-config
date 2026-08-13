@@ -26,7 +26,7 @@ and portable formatters are managed by Mason (requires Neovim 0.12+).
 │   │   └── health.lua      # :checkhealth nvim_config
 │   └── plugins/            # one file per plugin: vim.pack.add + setup
 │       ├── init.lua        # loader — priority list, then alphabetical
-│       └── <name>.lua      # mason, tokyonight, fzf, mini-*, conform, ...
+│       └── <name>.lua      # mason, tokyonight, fzf, mini, conform, ...
 ├── scripts/
 │   ├── bootstrap-linux.sh  # Fedora/Ubuntu/WSL system prerequisites
 │   └── bootstrap-windows.ps1 # Windows system prerequisites

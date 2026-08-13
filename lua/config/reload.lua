@@ -21,7 +21,7 @@ local CORE = {
 
 -- 可安全重跑的插件模块（用于刷新依赖上述配置的状态）。
 -- mini.clue 的触发项依赖已注册的按键。
-local RERUN_PLUGIN = { "plugins.mini-clue" }
+local RERUN_PLUGIN = { "plugins.mini" }
 
 local OWNED_COMMANDS = { "PackUpdate", "PackList" }
 
@@ -31,6 +31,10 @@ local function clear_owned_modules()
         if name ~= "config.util" and name ~= "config.reload" then
             if name:match("^config%.") then package.loaded[name] = nil end
         end
+    end
+    -- RERUN_PLUGIN 也要清掉，否则 re-require 命中缓存，setup 不会真正重跑。
+    for _, name in ipairs(RERUN_PLUGIN) do
+        package.loaded[name] = nil
     end
 end
 

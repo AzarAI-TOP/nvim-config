@@ -3,7 +3,7 @@
 -- 其余按字母序加载，保证跨平台顺序确定。
 
 local priority = {
-    "mini-core", -- 图标等核心 mini.* 模块
+    "mini", -- 全部 mini.* 插件（图标、键位提示等基础设施）
     "mason", -- 包管理器（同时尽早定义 :MasonTools*）
     "tokyonight", -- 配色方案（立即应用，避免闪屏）
 }
