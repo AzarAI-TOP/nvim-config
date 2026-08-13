@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   test:
@@ -113,3 +114,86 @@ jobs:
         run: |
           $ErrorActionPreference = "Stop"
           & "$env:GITHUB_WORKSPACE/scripts/test-bootstrap-windows.ps1"
+
+      - name: PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Install-Module PSScriptAnalyzer -Force -Scope CurrentUser
+          # Production script: full rule set, must be clean.
+          $prod = Invoke-ScriptAnalyzer -Path scripts/bootstrap-windows.ps1
+          # Test script: fake-executor scriptblocks legitimately ignore their
+          # parameters and Assert-Throws has an intentionally plural noun.
+          $test = Invoke-ScriptAnalyzer -Path scripts/test-bootstrap-windows.ps1 `
+            -Severity Warning `
+            -ExcludeRule PSUseSingularNouns, PSReviewUnusedParameter
+          $prod | Format-Table -AutoSize
+          $test | Format-Table -AutoSize
+          if ($prod -or $test) { exit 1 }
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # Official StyLua action. Tag v4 instead of a SHA pin: the pinning SHA
+      # could not be resolved at authoring time — resolve at the next pass.
+      - uses: JohnnyMorganz/stylua-action@v4
+        with:
+          args: --check .
+
+      - name: Bash syntax, diff check, version drift
+        run: |
+          bash -n scripts/*.sh .githooks/pre-commit
+          git diff --check
+          wf_version=$(grep -oP 'version: v\K[0-9.]+' .github/workflows/tests.yml | sort -u | head -1)
+          sh_version=$(grep -oP '^NVIM_VERSION="\K[0-9.]+' scripts/versions.sh)
+          test "$wf_version" = "$sh_version" || {
+            echo "workflow nvim version ($wf_version) != versions.sh ($sh_version)"; exit 1; }
+
+      - name: ShellCheck
+        run: |
+          sudo apt-get update && sudo apt-get install -y shellcheck
+          shellcheck -x scripts/*.sh .githooks/pre-commit
+
+  windows-first-boot:
+    # Manual (workflow_dispatch) integration channel: a real Windows first
+    # boot without the expensive winget system installs. Validates Mason
+    # package installation and the full first-boot runtime checks on native
+    # Windows (shims, .CMD resolution, PATH).
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      NVIM_BOOTSTRAP: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - uses: rhysd/action-setup-vim@febef33995d6649302e9d88dda81e071b68f16a7 # v1
+        with:
+          neovim: true
+          version: v0.12.4
+
+      - name: Ensure rustfmt component (runner toolchain may lack it)
+        run: rustup component add rustfmt
+
+      - name: Prepare disposable XDG environment
+        shell: bash
+        run: |
+          mkdir -p "$RUNNER_TEMP/cfg/nvim"
+          cp -R . "$RUNNER_TEMP/cfg/nvim"
+          {
+            echo "XDG_CONFIG_HOME=$RUNNER_TEMP/cfg"
+            echo "XDG_DATA_HOME=$RUNNER_TEMP/data"
+            echo "XDG_STATE_HOME=$RUNNER_TEMP/state"
+            echo "XDG_CACHE_HOME=$RUNNER_TEMP/cache"
+            echo "NVIM_TEST_ROOT=$RUNNER_TEMP/cfg/nvim"
+          } >> "$GITHUB_ENV"
+
+      - name: Install Mason packages (synchronous)
+        run: |
+          cd "$NVIM_TEST_ROOT"
+          nvim --headless "+MasonToolsInstallSync" "+qa!"
+
+      - name: First-boot runtime checks
+        run: |
+          cd "$NVIM_TEST_ROOT"
+          nvim --headless init.lua "+luafile tests/check_first_boot_runtime.lua"

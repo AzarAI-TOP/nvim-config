@@ -105,6 +105,7 @@ function New-NeovideShortcut {
     # Creates the documented Ctrl+Alt+N Start Menu launcher for Neovide.
     # The COM factory is injectable so logic tests never touch the real
     # Start Menu or registry.
+    [CmdletBinding(SupportsShouldProcess)]
     param(
         [string]$TargetPath = "C:\Program Files\Neovide\neovide.exe",
         [string]$ShortcutPath = "",
@@ -120,6 +121,9 @@ function New-NeovideShortcut {
     }
     if ($null -eq $ShortcutFactory) {
         $ShortcutFactory = $script:DefaultShortcutFactory
+    }
+    if (-not $PSCmdlet.ShouldProcess($ShortcutPath, "create Neovide shortcut with hotkey $Hotkey")) {
+        return $null
     }
     return & $ShortcutFactory $ShortcutPath $TargetPath $Hotkey
 }
@@ -253,7 +257,7 @@ function Invoke-BootstrapWindows {
         [scriptblock]$WriteUserPath = { param($value) [Environment]::SetEnvironmentVariable("Path", $value, "User") },
         [switch]$SkipFont,
         [string]$NvimVersionOutput = "",
-        [scriptblock]$Notify = { param($message) Write-Host $message },
+        [scriptblock]$Notify = { param($message) Write-Output $message },
         [string]$VersionsPath = "",
         [scriptblock]$ShortcutFactory = $null
     )
