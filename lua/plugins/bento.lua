@@ -5,7 +5,7 @@ vim.pack.add({
 })
 
 require("bento").setup({
-    main_keymap = "<leader>bb",
+    main_keymap = ";",
 
     ui = {
         mode = "floating",

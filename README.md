@@ -45,7 +45,7 @@ display, native completion activation, and the LSP keymaps.
   Neovim's built-in `vim.pack`; update with `:PackUpdate` (opens the official
   vim.pack review buffer — `:write` applies, `:quit` discards), list them with
   `:PackList`.
-- **Buffer manager** — `bento.nvim` (`<leader>bb`) provides a floating buffer switcher
+- **Buffer manager** — `bento.nvim` (`;`) provides a floating buffer switcher
   with actions (open, delete, split, lock).
 - **File explorer** — `mini.files` uses Miller columns for navigating and
   manipulating the file system. Replaces netrw by default.
@@ -64,8 +64,8 @@ display, native completion activation, and the LSP keymaps.
   automatic check disabled so `+MasonToolsInstallSync` runs eagerly and
   headless runs never hit the network. Tokyo Night prepares on
   `ColorSchemePre`; TODO comments initialize on the first opened file.
-- **Key discovery** — `mini.clue` describes the `<leader>b/c/f/l/p/s/t/w`
-  groups without adding a second overlapping which-key UI.
+- **Key discovery** — `mini.clue` acts as a lightweight which-key for
+  `<leader>`, `[` and `]`, without adding a second overlapping hint UI.
 - **Code formatting** — `conform.nvim` formats on demand (`<leader>lf`). Mason
   installs portable formatters automatically; `gofmt` and `rustfmt` come from
   their native Go/Rust toolchains. Java uses `google-java-format`, Kotlin uses
@@ -78,7 +78,8 @@ display, native completion activation, and the LSP keymaps.
 - **Textobjects** — `mini.ai` extends `a`/`i` with function calls, arguments,
   tags, and more. Supports consecutive expansion (`in` → `in` → ...).
 - **Bracket navigation** — `mini.bracketed` provides `]`/`[` mappings for
-  diagnostics, indentation, comments, quickfix, buffers, windows, and more.
+  diagnostics, indentation, comments, quickfix, buffers, windows, and more;
+  pausing after either prefix displays the available targets through `mini.clue`.
 - **Comment toggling** — `mini.comment` via `gc` / `gcc` / `<C-/>`.
 - **Leader = `<Space>`**, with mappings grouped by mnemonic prefix:
   `<leader>b` buffer, `<leader>c` config, `<leader>l` language (format),
@@ -221,15 +222,16 @@ missing afterwards, `:checkhealth` names the tool and the fix.
 
 ## Key map groups
 
-Press `<Space>` and continue with a group prefix; `mini.clue` displays the
-available actions after a short delay.
+Press `<Space>`, `[` or `]`; `mini.clue` displays the available groups and
+actions after a short delay. Existing mapping descriptions provide action hints,
+while explicit clues label the mnemonic `<leader>` groups below.
 
 | Prefix | Group | Examples |
 |--------|-------|----------|
 | `<leader>p` | Package management | `pm` Mason UI / `pu` plugin update / `pU` Mason tools update / `pp` plugin list / `pi` install |
 | `<leader>s` | Splits | create/close/keep split |
 | `<leader>f` | Find | files/config/registers/help/TODO |
-| `<leader>b` | Buffers | next/previous/delete/bento |
+| `<leader>b` | Buffers | next/previous/delete (`;` opens bento directly) |
 | `<leader>l` | Languages | format/LSP/diagnostic details |
 | `<leader>c` | Config | edit/reload config |
 | `<leader>t` | Toggles | wrap |
@@ -261,7 +263,7 @@ These upstream changes may affect this config in the near future:
 
 - **bento.nvim v2** — A `feat/v2` branch with a fully refactored API
   (explicit action/key registration via `require("bento.api")`) is planned for
-  merge to `main` around **July 2026**. The current `setup({ main_keymap = "<leader>bb" })`
+  merge to `main` around **July 2026**. The current `setup({ main_keymap = ";" })`
   config will need updating when that lands.
 - **nvim-treesitter archived** — The repository was archived on 2026-04-03 and
   is no longer actively developed. The current `main`-branch API works correctly

@@ -36,9 +36,8 @@ require("mini.bracketed").setup({
 
 -- ── Keymap discovery ──
 -- Shows available keymaps in a floating window when a prefix key is pressed,
--- covering every <leader> group in this config.
--- The host-clipboard copies <leader>y / <leader>Y are only registered on remote
--- platforms (WSL/SSH), so they only appear as hints there.
+-- using root triggers like which-key. Existing mapping descriptions supply
+-- action hints; only virtual <leader> groups need explicit clues.
 vim.pack.add({
     { src = "https://github.com/nvim-mini/mini.clue" },
 })
@@ -46,30 +45,26 @@ vim.pack.add({
 local miniclue = require("mini.clue")
 
 local clue_triggers = {
-    { mode = "n", keys = "<leader>b", desc = "+Buffers" },
-    { mode = "n", keys = "<leader>c", desc = "+Config" },
-    { mode = "n", keys = "<leader>l", desc = "+Language" },
-    { mode = "n", keys = "<leader>f", desc = "+Find" },
-    { mode = "n", keys = "<leader>w", desc = "+Windows" },
-    { mode = "n", keys = "<leader>t", desc = "+Toggles" },
-    { mode = "n", keys = "<leader>p", desc = "+Packages" },
-    { mode = "n", keys = "<leader>s", desc = "+Splits" },
-    { mode = "n", keys = "<leader>e", desc = "File explorer" },
-    { mode = "n", keys = "<leader>nh", desc = "Clear search highlight" },
-    { mode = "n", keys = "<leader>q", desc = "Quit" },
-    { mode = "n", keys = "<leader>Q", desc = "Quit all" },
+    { mode = "n", keys = "<Leader>" },
+    { mode = "n", keys = "[" },
+    { mode = "n", keys = "]" },
 }
-if require("config.platform").is_remote then
-    table.insert(clue_triggers, { mode = "n", keys = "<leader>y", desc = "Copy to host clipboard" })
-    table.insert(clue_triggers, { mode = "n", keys = "<leader>Y", desc = "Copy line to host clipboard" })
-end
+
+local clues = {
+    { mode = "n", keys = "<Leader>b", desc = "+Buffers" },
+    { mode = "n", keys = "<Leader>c", desc = "+Config" },
+    { mode = "n", keys = "<Leader>f", desc = "+Find" },
+    { mode = "n", keys = "<Leader>l", desc = "+Language" },
+    { mode = "n", keys = "<Leader>p", desc = "+Packages" },
+    { mode = "n", keys = "<Leader>s", desc = "+Splits" },
+    { mode = "n", keys = "<Leader>t", desc = "+Toggles" },
+    { mode = "n", keys = "<Leader>w", desc = "+Windows" },
+    miniclue.gen_clues.square_brackets(),
+}
 
 miniclue.setup({
     triggers = clue_triggers,
-
-    clues = {
-        miniclue.gen_clues.builtin_completion(),
-    },
+    clues = clues,
 
     window = {
         delay = 300,
