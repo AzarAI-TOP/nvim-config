@@ -12,6 +12,7 @@ local tests = {
     "check_tool_inventory.lua",
     "check_pack_commands.lua",
     "check_plugin_lifecycle.lua",
+    "check_reload.lua",
 }
 
 local test_dir = vim.fs.joinpath(vim.fn.getcwd(), "tests")

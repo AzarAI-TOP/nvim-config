@@ -18,6 +18,7 @@
 local function map(mode, lhs, rhs, desc, opts)
     opts = vim.tbl_extend("force", { desc = desc }, opts or {})
     vim.keymap.set(mode, lhs, rhs, opts)
+    require("config.keymaps_registry").register(mode, lhs)
 end
 
 local platform = require("config.platform")
@@ -48,7 +49,7 @@ map("n", "<leader>bp", ":bprevious<CR>", "Previous buffer")
 -- <leader>c — config
 -- =============================================
 map("n", "<leader>ce", ":vsplit $MYVIMRC<CR>", "Edit config")
-map("n", "<leader>cr", ":source $MYVIMRC<CR>", "Reload config")
+map("n", "<leader>cr", function() require("config.reload").reload() end, "Reload config")
 
 -- =============================================
 -- <leader>l — language (format / LSP)

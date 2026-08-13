@@ -61,7 +61,10 @@ local completion = require("config.lsp_completion")
 
 -- LSP keymaps are global on purpose: vim.lsp.buf.* already reports the native
 -- "no client attached" message when invoked in an unattached buffer.
-local function map(mode, lhs, rhs, desc) vim.keymap.set(mode, lhs, rhs, { desc = desc }) end
+local function map(mode, lhs, rhs, desc)
+    vim.keymap.set(mode, lhs, rhs, { desc = desc })
+    require("config.keymaps_registry").register(mode, lhs)
+end
 map("i", "<C-Space>", completion.trigger, "Trigger LSP completion")
 map("n", "<leader>ld", vim.lsp.buf.definition, "Go to definition")
 map("n", "<leader>lh", function() vim.lsp.buf.hover({ border = "rounded" }) end, "Hover documentation")
