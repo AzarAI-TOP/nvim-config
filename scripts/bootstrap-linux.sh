@@ -149,6 +149,6 @@ fi
 # 而不是在后台下载包。
 python3 -c 'import venv'
 NVIM_BOOTSTRAP=1 nvim --headless "+MasonToolsInstallSync" "+qa!"
-printf 'Linux 引导完成。在 Neovim 中运行 :checkhealth nvim_config。\n'
+printf 'Linux 引导完成。在 Neovim 中运行 :checkhealth 检查环境。\n'
 # shellcheck disable=SC2016 # $HOME/$PATH 文本是字面建议，不是展开
 printf '让未来的 shell 生效，请确保 profile 包含：export PATH="$HOME/.local/bin:$PATH"\n'

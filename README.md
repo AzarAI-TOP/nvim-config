@@ -22,8 +22,6 @@ and portable formatters are managed by Mason (requires Neovim 0.12+).
 │   │   ├── platform.lua    # Windows/Linux/WSL/SSH detection
 │   │   ├── pack.lua        # :PackUpdate / :PackList user commands
 │   │   └── reload.lua      # hot-reload of the core config layer
-│   ├── nvim_config/
-│   │   └── health.lua      # :checkhealth nvim_config
 │   └── plugins/            # one file per plugin: vim.pack.add + setup
 │       ├── init.lua        # loader — priority list, then alphabetical
 │       └── <name>.lua      # mason, tokyonight, fzf, mini, conform, ...
@@ -211,8 +209,7 @@ This config ships no automated test suite — verify by using the editor and
 checking its built-in diagnostics:
 
 ```vim
-:checkhealth nvim_config   " platform, system tools, Mason LSPs, formatters, clipboard
-:checkhealth               " full plugin and provider report
+:checkhealth               " full plugin/provider/Mason/toolchain report
 :MasonToolsInstallSync     " (re)install all Mason-managed LSP servers and formatters
 :Mason                     " inspect package state in the Mason UI
 :PackUpdate                " update plugins via the vim.pack review buffer
@@ -220,7 +217,7 @@ checking its built-in diagnostics:
 
 The bootstrap scripts install every dependency they declare and fail fast on
 any unacceptable exit code (winget, dnf, apt, curl checksums). If something is
-missing afterwards, `:checkhealth nvim_config` names the tool and the fix.
+missing afterwards, `:checkhealth` names the tool and the fix.
 
 ## Key map groups
 

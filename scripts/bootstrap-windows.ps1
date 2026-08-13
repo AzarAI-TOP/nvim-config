@@ -359,7 +359,7 @@ function Invoke-BootstrapWindows {
         $env:NVIM_BOOTSTRAP = $null
     }
 
-    & $Notify "Windows 引导完成。在 Neovim 中运行 :checkhealth nvim_config。"
+    & $Notify "Windows 引导完成。在 Neovim 中运行 :checkhealth 检查环境。"
 }
 
 if ($MyInvocation.InvocationName -ne ".") {
