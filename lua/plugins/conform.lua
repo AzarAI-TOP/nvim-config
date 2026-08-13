@@ -49,8 +49,9 @@ require("conform").setup({
             args = { "--stdout", "--filename", "$FILENAME", "-" },
         },
         ["clang-format"] = {
-            -- Google Style: 2-space indent, 80-col, specific bracket placement.
-            prepend_args = { "--style=Google" },
+            -- Project .clang-format wins when present; Google Style only as
+            -- fallback for files outside any configured project.
+            prepend_args = { "--fallback-style=Google" },
         },
         prettierd = {
             -- Prefer project .prettierrc / prettier.config files when present;

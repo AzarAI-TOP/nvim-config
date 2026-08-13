@@ -14,7 +14,10 @@ local isort = conform.get_formatter_config("isort")
 local prettierd = conform.get_formatter_config("prettierd")
 local java = conform.get_formatter_config("google-java-format")
 
-check(vim.tbl_contains(clang.prepend_args or {}, "--style=Google"), "clang-format must use Google Style")
+check(
+    vim.tbl_contains(clang.prepend_args or {}, "--fallback-style=Google"),
+    "clang-format must prefer project config with Google fallback"
+)
 check(vim.tbl_contains(shfmt.args or {}, "4"), "shfmt must use four spaces")
 check(vim.tbl_contains(isort.args or {}, "--stdout"), "isort must support the pinned Mason version")
 check(type(prettierd.cwd) == "function", "prettierd must resolve the project config directory")
