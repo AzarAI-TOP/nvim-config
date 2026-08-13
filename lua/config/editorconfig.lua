@@ -1,7 +1,9 @@
--- Thin wrapper around the runtime editorconfig module (Neovim 0.12 ships
--- require('editorconfig') with full property/glob support but no longer wires
--- it to buffer events itself). Project .editorconfig values take precedence
--- over the per-filetype indent defaults in config/autocmds.lua.
+-- Helpers around the runtime editorconfig integration. Neovim 0.12 wires
+-- require('editorconfig') itself via plugin/editorconfig.lua (BufNewFile /
+-- BufRead / BufFilePost, enabled by default), so this module deliberately
+-- does NOT register its own application autocmd — that would double-apply
+-- and re-register BufWritePre autocmds for trim_trailing_whitespace /
+-- insert_final_newline on every event.
 
 local M = {}
 
@@ -14,35 +16,33 @@ function M.has_indent(bufnr)
     return applied.indent_style ~= nil or applied.indent_size ~= nil or applied.tab_width ~= nil
 end
 
----Re-apply the resolved .editorconfig values for a buffer (idempotent).
----Used when a late FileType event lets runtime ftplugin/indent files
----overwrite the project values.
+---Re-assert the applied indent options after a late FileType event lets
+---runtime ftplugin/indent handlers overwrite them. Mirrors the official
+---property functions but writes buffer options only — it intentionally does
+---NOT re-run editorconfig.config(), which would re-register write-autocmds.
 ---@param bufnr integer
-function M.reapply(bufnr)
-    local ok, editorconfig = pcall(require, "editorconfig")
-    if not ok then return end
-    pcall(editorconfig.config, bufnr)
-end
-
----Apply .editorconfig properties on buffer read/create. The runtime module
----walks parent directories, honors root=true, and supports the full glob
----syntax; it stores the applied properties in b:editorconfig.
-function M.setup()
-    vim.api.nvim_create_autocmd({ "BufRead", "BufNewFile" }, {
-        group = vim.api.nvim_create_augroup("nvim_config_editorconfig", { clear = true }),
-        callback = function(args)
-            local ok, editorconfig = pcall(require, "editorconfig")
-            if not ok then return end
-            local ok2, err = pcall(editorconfig.config, args.buf)
-            if not ok2 then
-                vim.notify(
-                    "editorconfig 应用失败: " .. tostring(err),
-                    vim.log.levels.WARN,
-                    { title = "editorconfig" }
-                )
-            end
-        end,
-    })
+function M.reapply_indent(bufnr)
+    local applied = vim.b[bufnr].editorconfig
+    if type(applied) ~= "table" then return end
+    if applied.indent_style ~= nil then
+        vim.bo[bufnr].expandtab = applied.indent_style == "space"
+        if applied.indent_style == "tab" and applied.indent_size == nil then
+            vim.bo[bufnr].shiftwidth = 0
+            vim.bo[bufnr].softtabstop = 0
+        end
+    end
+    if applied.indent_size ~= nil then
+        if applied.indent_size == "tab" then
+            vim.bo[bufnr].shiftwidth = 0
+            vim.bo[bufnr].softtabstop = 0
+        else
+            local n = tonumber(applied.indent_size)
+            vim.bo[bufnr].shiftwidth = n
+            vim.bo[bufnr].softtabstop = -1
+            if applied.tab_width == nil then vim.bo[bufnr].tabstop = n end
+        end
+    end
+    if applied.tab_width ~= nil then vim.bo[bufnr].tabstop = tonumber(applied.tab_width) end
 end
 
 return M

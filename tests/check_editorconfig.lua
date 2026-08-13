@@ -9,12 +9,13 @@ end
 
 local editorconfig = require("config.editorconfig")
 
--- setup() must register BufRead and BufNewFile autocmds.
-local acmds = vim.api.nvim_get_autocmds({
-    group = "nvim_config_editorconfig",
-    event = { "BufRead", "BufNewFile" },
-})
-check(#acmds == 2, "editorconfig must register BufRead and BufNewFile autocmds")
+-- The runtime wires editorconfig (plugin/editorconfig.lua); this config must
+-- NOT add a second application hook (double-apply re-registers BufWritePre
+-- autocmds for trim_trailing_whitespace / insert_final_newline).
+local runtime_acmds = vim.api.nvim_get_autocmds({ group = "nvim.editorconfig" })
+check(#runtime_acmds >= 1, "runtime editorconfig binding must exist")
+local ok_group, own_acmds = pcall(vim.api.nvim_get_autocmds, { group = "nvim_config_editorconfig" })
+check(not ok_group or #own_acmds == 0, "config must not register its own editorconfig application autocmd")
 
 -- has_indent(): table with indent keys => true; empty/missing/disabled => false.
 local scratch = vim.api.nvim_create_buf(false, true)
@@ -80,6 +81,27 @@ vim.api.nvim_buf_delete(rs_buf, { force = true })
 vim.api.nvim_buf_delete(plain_buf, { force = true })
 vim.fn.delete(root, "rf")
 vim.fn.delete(noroot, "rf")
+
+-- No duplicate application: trim_trailing_whitespace must register exactly
+-- one BufWritePre autocmd, and a late FileType re-assert must not add more.
+local trimroot = vim.fn.tempname()
+vim.fn.mkdir(trimroot, "p")
+vim.fn.writefile(
+    { "root = true", "[*]", "trim_trailing_whitespace = true", "indent_size = 4" },
+    vim.fs.joinpath(trimroot, ".editorconfig")
+)
+local trimfile = vim.fs.joinpath(trimroot, "t.py")
+vim.fn.writefile({ "x = 1" }, trimfile)
+vim.cmd.edit(trimfile)
+local trim_buf = vim.api.nvim_get_current_buf()
+local function trim_autocmd_count()
+    return #vim.api.nvim_get_autocmds({ group = "nvim.editorconfig", event = "BufWritePre", buffer = trim_buf })
+end
+check(trim_autocmd_count() == 1, "trim_trailing_whitespace must register exactly one BufWritePre autocmd")
+vim.api.nvim_exec_autocmds("FileType", { buffer = trim_buf })
+check(trim_autocmd_count() == 1, "FileType re-assert must not duplicate BufWritePre autocmds")
+vim.api.nvim_buf_delete(trim_buf, { force = true })
+vim.fn.delete(trimroot, "rf")
 
 if #failures > 0 then
     io.stderr:write("EDITORCONFIG_CHECK_FAILED:\n- " .. table.concat(failures, "\n- ") .. "\n")

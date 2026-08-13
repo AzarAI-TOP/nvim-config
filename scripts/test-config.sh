@@ -48,4 +48,6 @@ export GIT_CONFIG_KEY_0=core.longpaths
 export GIT_CONFIG_VALUE_0=true
 
 cd "$tmp_dir/xdg/nvim"
-nvim --headless "+lua dofile(vim.fs.joinpath(vim.fn.getcwd(), 'tests', 'run.lua'))"
+output=$(nvim --headless "+lua dofile(vim.fs.joinpath(vim.fn.getcwd(), 'tests', 'run.lua'))" 2>&1)
+printf '%s\n' "$output"
+printf '%s\n' "$output" | grep -q 'CONFIG_TEST_SUITE_OK'

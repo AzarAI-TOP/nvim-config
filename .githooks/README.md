@@ -15,11 +15,11 @@ This directory contains version-controlled git hooks.
 
 ## Setup
 
-The hooks directory is configured automatically via:
+Configure the hooks directory once after cloning:
 
 ```sh
 git config core.hooksPath .githooks
 ```
 
-If you clone this repo fresh, run that command (or the hooks won't fire).
+Run that command (or the hooks won't fire).
 To bypass hooks on a specific commit: `git commit --no-verify`.

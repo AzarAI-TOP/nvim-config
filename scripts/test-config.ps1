@@ -37,8 +37,10 @@ try {
 
     Push-Location $configRoot
     try {
-        & nvim --headless "+lua dofile(vim.fs.joinpath(vim.fn.getcwd(), 'tests', 'run.lua'))"
+        $output = & nvim --headless "+lua dofile(vim.fs.joinpath(vim.fn.getcwd(), 'tests', 'run.lua'))" 2>&1
+        $output | ForEach-Object { Write-Output $_ }
         if ($LASTEXITCODE -ne 0) { throw "Config tests failed with exit code $LASTEXITCODE" }
+        if (-not ($output -match 'CONFIG_TEST_SUITE_OK')) { throw "Config tests did not report CONFIG_TEST_SUITE_OK" }
     } finally {
         Pop-Location
     }

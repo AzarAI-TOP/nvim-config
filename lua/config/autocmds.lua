@@ -32,11 +32,10 @@ vim.api.nvim_create_autocmd("BufReadPost", {
 -- Only non-default filetypes are overridden here.
 -- Unlisted filetypes inherit the global default.
 --
--- Project .editorconfig values take precedence: they are applied on
--- BufRead/BufNewFile (config/editorconfig.lua) and the FileType callback
--- below yields whenever the buffer already has applied indent props.
-
-require("config.editorconfig").setup()
+-- Project .editorconfig values take precedence: Neovim's runtime applies
+-- them on file open (plugin/editorconfig.lua), and the FileType callback
+-- below re-asserts them whenever a late FileType event lets runtime
+-- ftplugin/indent handlers overwrite the project values.
 
 local indent_augroup = vim.api.nvim_create_augroup("indent_settings", { clear = true })
 
@@ -127,11 +126,11 @@ for _, group in ipairs(indent_groups) do
         group = indent_augroup,
         pattern = fts,
         callback = function(args)
-            -- Project .editorconfig wins: re-assert its values after any
-            -- runtime ftplugin/indent handlers, otherwise apply defaults.
+            -- Project .editorconfig wins: re-assert its indent values after
+            -- any runtime ftplugin/indent handlers, otherwise apply defaults.
             local editorconfig = require("config.editorconfig")
             if editorconfig.has_indent(args.buf) then
-                editorconfig.reapply(args.buf)
+                editorconfig.reapply_indent(args.buf)
                 return
             end
             vim.opt_local.tabstop = ts
