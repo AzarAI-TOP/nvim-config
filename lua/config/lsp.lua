@@ -1,15 +1,17 @@
--- LSP 配置（Neovim 0.11+ 原生 API）：各服务器配置表、诊断显示、
--- 原生补全激活与 LSP 键位。
+-- LSP config (native Neovim 0.11+ API): per-server config tables, diagnostics,
+-- native completion activation, and LSP keymaps.
 --
--- Mason 已在插件阶段同步初始化（plugins/mason.lua，先于本模块加载），
--- 只负责安装服务器；本模块注册原生 vim.lsp.config() 覆盖、启用服务器，
--- 并接入补全。mason-lspconfig 的包名映射仅被健康检查和 first-boot 测试使用。
+-- Mason is initialized synchronously in the plugin phase (plugins/mason.lua,
+-- loaded before this module) and only installs servers; this module registers
+-- native vim.lsp.config() overrides, enables servers, and wires up completion.
+-- The mason-lspconfig package-name mapping is only used by health checks and
+-- first-boot tests.
 
 local util = require("config.util")
 
 local M = {}
 
--- ── 诊断显示 ──
+-- ── Diagnostics ──
 vim.diagnostic.config({
     virtual_text = true,
     signs = true,
@@ -24,12 +26,12 @@ vim.diagnostic.config({
     },
 })
 
--- ── 各服务器配置 ──
--- 键名与 mason-lspconfig 注册表一致；缺失的字段（如 cmd）由
--- nvim-lspconfig 的默认配置补齐。
+-- ── Per-server configs ──
+-- Keys match the mason-lspconfig registry; missing fields (e.g. cmd) are filled
+-- by nvim-lspconfig defaults.
 local server_configs = {
     bashls = {
-        -- Bash 语言服务器：覆盖 POSIX shell 与 Bash 缓冲区。
+        -- Bash language server: covers POSIX shell and Bash buffers.
         filetypes = { "sh", "bash" },
         root_markers = { ".git", "Makefile", "package.json" },
         settings = {
@@ -38,8 +40,8 @@ local server_configs = {
     },
 
     clangd = {
-        -- C / C++ / Objective-C：格式化归 conform.nvim 管，
-        -- clangd 只负责分析与导航。
+        -- C / C++ / Objective-C: formatting belongs to conform.nvim,
+        -- clangd only handles analysis and navigation.
         cmd = {
             "clangd",
             "--background-index",
@@ -52,7 +54,7 @@ local server_configs = {
     },
 
     cssls = {
-        -- VS Code CSS 语言服务器：CSS / SCSS / Less 校验保持开启。
+        -- VS Code CSS language server: CSS / SCSS / Less validation stays on.
         filetypes = { "css", "scss", "less" },
         root_markers = { "package.json", ".git" },
         settings = {
@@ -63,7 +65,8 @@ local server_configs = {
     },
 
     gopls = {
-        -- Go 模块与工作区：静态分析持续运行，格式化归 conform.nvim。
+        -- Go modules and workspaces: static analysis runs continuously,
+        -- formatting belongs to conform.nvim.
         root_markers = { "go.work", "go.mod", ".git" },
         settings = {
             gopls = {
@@ -78,14 +81,16 @@ local server_configs = {
     },
 
     html = {
-        -- VS Code HTML 语言服务器：额外模板文件类型共享补全与校验。
+        -- VS Code HTML language server: extra template filetypes share
+        -- completion and validation.
         filetypes = { "html", "handlebars", "htmldjango" },
         root_markers = { "package.json", ".git" },
         init_options = { provideFormatter = false },
     },
 
     jsonls = {
-        -- VS Code JSON 语言服务器：schema 下载与校验开启，格式化归 conform。
+        -- VS Code JSON language server: schema download and validation on,
+        -- formatting belongs to conform.
         cmd = { "vscode-json-language-server", "--stdio" },
         root_markers = { "package.json", ".git" },
         settings = {
@@ -98,7 +103,8 @@ local server_configs = {
     },
 
     kotlin_lsp = {
-        -- 官方 Kotlin 语言服务器：Gradle / Maven 标记限定项目范围。
+        -- Official Kotlin language server: Gradle / Maven markers scope
+        -- projects.
         root_markers = {
             "settings.gradle.kts",
             "settings.gradle",
@@ -111,7 +117,7 @@ local server_configs = {
     },
 
     lua_ls = {
-        -- Neovim Lua 开发：索引运行时 API，不提示第三方库配置。
+        -- Neovim Lua development: index runtime APIs, no third-party config hints.
         root_markers = { ".luarc.json", ".luarc.jsonc", "stylua.toml", ".stylua.toml", ".git" },
         settings = {
             Lua = {
@@ -128,7 +134,7 @@ local server_configs = {
     },
 
     pyright = {
-        -- Python：工作区级诊断捕捉跨文件问题。
+        -- Python: workspace-level diagnostics catch cross-file issues.
         root_markers = { "pyproject.toml", "setup.py", "setup.cfg", "requirements.txt", ".git" },
         settings = {
             python = {
@@ -144,7 +150,8 @@ local server_configs = {
     },
 
     rust_analyzer = {
-        -- Cargo 项目：Clippy 负责保存时检查，rustfmt 归 Rust 工具链。
+        -- Cargo projects: Clippy handles save-time checks, rustfmt belongs
+        -- to the Rust toolchain.
         root_markers = { "Cargo.toml", "rust-project.json", ".git" },
         settings = {
             ["rust-analyzer"] = {
@@ -157,7 +164,8 @@ local server_configs = {
     },
 
     ts_ls = {
-        -- TypeScript / JavaScript：单文件模式让小脚本脱离包根也能用。
+        -- TypeScript / JavaScript: single-file mode lets small scripts work
+        -- outside a package root.
         filetypes = { "javascript", "javascriptreact", "typescript", "typescriptreact" },
         root_markers = { "tsconfig.json", "jsconfig.json", "package.json", ".git" },
         single_file_support = true,
@@ -165,7 +173,8 @@ local server_configs = {
     },
 
     yamlls = {
-        -- Red Hat YAML 语言服务器：启用 Schema Store，不硬编码项目 schema。
+        -- Red Hat YAML language server: enable the Schema Store, don't
+        -- hardcode project schemas.
         root_markers = { ".yamllint", ".git" },
         settings = {
             redhat = { telemetry = { enabled = false } },
@@ -181,20 +190,21 @@ for name, config in pairs(server_configs) do
     vim.lsp.config(name, config)
 end
 
--- 原生覆盖全部注册完成后，统一启用服务器（按工具清单顺序）。
+-- Enable servers uniformly once all native overrides are registered
+-- (in tool-list order).
 for _, server in ipairs(util.lsp_servers) do
     vim.lsp.enable(server)
 end
 
--- ── 原生补全 ──
--- 每个附着的客户端单独启用补全；Markdown 刻意排除，
--- 让纯文本缓冲区不为补全请求和弹窗付出任何代价。
+-- ── Native completion ──
+-- Completion is enabled per attached client; Markdown is deliberately excluded
+-- so plain-text buffers pay no cost for completion requests and popups.
 
 local function is_markdown(bufnr) return vim.bo[bufnr].filetype == "markdown" end
 
----为一次 LspAttach 事件启用原生补全。
+--- Enable native completion for one LspAttach event.
 ---@param args { buf: integer, data: { client_id: integer } }
----@return boolean 是否已启用
+---@return boolean whether completion was enabled
 function M.enable_for_client(args)
     if is_markdown(args.buf) then return false end
 
@@ -206,15 +216,15 @@ function M.enable_for_client(args)
     return false
 end
 
----<C-Space> 的行为：代码缓冲区请求补全，Markdown 中保持静默。
----@return boolean 是否发出了补全请求
+---<C-Space> behavior: request completion in code buffers, stay silent in Markdown.
+---@return boolean whether a completion request was issued
 function M.trigger()
     if vim.bo.filetype == "markdown" then return false end
     vim.lsp.completion.get()
     return true
 end
 
----注册 LspAttach autocmd，按客户端激活补全。
+--- Register an LspAttach autocmd that activates completion per client.
 function M.register()
     vim.api.nvim_create_autocmd("LspAttach", {
         group = vim.api.nvim_create_augroup("lsp_completion", { clear = true }),
@@ -222,17 +232,17 @@ function M.register()
     })
 end
 
--- ── LSP 键位 ──
--- 刻意注册为全局键位：vim.lsp.buf.* 在未附着客户端的缓冲区中
--- 会给出原生"无客户端"提示。
-util.map("i", "<C-Space>", M.trigger, "触发补全")
-util.map("n", "<leader>ld", vim.lsp.buf.definition, "跳转到定义")
-util.map("n", "<leader>lh", function() vim.lsp.buf.hover({ border = "rounded" }) end, "悬浮文档")
-util.map("n", "<leader>lr", vim.lsp.buf.references, "查找引用")
-util.map("n", "<leader>lR", vim.lsp.buf.rename, "重命名符号")
-util.map("n", "<leader>la", vim.lsp.buf.code_action, "代码操作")
-util.map("n", "<leader>li", vim.lsp.buf.implementation, "跳转到实现")
-util.map("n", "<leader>ls", function() vim.lsp.buf.signature_help({ border = "rounded" }) end, "签名帮助")
+-- ── LSP keymaps ──
+-- Deliberately global: vim.lsp.buf.* shows a native "no client" hint in buffers
+-- without an attached client.
+util.map("i", "<C-Space>", M.trigger, "Trigger completion")
+util.map("n", "<leader>ld", vim.lsp.buf.definition, "Go to definition")
+util.map("n", "<leader>lh", function() vim.lsp.buf.hover({ border = "rounded" }) end, "Hover docs")
+util.map("n", "<leader>lr", vim.lsp.buf.references, "Find references")
+util.map("n", "<leader>lR", vim.lsp.buf.rename, "Rename symbol")
+util.map("n", "<leader>la", vim.lsp.buf.code_action, "Code actions")
+util.map("n", "<leader>li", vim.lsp.buf.implementation, "Go to implementation")
+util.map("n", "<leader>ls", function() vim.lsp.buf.signature_help({ border = "rounded" }) end, "Signature help")
 
 M.register()
 

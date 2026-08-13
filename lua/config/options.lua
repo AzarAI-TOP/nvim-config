@@ -1,12 +1,13 @@
--- 编辑器选项：显示、缩进、搜索、编辑、界面与性能。
+-- Editor options: display, indentation, search, editing, UI, and performance.
 
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
 local platform = require("config.platform")
 
--- Winget 便携包可能已更新用户 PATH，而 Explorer/Neovide 仍持有旧环境。
--- 立即为当前进程发现 fzf；bootstrap-windows.ps1 也会为未来 shell 持久化目录。
+-- A Winget portable package may have updated the user PATH while Explorer/Neovide
+-- still hold the old environment. Discover fzf for the current process right away;
+-- bootstrap-windows.ps1 also persists the directory for future shells.
 if platform.is_windows and vim.fn.executable("fzf") == 0 then
     local package_root = vim.fs.joinpath(vim.env.LOCALAPPDATA or "", "Microsoft", "WinGet", "Packages")
     local matches = vim.fn.glob(vim.fs.joinpath(package_root, "junegunn.fzf_*", "fzf.exe"), false, true)
@@ -16,18 +17,18 @@ if platform.is_windows and vim.fn.executable("fzf") == 0 then
     end
 end
 
--- 从 Git Bash 启动的 Windows nvim.exe 会继承 $SHELL=...bash.exe，
--- 却保留 cmd.exe 的 /s /c 标志。固定为原生 shell，避免 :!、system()、
--- 过滤器和 :make 把 cmd 标志送进 Bash。
+-- A Windows nvim.exe launched from Git Bash inherits $SHELL=...bash.exe but keeps
+-- cmd.exe's /s /c flags. Pin the native shell so :!, system(), filters, and :make
+-- don't feed cmd flags into Bash.
 if platform.is_windows then vim.opt.shell = vim.env.COMSPEC or "cmd.exe" end
 
--- ── 显示 ──
+-- ── Display ──
 vim.opt.number = true
 vim.opt.relativenumber = true
 vim.opt.cursorline = true
 vim.opt.signcolumn = "yes"
 
--- ── 缩进 ──
+-- ── Indentation ──
 vim.opt.tabstop = 4
 vim.opt.softtabstop = 4
 vim.opt.shiftwidth = 4
@@ -35,18 +36,18 @@ vim.opt.expandtab = true
 vim.opt.smartindent = true
 vim.opt.autoindent = true
 
--- ── 搜索 ──
+-- ── Search ──
 vim.opt.hlsearch = false
 vim.opt.incsearch = true
 vim.opt.ignorecase = true
 vim.opt.smartcase = true
 
--- ── 编辑 ──
+-- ── Editing ──
 vim.opt.wrap = false
 vim.opt.mouse = "a"
--- WSL / SSH 显式走 OSC52 复制，无名寄存器保持内部，
--- 普通 `p` 不会在禁止 OSC52 读取的终端里卡住。
--- 桌面 Linux 与 Windows 使用原生剪贴板发现并启用 unnamedplus。
+-- WSL / SSH use explicit OSC52 copy while the unnamed register stays internal,
+-- so plain `p` won't hang in terminals that forbid OSC52 reads.
+-- Desktop Linux and Windows use native clipboard detection and enable unnamedplus.
 if platform.is_remote then
     vim.g.clipboard = "osc52"
     vim.opt.clipboard = ""
@@ -61,26 +62,26 @@ vim.opt.swapfile = false
 vim.opt.backup = false
 vim.opt.writebackup = false
 
--- ── 界面 ──
+-- ── UI ──
 vim.opt.termguicolors = true
 vim.opt.scrolloff = 8
 vim.opt.sidescrolloff = 8
 vim.opt.showmode = false
 vim.opt.title = true
 
--- ── 性能 ──
+-- ── Performance ──
 vim.opt.timeoutlen = 300
 vim.opt.updatetime = 100
 vim.opt.redrawtime = 1500
 
--- ── 补全 ──
+-- ── Completion ──
 vim.opt.wildmode = "list:longest,full"
 vim.opt.wildignore = { "*.o", "*.pyc", "*.class", "node_modules/*" }
 
--- ── 历史 ──
+-- ── History ──
 vim.opt.history = 1000
 vim.opt.undolevels = 1000
 
--- ── 窗口 ──
+-- ── Windows ──
 vim.opt.splitright = true
 vim.opt.splitbelow = true

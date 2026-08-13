@@ -1,15 +1,17 @@
--- 本配置共用的工具集合：按键登记表、统一按键绑定、editorconfig 缩进辅助、
--- 以及 LSP/格式化器/系统工具清单。所有小工具函数集中在这一个文件里。
+-- Shared utility set for this config: keymap registry, unified keymap binding,
+-- editorconfig indent helpers, and the LSP / formatter / system tool lists.
+-- All small helper functions live in this one file.
 
 local M = {}
 
--- ── 按键登记表 ──
--- 记录本配置注册的全局按键。config.reload 会先删除全部已登记映射，
--- 再由按键模块重新注册（并重新登记）；因此本模块在 reload 时不得被清空。
+-- ── Keymap registry ──
+-- Records every global keymap registered by this config. config.reload deletes
+-- all registered mappings first, then keymap modules re-register (and re-record)
+-- them; therefore this module must never be cleared during reload.
 
 M.keymaps = {}
 
----登记一个本配置拥有的全局按键。
+---Register a global keymap owned by this config.
 ---@param mode string|string[]
 ---@param lhs string
 function M.register_keymap(mode, lhs)
@@ -18,7 +20,8 @@ function M.register_keymap(mode, lhs)
     end
 end
 
----删除全部已登记按键（幂等；被用户或插件手动删除的按键自动跳过）。
+---Delete all registered keymaps (idempotent; mappings already removed by the
+---user or a plugin are skipped automatically).
 function M.delete_all_keymaps()
     for _, m in ipairs(M.keymaps) do
         pcall(vim.keymap.del, m.mode, m.lhs)
@@ -26,7 +29,8 @@ function M.delete_all_keymaps()
     M.keymaps = {}
 end
 
----统一的按键绑定入口：设置映射、写入描述、登记到登记表。
+---Unified keymap entry point: set the mapping, write a description, and record
+---it in the registry.
 ---@param mode string|string[]
 ---@param lhs string
 ---@param rhs string|function
@@ -38,12 +42,14 @@ function M.map(mode, lhs, rhs, desc, opts)
     M.register_keymap(mode, lhs)
 end
 
--- ── editorconfig 缩进辅助 ──
--- 运行时自带的 editorconfig 集成（plugin/editorconfig.lua）负责在文件打开时
--- 应用项目配置；本配置只做"文件类型默认缩进让位于项目配置"的再确认，
--- 绝不重复注册应用 autocmd，否则 trim_trailing_whitespace 等写钩子会被重复添加。
+-- ── editorconfig indent helpers ──
+-- The runtime's built-in editorconfig integration (plugin/editorconfig.lua)
+-- applies project config when a file opens; this config only re-asserts
+-- "filetype default indentation yields to project config". It never registers
+-- a second apply autocmd — that would duplicate write hooks such as
+-- trim_trailing_whitespace.
 
----缓冲区已应用的 editorconfig 属性里是否含缩进设置。
+---Whether the editorconfig attributes applied to a buffer contain indent settings.
 ---@param bufnr integer
 ---@return boolean
 function M.has_editorconfig_indent(bufnr)
@@ -52,8 +58,9 @@ function M.has_editorconfig_indent(bufnr)
     return applied.indent_style ~= nil or applied.indent_size ~= nil or applied.tab_width ~= nil
 end
 
----在迟到的 FileType 事件覆盖项目缩进值之后，重新应用 editorconfig 缩进。
----只写缓冲区选项，不重新执行 editorconfig.config()（那会重复注册写钩子）。
+---Re-apply editorconfig indent after a late FileType event clobbered the
+---project values. Only writes buffer options; never re-runs editorconfig.config()
+---(that would re-register write hooks).
 ---@param bufnr integer
 function M.reapply_editorconfig_indent(bufnr)
     local applied = vim.b[bufnr].editorconfig
@@ -79,9 +86,9 @@ function M.reapply_editorconfig_indent(bufnr)
     if applied.tab_width ~= nil then vim.bo[bufnr].tabstop = tonumber(applied.tab_width) end
 end
 
--- ── 工具清单 ──
+-- ── Tool lists ──
 
--- LSP 服务器列表，名称与 nvim-lspconfig / mason-lspconfig 的标识一致。
+-- LSP server list; names match the nvim-lspconfig / mason-lspconfig identifiers.
 M.lsp_servers = {
     "gopls",
     "clangd",
@@ -97,8 +104,9 @@ M.lsp_servers = {
     "kotlin_lsp",
 }
 
--- Mason 注册表提供的便携格式化器。
--- gofmt 与 rustfmt 刻意来自 Go/Rust 官方工具链（Mason 不发布独立包）。
+-- Portable formatters available from the Mason registry.
+-- gofmt and rustfmt deliberately come from the official Go/Rust toolchains
+-- (Mason does not publish standalone packages for them).
 M.mason_formatters = {
     "black",
     "clang-format",
@@ -112,11 +120,11 @@ M.mason_formatters = {
     "ktlint",
 }
 
--- mason-tool-installer 接受普通包名。
+-- mason-tool-installer accepts plain package names.
 M.mason_packages = vim.list_extend(vim.list_extend({}, M.lsp_servers), M.mason_formatters)
 
--- 系统层工具（Mason 之外）：Linux 引导脚本安装通用工具，
--- 语言专属格式化器随各自工具链安装。
+-- System-level tools (outside Mason): the Linux bootstrap script installs
+-- common tools; language-specific formatters come with their own toolchains.
 M.system_tools = {
     "git",
     "curl",

@@ -1,6 +1,6 @@
--- 平台检测：Windows / 桌面 Linux / WSL / SSH 共用，
--- 供选项、GUI 设置、健康检查与测试使用。
--- 检测集中在一处，避免各处积累互不一致的一次性判断。
+-- Platform detection: shared by Windows / desktop Linux / WSL / SSH and used
+-- by options, GUI settings, health checks, and tests.
+-- Detection lives in one place so one-off judgments don't drift apart.
 
 local M = {}
 
@@ -53,7 +53,7 @@ function M.detect(context)
     }
 end
 
--- 当前环境的检测结果直接铺平到模块字段上。
+-- Flatten the current environment's detection result onto module fields.
 local current = M.detect()
 for key, value in pairs(current) do
     M[key] = value

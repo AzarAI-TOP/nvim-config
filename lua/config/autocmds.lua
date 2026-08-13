@@ -1,9 +1,9 @@
--- 自动命令：高亮闪烁、光标位置恢复、按文件类型的缩进规则。
+-- Autocommands: yank/put highlight, cursor-position restore, per-filetype indentation.
 
 local util = require("config.util")
 
--- ── 复制 / 粘贴高亮 ──
--- 优先 vim.hl.hl_op（Neovim ≥ 0.13），回退到 vim.hl.on_yank（0.12.x）。
+-- ── Yank / paste highlight ──
+-- Prefer vim.hl.hl_op (Neovim >= 0.13), fall back to vim.hl.on_yank (0.12.x).
 if vim.hl.hl_op then
     vim.api.nvim_create_autocmd({ "TextYankPost", "TextPutPost" }, {
         group = vim.api.nvim_create_augroup("highlight_yank", { clear = true }),
@@ -16,7 +16,7 @@ else
     })
 end
 
--- ── 打开文件时恢复上次光标位置 ──
+-- ── Restore last cursor position when opening a file ──
 vim.api.nvim_create_autocmd("BufReadPost", {
     group = vim.api.nvim_create_augroup("last_position", { clear = true }),
     callback = function()
@@ -26,19 +26,19 @@ vim.api.nvim_create_autocmd("BufReadPost", {
     end,
 })
 
--- ── 按文件类型的缩进 ──
--- 全局默认在 options.lua：4 空格、expandtab；此处只覆盖非默认文件类型，
--- 未列出的文件类型沿用全局默认。
+-- ── Per-filetype indentation ──
+-- The global default lives in options.lua: 4 spaces, expandtab; this block only
+-- overrides non-default filetypes, everything else keeps the global default.
 --
--- 项目 .editorconfig 优先：运行时在文件打开时应用它（plugin/editorconfig.lua），
--- 下方的 FileType 回调在迟到的 FileType 事件让 ftplugin/indent 处理器
--- 覆盖项目值之后，重新把项目值扶正。
+-- Project .editorconfig wins: the runtime applies it when a file opens
+-- (plugin/editorconfig.lua); the FileType callbacks below re-assert the project
+-- values after a late FileType event lets ftplugin/indent handlers clobber them.
 
 local indent_augroup = vim.api.nvim_create_augroup("indent_settings", { clear = true })
 
--- 缩进组格式：[tabstop, shiftwidth, expandtab, 文件类型列表]
+-- Indent group format: [tabstop, shiftwidth, expandtab, filetype list]
 local indent_groups = {
-    -- 2 空格 — Web / 脚本 / 标记 / 声明式语言
+    -- 2 spaces — web / scripting / markup / declarative languages
     {
         2,
         2,
@@ -87,7 +87,7 @@ local indent_groups = {
         },
     },
 
-    -- 4 空格 — 系统 / 传统语言
+    -- 4 spaces — systems / traditional languages
     {
         4,
         4,
@@ -110,7 +110,7 @@ local indent_groups = {
         },
     },
 
-    -- Tab 缩进 — 强制使用 Tab 的工具链
+    -- Tab indentation — toolchains that mandate tabs
     { 4, 4, false, {
         "go",
         "make",
@@ -123,8 +123,8 @@ for _, group in ipairs(indent_groups) do
         group = indent_augroup,
         pattern = fts,
         callback = function(args)
-            -- 项目 .editorconfig 优先：迟到的 FileType 处理器之后重新应用
-            -- 其缩进值，否则应用默认值。
+            -- Project .editorconfig wins: re-apply its indent values after a
+            -- late FileType handler, otherwise apply the defaults.
             if util.has_editorconfig_indent(args.buf) then
                 util.reapply_editorconfig_indent(args.buf)
                 return
