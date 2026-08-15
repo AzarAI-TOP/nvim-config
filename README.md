@@ -89,7 +89,10 @@ display, native completion activation, and the LSP keymaps.
 - **Per-filetype indentation** — 2 spaces for web/scripting/markup languages,
   4 spaces for systems languages, tabs for Go/Make. Project `.editorconfig`
   values (full property and glob support via the runtime module) take
-  precedence over these defaults.
+  precedence over these defaults. C/C++/ObjC default to Google Style (2-space
+  indent) to match clang-format's fallback; a project `.clang-format`
+  (searched upward from the file) overrides via its `IndentWidth`/`TabWidth`/
+  `UseTab`/`BasedOnStyle` keys, and `.editorconfig` still wins over both.
 - **Real config reload** — `<leader>cr` reloads the core config layer
   (options, keymaps, autocmds, LSP, Neovide settings, pack commands) for
   real: tracked keymaps are re-created, owned commands rebuilt, config

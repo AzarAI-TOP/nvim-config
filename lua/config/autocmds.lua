@@ -95,8 +95,6 @@ local indent_groups = {
         {
             "python",
             "rust",
-            "c",
-            "cpp",
             "java",
             "kotlin",
             "swift",
@@ -135,3 +133,88 @@ for _, group in ipairs(indent_groups) do
         end,
     })
 end
+
+-- ── C / C++: Google Style defaults, project .clang-format overrides ──
+-- clang-format's fallback style is Google (see plugins/conform.lua), so the
+-- editor matches it by default: 2-space indent. A project .clang-format
+-- (searched upward from the buffer) overrides that via its IndentWidth /
+-- TabWidth / UseTab / BasedOnStyle keys. Project .editorconfig keeps
+-- precedence over both.
+
+local CLANG_FORMAT_STYLES = {
+    LLVM = { indent = 2, tabwidth = 8, use_tab = false },
+    GNU = { indent = 2, tabwidth = 8, use_tab = false },
+    Google = { indent = 2, tabwidth = 8, use_tab = false },
+    Chromium = { indent = 2, tabwidth = 8, use_tab = false },
+    Mozilla = { indent = 2, tabwidth = 8, use_tab = false },
+    WebKit = { indent = 4, tabwidth = 8, use_tab = false },
+    Microsoft = { indent = 4, tabwidth = 4, use_tab = false },
+}
+
+---Parse a .clang-format file for the indentation-relevant keys.
+---@param path string
+---@return table|nil {indent, tabwidth, use_tab}
+local function parse_clang_format(path)
+    local file = io.open(path, "r")
+    if not file then return nil end
+    local based_on, indent, tabwidth, use_tab
+    for line in file:lines() do
+        line = line:gsub("#.*$", ""):gsub("^%s+", ""):gsub("%s+$", "")
+        if line ~= "" and not line:match("^%-%-%-") and not line:match("^%.%.%.") then
+            local key, val = line:match("^([%w_]+)%s*:%s*(.-)%s*$")
+            if key and val ~= "" then
+                if key == "BasedOnStyle" then
+                    based_on = val
+                elseif key == "IndentWidth" then
+                    indent = tonumber(val)
+                elseif key == "TabWidth" then
+                    tabwidth = tonumber(val)
+                elseif key == "UseTab" then
+                    local v = val:lower()
+                    use_tab = v == "always" or v == "forindentation" or v == "true"
+                end
+            end
+        end
+    end
+    file:close()
+    local base = (based_on and CLANG_FORMAT_STYLES[based_on]) or CLANG_FORMAT_STYLES.Google
+    return {
+        indent = indent or base.indent,
+        tabwidth = tabwidth or base.tabwidth,
+        use_tab = use_tab or base.use_tab,
+    }
+end
+
+---Locate the nearest .clang-format above the buffer's directory.
+---@param bufnr integer
+---@return string|nil
+local function find_clang_format(bufnr)
+    local name = vim.api.nvim_buf_get_name(bufnr)
+    if name == "" then return nil end
+    local found = vim.fs.find(".clang-format", { upward = true, path = vim.fn.fnamemodify(name, ":h") })
+    return found[1]
+end
+
+vim.api.nvim_create_autocmd("FileType", {
+    group = vim.api.nvim_create_augroup("indent_clang", { clear = true }),
+    pattern = { "c", "cpp", "objc", "objcpp" },
+    callback = function(args)
+        -- Project .editorconfig wins over everything else.
+        if util.has_editorconfig_indent(args.buf) then
+            util.reapply_editorconfig_indent(args.buf)
+            return
+        end
+        local cf = find_clang_format(args.buf)
+        local ind = cf and parse_clang_format(cf)
+        if ind then
+            vim.opt_local.tabstop = ind.tabwidth
+            vim.opt_local.shiftwidth = ind.indent
+            vim.opt_local.expandtab = not ind.use_tab
+            return
+        end
+        -- Google default: 2-space indent
+        vim.opt_local.tabstop = 2
+        vim.opt_local.shiftwidth = 2
+        vim.opt_local.expandtab = true
+    end,
+})
