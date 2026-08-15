@@ -53,10 +53,10 @@ display, native completion activation, and the LSP keymaps.
   registers (`<leader>fr`), help (`<leader>fh`).
 - **Native LSP completion + snippets** — Neovim 0.12 completion is enabled
   per attached client with automatic trigger-character support; the popup never
-  auto-selects and Text-kind items are filtered out. `mini.snippets` loads the
+  auto-selects. `mini.snippets` loads the
   local C, C++, and Python collections from `snippets/`; type a prefix and
   press `<Tab>` to expand, then `<Tab>` / `<S-Tab>` to move between fields and
-  `<C-c>` to stop the session.
+  `<C-q>` to stop the session.
   Markdown disables LSP completion to keep prose input immediate, while snippet expansion remains available.
 - **Simple plugin lifecycle** — every plugin registers its own
   `vim.pack.add` and setup; Mason sets up synchronously at startup (registry
@@ -251,13 +251,13 @@ buffers.
 - LSP completion opens automatically for server trigger characters. Use
   `<C-Space>`/`<C-x><C-o>` for manual completion. The popup never auto-selects
   or auto-inserts: move with `<C-n>`/`<C-p>`, accept with `<C-y>` or `<Tab>`.
-- Plain "Text" completion items (LSP kind 1) are filtered out of the popup as
-  noise.
 - Snippets: type `main`, `for`, `if`, `def`, etc., then press `<Tab>` to expand.
   `<Tab>` accepts a completion while the popup is open, expands a snippet when a
   prefix matches, and jumps to the next field during a snippet session. Use
-  `<S-Tab>` to move backward (`<C-l>`/`<C-h>` also work during a session), and
-  `<C-c>` to stop the session.
+  `<S-Tab>` or `<C-h>` to move backward and `<C-l>` to move forward (`<C-q>`
+  stops the session). During a session, Backspace (the same key as `<C-h>`)
+  jumps to the previous field instead of deleting. Expansion is strict: Tab
+  never pops up a snippet picker, so indentation with Tab keeps working.
 - Snippet files live in `snippets/c.json`, `snippets/cpp.json`, and
   `snippets/python.json`; they use VS Code/LSP snippet JSON syntax. Loaders
   cache file contents, so after editing a snippet file restart Neovim or run

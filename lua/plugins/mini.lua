@@ -120,6 +120,19 @@ mini_snippets.setup({
     snippets = {
         mini_snippets.gen_loader.from_lang(),
     },
+    -- Strict expansion: only expand an exact prefix match (or fuzzy on a typed
+    -- word); never show the all-snippets picker after a space / at line start,
+    -- so <Tab> keeps working for indentation.
+    expand = {
+        match = function(snips) return mini_snippets.default_match(snips, { pattern_fuzzy = "%S+" }) end,
+    },
+    -- Session navigation keeps the plugin defaults: <C-l> / <C-h> jump between
+    -- fields. Note: in Insert mode Backspace IS <C-h>, so during a snippet
+    -- session Backspace jumps to the previous field instead of deleting — the
+    -- plugin's default design, kept deliberately. <S-Tab> (mapped below) also
+    -- jumps back. The session stop key is <C-q> so <C-c> keeps its usual
+    -- "exit Insert mode" behavior.
+    mappings = { jump_prev = "<C-h>", stop = "<C-q>" },
 })
 
 -- ── Snippet expansion keys ──

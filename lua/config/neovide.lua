@@ -52,8 +52,8 @@ vim.g.neovide_scroll_animation_length = 0.3
 vim.g.neovide_hide_mouse_when_typing = true
 
 -- ── Input method: auto-switch for Chinese input ──
--- Normal mode disables the IME (navigation stays uninterrupted), insert and
--- command-line modes enable it.
+-- Normal mode disables the IME (navigation stays uninterrupted); Insert mode
+-- enables it; the command line enables it only for search prompts (/ and ?).
 vim.g.neovide_input_ime = false
 local ime_grp = vim.api.nvim_create_augroup("neovide_ime", { clear = true })
 vim.api.nvim_create_autocmd("InsertEnter", {

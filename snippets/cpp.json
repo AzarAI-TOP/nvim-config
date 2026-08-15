@@ -9,6 +9,16 @@
     ],
     "description": "Main function"
   },
+  "vmain": {
+    "prefix": "vmain",
+    "body": [
+      "int main(void) {",
+      "    ${0:// body}",
+      "    return 0;",
+      "}"
+    ],
+    "description": "Main function without arguments"
+  },
   "for": {
     "prefix": "for",
     "body": [

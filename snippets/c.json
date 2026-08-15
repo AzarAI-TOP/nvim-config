@@ -86,17 +86,6 @@
     ],
     "description": "Struct definition"
   },
-  "class": {
-    "prefix": "class",
-    "body": [
-      "class ${1:Name} {",
-      " public:",
-      "    ${0:// public members}",
-      " private:",
-      "};"
-    ],
-    "description": "Class definition (Google Style)"
-  },
   "include": {
     "prefix": "include",
     "body": "#include <${1:header}>",

@@ -34,6 +34,7 @@ local parsers = {
     "c",
     "cpp",
     "java",
+    "kotlin",
 }
 
 -- Install / update parsers asynchronously (already installed ones are skipped);
