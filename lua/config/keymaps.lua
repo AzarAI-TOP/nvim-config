@@ -122,4 +122,8 @@ util.map("n", "<C-/>", "gcc", "Toggle comment", { remap = true })
 util.map("v", "<C-/>", "gc", "Toggle comment", { remap = true })
 
 -- Terminal
+-- <F2> / <S-F2>: terminal in a new split (below / right, per 'splitbelow'
+-- and 'splitright'); the cursor lands inside the terminal, ready for input.
+util.map("n", "<F2>", ":split | terminal<CR>", "Open terminal (horizontal split)")
+util.map("n", "<S-F2>", ":vsplit | terminal<CR>", "Open terminal (vertical split)")
 util.map("t", "<Esc><Esc>", "<C-\\><C-n>", "Exit terminal's insert mode", { noremap = true })
