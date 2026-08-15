@@ -200,6 +200,46 @@ end
 -- Completion is enabled per attached client; Markdown is deliberately excluded
 -- so plain-text buffers pay no cost for completion requests and popups.
 
+-- Plain "Text" completion items (LSP kind 1) are raw text noise in a flat
+-- popup menu, so drop them before the popup sees them. The native completion
+-- API exposes no kind filter (convert cannot drop items), so wrap the internal
+-- converter. Guarded so :ConfigReload (which re-runs this module) does not
+-- stack wrapper layers.
+local completion_mod = require("vim.lsp.completion")
+if not completion_mod._nvim_config_text_filter then
+    completion_mod._nvim_config_text_filter = true
+    local orig_convert_results = completion_mod._convert_results
+    -- Explicit params (not varargs): the 6th arg is often nil and Lua 5.1
+    -- unpack() on a table with a nil hole truncates the list.
+    completion_mod._convert_results = function(
+        line,
+        lnum,
+        cursor_col,
+        client_id,
+        client_start_boundary,
+        server_start_boundary,
+        result,
+        encoding
+    )
+        if type(result) == "table" and type(result.items) == "table" then
+            result.items = vim.tbl_filter(
+                function(item) return item.kind ~= vim.lsp.protocol.CompletionItemKind.Text end,
+                result.items
+            )
+        end
+        return orig_convert_results(
+            line,
+            lnum,
+            cursor_col,
+            client_id,
+            client_start_boundary,
+            server_start_boundary,
+            result,
+            encoding
+        )
+    end
+end
+
 local function is_markdown(bufnr) return vim.bo[bufnr].filetype == "markdown" end
 
 --- Enable native completion for one LspAttach event.

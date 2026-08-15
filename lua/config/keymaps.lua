@@ -81,11 +81,8 @@ util.map("n", "[t", function() require("todo-comments").jump_prev() end, "Previo
 -- ── <leader>w — windows (forwarded to <C-w>) ──
 util.map("n", "<leader>w", "<C-w>", "Window", { remap = true })
 
--- Direct window navigation
-util.map("n", "<M-h>", "<C-w>h", "Window left")
-util.map("n", "<M-j>", "<C-w>j", "Window below")
-util.map("n", "<M-k>", "<C-w>k", "Window above")
-util.map("n", "<M-l>", "<C-w>l", "Window right")
+-- Direct window navigation (Alt+Arrows deliberately unmapped; <leader>w
+-- covers window movement)
 util.map("n", "<C-Up>", ":resize -2<CR>", "Decrease height")
 util.map("n", "<C-Down>", ":resize +2<CR>", "Increase height")
 util.map("n", "<C-Left>", ":vertical resize -2<CR>", "Decrease width")
@@ -123,3 +120,6 @@ util.map("n", "N", "Nzzzv", "Previous result and center")
 -- Comments (mini.comment)
 util.map("n", "<C-/>", "gcc", "Toggle comment", { remap = true })
 util.map("v", "<C-/>", "gc", "Toggle comment", { remap = true })
+
+-- Terminal
+util.map("t", "<Esc><Esc>", "<C-\\><C-n>", "Exit terminal's insert mode", { noremap = true })

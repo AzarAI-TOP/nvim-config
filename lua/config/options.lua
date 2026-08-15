@@ -75,6 +75,9 @@ vim.opt.updatetime = 100
 vim.opt.redrawtime = 1500
 
 -- ── Completion ──
+-- Popup shows without auto-selecting or auto-inserting the first item:
+-- navigate with <C-n>/<C-p>, accept with <C-y> or <Tab>.
+vim.opt.completeopt = "menuone,noselect,noinsert"
 vim.opt.wildmode = "list:longest,full"
 vim.opt.wildignore = { "*.o", "*.pyc", "*.class", "node_modules/*" }
 

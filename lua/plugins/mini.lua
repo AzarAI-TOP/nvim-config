@@ -122,6 +122,31 @@ mini_snippets.setup({
     },
 })
 
+-- ── Snippet expansion keys ──
+-- mini.snippets expands only on an explicit key (default <C-j>), never while
+-- typing. A "supertab"-style <Tab> makes expansion reachable and does the
+-- right thing in every state:
+--   completion popup open    -> accept the selected item (<C-y>)
+--   snippet prefix at cursor -> expand it
+--   active snippet session   -> jump to the next tabstop
+--   otherwise                -> insert a literal tab
+vim.keymap.set("i", "<Tab>", function()
+    if vim.fn.pumvisible() ~= 0 then return vim.keycode("<C-y>") end
+    if #mini_snippets.expand({ insert = false }) > 0 then
+        vim.schedule(mini_snippets.expand)
+        return ""
+    end
+    if mini_snippets.session.get() ~= nil then
+        mini_snippets.session.jump("next")
+        return ""
+    end
+    return "\t"
+end, { expr = true, desc = "Accept completion, expand snippet, or jump tabstop" })
+vim.keymap.set("i", "<S-Tab>", function()
+    if vim.fn.pumvisible() ~= 0 then return vim.keycode("<C-p>") end
+    mini_snippets.session.jump("prev")
+end, { expr = true, desc = "Previous completion item or snippet tabstop" })
+
 -- ── Commands ──
 
 -- :TrimTrailSpace — remove trailing whitespace and trailing blank lines
