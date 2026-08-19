@@ -208,6 +208,19 @@ function M.enable_for_client(args)
 
     local client = vim.lsp.get_client_by_id(args.data.client_id)
     if client and client:supports_method("textDocument/completion", args.buf) then
+        -- autotrigger only fires on the server's triggerCharacters, which are
+        -- typically just ".", ":", ">", etc. Extend them to all printable
+        -- non-space ASCII (33-126) so the popup opens on every keystroke.
+        -- completeopt=noselect/noinsert (set in config/options.lua) still keeps
+        -- the menu from pre-selecting or auto-inserting an item.
+        local cp = client.server_capabilities.completionProvider
+        if cp then
+            local chars = {}
+            for i = 33, 126 do
+                table.insert(chars, string.char(i))
+            end
+            cp.triggerCharacters = chars
+        end
         vim.lsp.completion.enable(true, client.id, args.buf, { autotrigger = true })
         return true
     end
