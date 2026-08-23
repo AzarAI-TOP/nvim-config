@@ -21,6 +21,9 @@ local parsers = {
     "html",
     "css",
     "scss",
+    "graphql",
+    "vue",
+    "svelte",
     "json",
     -- "jsonc" is unsupported
     "yaml",

@@ -25,6 +25,10 @@ require("conform").setup({
         html = { "prettierd" },
         css = { "prettierd" },
         scss = { "prettierd" },
+        -- svelte is deliberately absent: prettierd does not bundle
+        -- prettier-plugin-svelte, so a svelte entry would fail on format.
+        vue = { "prettierd" },
+        graphql = { "prettierd" },
         json = { "prettierd" },
         jsonc = { "prettierd" },
         yaml = { "prettierd" },

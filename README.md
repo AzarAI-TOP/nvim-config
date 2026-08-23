@@ -247,16 +247,18 @@ while explicit clues label the mnemonic `<leader>` groups below.
 | `<leader>s` | Splits | create/close/keep split |
 | `<leader>f` | Find | files/config/registers/help/TODO |
 | `<leader>b` | Buffers | next/previous/delete (`;` opens bento directly) |
-| `<leader>l` | Languages | format/LSP/diagnostic details |
+| `<leader>l` | Languages | format / LSP actions (def, hover, rename, references, symbols, signature) / diagnostics |
 | `<leader>c` | Config | edit/reload config |
 | `<leader>t` | Terminal | `th` horizontal / `tv` vertical / `tf` float / `tg` lazygit / `tp` ipython (`<F2>` floats) |
-| `<leader>u` | Toggles | wrap |
+| `<leader>u` | Toggles | wrap / inlay hints |
 | `<leader>w` | Windows | forwards to native `<C-w>` commands |
 
-Diagnostics deliberately use only `]d` and `[d` for next/previous navigation;
-there are no duplicate `<leader>ln` / `<leader>lp` aliases. LSP actions are
-global and use Neovim's built-in "no client attached" feedback outside LSP
-buffers.
+Diagnostic navigation uses `]d` / `[d` (and `]D` / `[D` for first/last), plus
+`]b`/`[b` buffers, `]w`/`[w` windows, `]q`/`[q` quickfix/location, `]f`/`[f`
+files, `]o`/`[o` oldfiles, `]u`/`[u` undo and more — all provided by
+mini.bracketed; there are no duplicate `<leader>ln` / `<leader>lp` aliases.
+LSP actions are global and use Neovim's built-in "no client attached" feedback
+outside LSP buffers.
 
 ## Completion and snippets
 

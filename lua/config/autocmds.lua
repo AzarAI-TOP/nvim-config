@@ -38,13 +38,13 @@ local indent_augroup = vim.api.nvim_create_augroup("indent_settings", { clear = 
 
 -- Indent group format: [tabstop, shiftwidth, expandtab, filetype list]
 local indent_groups = {
-    -- 2 spaces — web / scripting / markup / declarative languages
+    -- 2 spaces — web / scripting / markup / declarative languages; java sits
+    -- here because google-java-format mandates 2-space Google Java Style.
     {
         2,
         2,
         true,
         {
-            "lua",
             "vim",
             "javascript",
             "javascriptreact",
@@ -60,9 +60,6 @@ local indent_groups = {
             "yaml",
             "ruby",
             "eruby",
-            "sh",
-            "bash",
-            "zsh",
             "fish",
             "markdown",
             "elixir",
@@ -84,18 +81,23 @@ local indent_groups = {
             "nix",
             "rescript",
             "gleam",
+            "java",
         },
     },
 
-    -- 4 spaces — systems / traditional languages
+    -- 4 spaces — systems / traditional languages; lua follows the repo's
+    -- .stylua.toml (Spaces/4), sh/bash follow shfmt's pinned -i 4
+    -- (plugins/conform.lua).
     {
         4,
         4,
         true,
         {
+            "lua",
+            "sh",
+            "bash",
             "python",
             "rust",
-            "java",
             "kotlin",
             "swift",
             "fsharp",

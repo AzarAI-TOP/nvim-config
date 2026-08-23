@@ -55,10 +55,9 @@ util.map("n", "<leader>lf", function()
     end)
 end, "Format file")
 
--- Diagnostic details and navigation (no LSP client required)
-util.map("n", "<leader>le", vim.diagnostic.open_float, "Diagnostic details")
-util.map("n", "]d", function() vim.diagnostic.jump({ count = 1, float = true }) end, "Next diagnostic")
-util.map("n", "[d", function() vim.diagnostic.jump({ count = -1, float = true }) end, "Previous diagnostic")
+-- Diagnostic details (no LSP client required). Next/previous diagnostic jumps
+-- are provided by mini.bracketed (]d / [d) — see plugins/mini.lua.
+util.map("n", "<leader>lD", vim.diagnostic.open_float, "Diagnostic details")
 
 -- ── <leader>e — file explorer ──
 util.map("n", "<leader>e", function() require("mini.files").open() end, "File explorer")
@@ -105,6 +104,11 @@ util.map("n", "<leader>so", ":only<CR>", "Close other splits")
 -- No paste-mode toggle: 'paste' is absent from the Neovim 0.12+ docs,
 -- and bracketed paste handles pasting automatically.
 util.map("n", "<leader>uw", ":set wrap!<CR>", "Toggle wrap")
+-- Global toggle per the documented vim.lsp.inlay_hint pattern (0.12 runtime docs).
+util.map("n", "<leader>ui", function()
+    vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
+    vim.notify(vim.lsp.inlay_hint.is_enabled() and "Inlay hints on" or "Inlay hints off", vim.log.levels.INFO)
+end, "Toggle inlay hints")
 
 -- ── <leader>p — package management ──
 util.map("n", "<leader>pm", ":Mason<CR>", "Open Mason UI")

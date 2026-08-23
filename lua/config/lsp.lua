@@ -12,7 +12,14 @@ local M = {}
 -- ── Diagnostics ──
 vim.diagnostic.config({
     virtual_text = true,
-    signs = true,
+    signs = {
+        text = {
+            [vim.diagnostic.severity.ERROR] = "",
+            [vim.diagnostic.severity.WARN] = "",
+            [vim.diagnostic.severity.INFO] = "",
+            [vim.diagnostic.severity.HINT] = "",
+        },
+    },
     underline = true,
     update_in_insert = false,
     severity_sort = true,
@@ -249,11 +256,13 @@ end
 util.map("i", "<C-Space>", M.trigger, "Trigger completion")
 util.map("n", "<leader>ld", vim.lsp.buf.definition, "Go to definition")
 util.map("n", "<leader>lh", function() vim.lsp.buf.hover({ border = "rounded" }) end, "Hover docs")
-util.map("n", "<leader>lr", vim.lsp.buf.references, "Find references")
-util.map("n", "<leader>lR", vim.lsp.buf.rename, "Rename symbol")
+util.map("n", "<leader>lR", vim.lsp.buf.references, "Find references")
+util.map("n", "<leader>lr", vim.lsp.buf.rename, "Rename symbol")
 util.map("n", "<leader>la", vim.lsp.buf.code_action, "Code actions")
 util.map("n", "<leader>li", vim.lsp.buf.implementation, "Go to implementation")
-util.map("n", "<leader>ls", function() vim.lsp.buf.signature_help({ border = "rounded" }) end, "Signature help")
+util.map("n", "<leader>ls", function() require("fzf-lua").lsp_document_symbols() end, "Document symbols")
+util.map("n", "<leader>lS", function() require("fzf-lua").lsp_workspace_symbols() end, "Workspace symbols")
+util.map("n", "<leader>lI", function() vim.lsp.buf.signature_help({ border = "rounded" }) end, "Signature help")
 
 M.register()
 
