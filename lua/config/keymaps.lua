@@ -118,6 +118,10 @@ util.map("n", "<leader>pi", ":MasonToolsInstallSync<CR>", "Install Mason tools")
 util.map("n", "*", "*<C-o>", "Search word under cursor (no jump)")
 util.map("n", "<Esc><Esc>", ":nohlsearch<CR>", "Clear highlight (double Esc)")
 
+-- Hop (character jump): f = in-line search (current line only), F = whole-window search
+util.map("n", "f", function() require("hop").hint_char1({ current_line_only = true }) end, "Hop char in line")
+util.map("n", "F", function() require("hop").hint_char1() end, "Hop char in window")
+
 -- Scroll and center
 util.map("n", "<C-d>", "<C-d>zz", "Scroll half page down and center")
 util.map("n", "<C-u>", "<C-u>zz", "Scroll half page up and center")

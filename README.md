@@ -53,6 +53,8 @@ display, native completion activation, and the LSP keymaps.
   manipulating the file system. Replaces netrw by default.
 - **Fuzzy finding** — `fzf-lua` for files (`<leader>ff`), config (`<leader>fc`),
   registers (`<leader>fr`), help (`<leader>fh`).
+- **Character jumping** — `hop.nvim`: `f` searches within the current line,
+  `F` across the whole window (replacing the built-in `f`/`F` motions).
 - **Terminals** — `toggleterm.nvim`: `<leader>th` toggles a horizontal
   terminal, `<leader>tv` a vertical one, `<leader>tf` / `<F2>` a floating one,
   `<leader>tg` lazygit, `<leader>tp` ipython.
@@ -123,6 +125,7 @@ display, native completion activation, and the LSP keymaps.
 | [bento.nvim](https://github.com/serhez/bento.nvim) | Buffer manager |
 | [conform.nvim](https://github.com/stevearc/conform.nvim) | Code formatting |
 | [fzf-lua](https://github.com/ibhagwan/fzf-lua) | Fuzzy finding |
+| [hop.nvim](https://github.com/smoka7/hop.nvim) | Character jumping |
 | [mason.nvim](https://github.com/mason-org/mason.nvim) | External tool package manager |
 | [mason-lspconfig.nvim](https://github.com/mason-org/mason-lspconfig.nvim) | LSP installation bridge |
 | [mason-tool-installer.nvim](https://github.com/WhoIsSethDaniel/mason-tool-installer.nvim) | Formatter installation |
