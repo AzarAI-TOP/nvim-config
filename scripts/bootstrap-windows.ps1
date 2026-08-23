@@ -22,6 +22,7 @@ $script:DefaultPackages = @(
     "Neovide.Neovide",
     "BurntSushi.ripgrep.MSVC",
     "junegunn.fzf",
+    "JesseDuffield.lazygit",
     "OpenJS.NodeJS.LTS",
     "Python.Python.3.13",
     "GoLang.Go",
@@ -306,6 +307,23 @@ function Invoke-BootstrapWindows {
     if ((& $TestPath (Join-Path $fzfDirectory "fzf.exe")) -and -not (& $TestCommand "fzf")) {
         $null = Add-UserPathEntry -Directory $fzfDirectory -ReadPath $ReadUserPath -WritePath $WriteUserPath
         $env:Path = Add-PathEntryString -PathValue $env:Path -Entry $fzfDirectory
+    }
+
+    # Same portable-package PATH repair for lazygit (toggleterm <leader>tg).
+    $lazygitDirectory = Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Packages\JesseDuffield.lazygit_Microsoft.Winget.Source_8wekyb3d8bbwe"
+    if ((& $TestPath (Join-Path $lazygitDirectory "lazygit.exe")) -and -not (& $TestCommand "lazygit")) {
+        $null = Add-UserPathEntry -Directory $lazygitDirectory -ReadPath $ReadUserPath -WritePath $WriteUserPath
+        $env:Path = Add-PathEntryString -PathValue $env:Path -Entry $lazygitDirectory
+    }
+
+    # ipython powers the <leader>tp REPL inside toggleterm terminals; install
+    # it into the active Python so `ipython` resolves from nvim's terminals.
+    $pythonCommand = & $TestCommand "python"
+    if ($pythonCommand) {
+        Invoke-NativeChecked -Command $pythonCommand.Source `
+            -Arguments @("-m", "pip", "install", "--quiet", "ipython") `
+            -Context "pip install ipython" `
+            -Executor $Executor
     }
 
     if (-not $SkipFont) {

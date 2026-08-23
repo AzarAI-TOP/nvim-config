@@ -18,6 +18,8 @@ and portable formatters are managed by Mason (requires Neovim 0.12+).
 │   │   ├── autocmds.lua    # autocommands + per-filetype indent rules
 │   │   ├── lsp.lua         # all LSP config: per-server tables, diagnostics,
 │   │   │                   #   native completion activation, LSP keymaps
+│   │   ├── colors.lua      # noice UI colors: popupmenu/kind palette (moon),
+│   │   │                   #   transparent float surfaces, per-kind groups
 │   │   ├── neovide.lua     # shared Windows/Fedora Neovide settings
 │   │   ├── platform.lua    # Windows/Linux/WSL/SSH detection
 │   │   ├── pack.lua        # :PackUpdate / :PackList user commands
@@ -51,6 +53,9 @@ display, native completion activation, and the LSP keymaps.
   manipulating the file system. Replaces netrw by default.
 - **Fuzzy finding** — `fzf-lua` for files (`<leader>ff`), config (`<leader>fc`),
   registers (`<leader>fr`), help (`<leader>fh`).
+- **Terminals** — `toggleterm.nvim`: `<leader>th` toggles a horizontal
+  terminal, `<leader>tv` a vertical one, `<leader>tf` / `<F2>` a floating one,
+  `<leader>tg` lazygit, `<leader>tp` ipython.
 - **Native LSP completion + snippets** — Neovim 0.12 completion is enabled
   per attached client with automatic trigger-character support; the popup never
   auto-selects. `mini.snippets` loads the
@@ -84,7 +89,8 @@ display, native completion activation, and the LSP keymaps.
 - **Comment toggling** — `mini.comment` via `gc` / `gcc` / `<C-/>`.
 - **Leader = `<Space>`**, with mappings grouped by mnemonic prefix:
   `<leader>b` buffer, `<leader>c` config, `<leader>l` language (format),
-  `<leader>e` explorer, `<leader>f` find/search, `<leader>t` toggle.
+  `<leader>e` explorer, `<leader>f` find/search, `<leader>t` terminal,
+  `<leader>u` toggles.
   Direct window navigation via `<M-h/j/k/l>`.
 - **Per-filetype indentation** — 2 spaces for web/scripting/markup languages,
   4 spaces for systems languages, tabs for Go/Make. Project `.editorconfig`
@@ -133,6 +139,7 @@ display, native completion activation, and the LSP keymaps.
 | [mini.clue](https://github.com/nvim-mini/mini.clue) | Leader-key discovery and groups |
 | [mini.trailspace](https://github.com/nvim-mini/mini.trailspace) | Trailing whitespace |
 | [todo-comments.nvim](https://github.com/folke/todo-comments.nvim) | TODO highlighting |
+| [toggleterm.nvim](https://github.com/akinsho/toggleterm.nvim) | Toggleable terminals (terminal / lazygit / ipython) |
 | [tokyonight.nvim](https://github.com/folke/tokyonight.nvim) | Colorscheme (moon) |
 | [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) | Syntax highlighting |
 
@@ -153,8 +160,9 @@ The pre-commit hook is fail-closed: commits touching Lua files are aborted
 unless StyLua (PATH, Mason packages, or Mason bin) can format them.
 
 The Windows bootstrap installs Neovim, Neovide, Git, Node, Python, Go, Rust,
-Java, LLVM, fzf, ripgrep, 7-Zip, and the 0xProto Nerd Font before synchronizing
-all Mason-managed LSP servers and formatters.
+Java, LLVM, fzf, lazygit, ripgrep, 7-Zip, and the 0xProto Nerd Font, installs
+ipython via pip (the `<leader>tp` REPL), and then synchronizes all
+Mason-managed LSP servers and formatters.
 
 ### Fedora / Ubuntu / WSL
 
@@ -238,7 +246,8 @@ while explicit clues label the mnemonic `<leader>` groups below.
 | `<leader>b` | Buffers | next/previous/delete (`;` opens bento directly) |
 | `<leader>l` | Languages | format/LSP/diagnostic details |
 | `<leader>c` | Config | edit/reload config |
-| `<leader>t` | Toggles | wrap |
+| `<leader>t` | Terminal | `th` horizontal / `tv` vertical / `tf` float / `tg` lazygit / `tp` ipython (`<F2>` floats) |
+| `<leader>u` | Toggles | wrap |
 | `<leader>w` | Windows | forwards to native `<C-w>` commands |
 
 Diagnostics deliberately use only `]d` and `[d` for next/previous navigation;

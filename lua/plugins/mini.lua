@@ -51,14 +51,15 @@ local clue_triggers = {
 }
 
 local clues = {
-    { mode = "n", keys = "<Leader>b", desc = "+Buffers" },
-    { mode = "n", keys = "<Leader>c", desc = "+Config" },
-    { mode = "n", keys = "<Leader>f", desc = "+Find" },
-    { mode = "n", keys = "<Leader>l", desc = "+Language" },
-    { mode = "n", keys = "<Leader>p", desc = "+Packages" },
-    { mode = "n", keys = "<Leader>s", desc = "+Splits" },
-    { mode = "n", keys = "<Leader>t", desc = "+Toggles" },
-    { mode = "n", keys = "<Leader>w", desc = "+Windows" },
+    { mode = "n", keys = "<Leader>b", desc = "󰈚 +Buffers" },
+    { mode = "n", keys = "<Leader>c", desc = "󰒓 +Config" },
+    { mode = "n", keys = "<Leader>f", desc = "󰈞 +Find" },
+    { mode = "n", keys = "<Leader>l", desc = "󰘋 +Language" },
+    { mode = "n", keys = "<Leader>p", desc = "󰏖 +Packages" },
+    { mode = "n", keys = "<Leader>s", desc = "󰤼 +Splits" },
+    { mode = "n", keys = "<Leader>t", desc = "󰆍 +Terminal" },
+    { mode = "n", keys = "<Leader>u", desc = "󰔡 +Toggles" },
+    { mode = "n", keys = "<Leader>w", desc = "󰒩 +Windows" },
     miniclue.gen_clues.square_brackets(),
 }
 
@@ -92,6 +93,9 @@ require("mini.files").setup({
 })
 
 -- ── Notification system ──
+-- mini.notify owns vim.notify (noice's notify routing is disabled in
+-- plugins/noice.lua, so this override survives). The card background is made
+-- transparent in config/colors.lua; width is capped at 30% of the editor.
 vim.pack.add({
     { src = "https://github.com/nvim-mini/mini.notify" },
 })
@@ -100,7 +104,11 @@ require("mini.notify").setup({
     window = {
         config = {
             focusable = true,
+            border = "rounded",
         },
+    },
+    config = {
+        max_width_share = 0.3, -- cap cards at 30% of the editor width
     },
 })
 

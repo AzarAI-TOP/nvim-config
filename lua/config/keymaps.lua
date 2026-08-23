@@ -9,7 +9,8 @@
 --   <leader>l  language (formatting / LSP)
 --   <leader>p  package management
 --   <leader>s  splits
---   <leader>t  toggles
+--   <leader>t  terminal
+--   <leader>u  toggles
 --   <leader>w  windows (forwarded to <C-w>)
 --
 -- LSP keymaps (<leader>ld, <leader>lh, etc.) are registered in config/lsp.lua:
@@ -73,6 +74,12 @@ util.map(
 util.map("n", "<Leader>fr", function() require("fzf-lua").registers() end, "Search registers")
 util.map("n", "<Leader>fh", function() require("fzf-lua").helptags() end, "Search help")
 util.map("n", "<Leader>ft", ":TodoFzfLua<CR>", "Find TODOs")
+util.map(
+    "n",
+    "<Leader>fk",
+    function() require("fzf-lua").keymaps({ modes = { "n" }, prompt = "Keymaps>" }) end,
+    "Find keymaps"
+)
 
 -- TODO comment jumps
 util.map("n", "]t", function() require("todo-comments").jump_next() end, "Next TODO")
@@ -94,10 +101,10 @@ util.map("n", "<leader>sv", ":vsplit<CR>", "Split vertical")
 util.map("n", "<leader>sc", ":close<CR>", "Close split")
 util.map("n", "<leader>so", ":only<CR>", "Close other splits")
 
--- ── <leader>t — toggles ──
+-- ── <leader>u — toggles ──
 -- No paste-mode toggle: 'paste' is absent from the Neovim 0.12+ docs,
 -- and bracketed paste handles pasting automatically.
-util.map("n", "<leader>tw", ":set wrap!<CR>", "Toggle wrap")
+util.map("n", "<leader>uw", ":set wrap!<CR>", "Toggle wrap")
 
 -- ── <leader>p — package management ──
 util.map("n", "<leader>pm", ":Mason<CR>", "Open Mason UI")
@@ -121,9 +128,23 @@ util.map("n", "N", "Nzzzv", "Previous result and center")
 util.map("n", "<C-/>", "gcc", "Toggle comment", { remap = true })
 util.map("v", "<C-/>", "gc", "Toggle comment", { remap = true })
 
--- Terminal
--- <F2> / <S-F2>: terminal in a new split (below / right, per 'splitbelow'
--- and 'splitright'); the cursor lands inside the terminal, ready for input.
-util.map("n", "<F2>", ":split | terminal<CR>", "Open terminal (horizontal split)")
-util.map("n", "<S-F2>", ":vsplit | terminal<CR>", "Open terminal (vertical split)")
+-- ── <leader>t — terminal (toggleterm.nvim) ──
+-- Each binding owns a fixed terminal id, so toggling always reopens the same
+-- terminal (Terminal:new returns the existing terminal for a taken id, which
+-- also keeps the bindings working after a :ConfigReload). Plain terminals use
+-- the configured shell (cmd.exe on Windows); lazygit / ipython run their own
+-- command. <F2> is a direct alias for the floating toggle, replacing the old
+-- ":split | terminal" mappings.
+local function terminal_toggle(id, direction, cmd)
+    return function()
+        require("toggleterm.terminal").Terminal:new({ id = id, direction = direction, cmd = cmd }):toggle()
+    end
+end
+
+util.map("n", "<leader>th", terminal_toggle(1, "horizontal"), "Toggle horizontal terminal")
+util.map("n", "<leader>tv", terminal_toggle(2, "vertical"), "Toggle vertical terminal")
+util.map("n", "<leader>tg", terminal_toggle(3, "horizontal", "lazygit"), "Toggle lazygit")
+util.map("n", "<leader>tp", terminal_toggle(4, "horizontal", "ipython"), "Toggle ipython")
+util.map("n", "<leader>tf", terminal_toggle(5, "float"), "Toggle floating terminal")
+util.map("n", "<F2>", terminal_toggle(5, "float"), "Toggle floating terminal")
 util.map("t", "<Esc><Esc>", "<C-\\><C-n>", "Exit terminal's insert mode", { noremap = true })

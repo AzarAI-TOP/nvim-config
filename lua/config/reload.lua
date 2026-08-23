@@ -13,6 +13,7 @@ local M = {}
 
 local CORE = {
     "config.options",
+    "config.colors",
     "config.keymaps",
     "config.autocmds",
     "config.neovide",

@@ -6,14 +6,19 @@ vim.g.maplocalleader = " "
 local platform = require("config.platform")
 
 -- A Winget portable package may have updated the user PATH while Explorer/Neovide
--- still hold the old environment. Discover fzf for the current process right away;
--- bootstrap-windows.ps1 also persists the directory for future shells.
-if platform.is_windows and vim.fn.executable("fzf") == 0 then
+-- still hold the old environment. Discover tools for the current process right
+-- away; bootstrap-windows.ps1 also persists the directories for future shells.
+if platform.is_windows then
     local package_root = vim.fs.joinpath(vim.env.LOCALAPPDATA or "", "Microsoft", "WinGet", "Packages")
-    local matches = vim.fn.glob(vim.fs.joinpath(package_root, "junegunn.fzf_*", "fzf.exe"), false, true)
-    if #matches > 0 then
-        local fzf_dir = vim.fs.dirname(matches[1])
-        vim.env.PATH = fzf_dir .. ";" .. (vim.env.PATH or "")
+    local winget_tools = {
+        { exe = "fzf", glob = "junegunn.fzf_*/fzf.exe" },
+        { exe = "lazygit", glob = "JesseDuffield.lazygit_*/lazygit.exe" },
+    }
+    for _, tool in ipairs(winget_tools) do
+        if vim.fn.executable(tool.exe) == 0 then
+            local matches = vim.fn.glob(vim.fs.joinpath(package_root, tool.glob), false, true)
+            if #matches > 0 then vim.env.PATH = vim.fs.dirname(matches[1]) .. ";" .. (vim.env.PATH or "") end
+        end
     end
 end
 
