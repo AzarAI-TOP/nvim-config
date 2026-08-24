@@ -15,6 +15,7 @@
 --      colors have to come from here (MiniStatuslineDiag*).
 --   6. The statusline brightness gradient: bright → dim from both edges
 --      toward the centered location (MiniStatuslineBright/Dim/Center/Peak).
+--      The hue follows the current mode (set_mode_gradient).
 --
 -- Group definitions are non-default, applied before the plugins load (this
 -- module runs in the core config phase), so plugins' `default=true` links
@@ -27,21 +28,52 @@
 local C = {
     bg_popup = "#1e2030", -- moon bg_dark: popup background
     bg_sel = "#2b3d73", -- blue0 blended into bg_popup at 40%, matches Visual
-    bg_center = "#262b45", -- gradient midpoint between bg_dark and fg_gutter
-    bg_bright = "#4b5582", -- step above fg_gutter
-    bg_peak = "#5f6b9e", -- brightest step, toward fg_dark
     blue = "#82aaff",
     comment = "#636da6",
     cyan = "#86e1fc",
     fg = "#c8d3f5",
     fg_dark = "#828bb8",
-    fg_gutter = "#3b4261",
+    green = "#c3e88d", -- moon green0: INSERT mode
     magenta = "#c099ff",
     orange = "#ff966c",
     purple = "#fca7ea",
     red = "#ff757f",
     teal = "#4fd6be",
     yellow = "#ffc777",
+}
+
+-- Linear blend of two #rrggbb colors; t=0 -> a, t=1 -> b.
+local function blend(a, b, t)
+    local function ch(s, i) return tonumber(s:sub(i, i + 1), 16) end
+    local r = ch(a, 2) + (ch(b, 2) - ch(a, 2)) * t
+    local g = ch(a, 4) + (ch(b, 4) - ch(a, 4)) * t
+    local bl = ch(a, 6) + (ch(b, 6) - ch(a, 6)) * t
+    return string.format("#%02x%02x%02x", r, g, bl)
+end
+
+-- Mode base colors (C entries; only INSERT green is new). Extended mode
+-- chars fold into their family: V/s/S/\19 → v, ic/ix → i, Rc/Rx/Rv → R,
+-- cv/cex → c; unknown states fall back to NORMAL.
+local MODE_PALETTE = {
+    n = C.blue,
+    i = C.green,
+    ic = C.green,
+    ix = C.green,
+    v = C.magenta,
+    V = C.magenta,
+    ["\22"] = C.magenta,
+    s = C.magenta,
+    S = C.magenta,
+    ["\19"] = C.magenta,
+    R = C.red,
+    r = C.red,
+    Rc = C.red,
+    Rx = C.red,
+    Rv = C.red,
+    c = C.yellow,
+    cv = C.yellow,
+    cex = C.yellow,
+    t = C.teal,
 }
 
 -- Completion kinds: single source of truth for the popupmenu's per-kind icon
@@ -88,6 +120,34 @@ function M.kind_icons()
     return out
 end
 
+-- Severity → fg color for the statusline diagnostic icons (see header,
+-- item 5). Exported so statusline.lua can derive the group names from the
+-- same keys (MiniStatuslineDiag<Name>).
+M.diag_fg = { Error = C.red, Warn = C.yellow, Info = C.cyan, Hint = C.teal }
+
+-- Rewrite the statusline gradient groups to the given mode's hue. Called from
+-- statusline.lua on ModeChanged and from apply() on ColorScheme. Dark text
+-- on the saturated steps (Peak/Bright) matches the mode block's own styling;
+-- Peak sits one step below the mode block (20% toward bg) so the two
+-- adjacent blocks stay distinct. Diag/FileBase keep Dim's bg (a %# switch to
+-- a group without bg falls back to the default background).
+function M.set_mode_gradient(mode_char)
+    -- Same guard as apply(): the moon hues would clash with other palettes.
+    if vim.g.colors_name and not vim.g.colors_name:match("^tokyonight") then return end
+    local m = MODE_PALETTE[mode_char] or MODE_PALETTE.n
+    local dim_bg = blend(m, C.bg_popup, 0.6) -- shared by Dim/FileBase/Diag
+    vim.api.nvim_set_hl(0, "MiniStatuslineBright", { fg = C.bg_popup, bg = blend(m, C.bg_popup, 0.35) })
+    -- Dim keeps the dark text: the filename dir part must stay dimmer than
+    -- the bright basename (FileBase), which is the "not in cwd root" cue.
+    vim.api.nvim_set_hl(0, "MiniStatuslineDim", { fg = C.fg_dark, bg = dim_bg })
+    vim.api.nvim_set_hl(0, "MiniStatuslineCenter", { fg = C.fg_dark, bg = blend(m, C.bg_popup, 0.8) })
+    vim.api.nvim_set_hl(0, "MiniStatuslinePeak", { fg = C.bg_popup, bg = blend(m, C.bg_popup, 0.2) })
+    vim.api.nvim_set_hl(0, "MiniStatuslineFileBase", { fg = C.fg, bg = dim_bg })
+    for sev, fg in pairs(M.diag_fg) do
+        vim.api.nvim_set_hl(0, "MiniStatuslineDiag" .. sev, { fg = fg, bg = dim_bg })
+    end
+end
+
 local function apply()
     -- Skip when a different colorscheme is active: the groups below are tuned
     -- for TokyoNight moon and would clash with other palettes.
@@ -103,25 +163,9 @@ local function apply()
         vim.api.nvim_set_hl(0, "NoiceCompletionItemKind" .. name, { fg = spec.color })
     end
 
-    -- Statusline diagnostic icons (see header, item 5). The bg keeps the
-    -- Dim step: the %#Group# switch inside the section would otherwise fall
-    -- back to the default background and break the gradient.
-    vim.api.nvim_set_hl(0, "MiniStatuslineDiagError", { fg = C.red, bg = C.fg_gutter })
-    vim.api.nvim_set_hl(0, "MiniStatuslineDiagWarn", { fg = C.yellow, bg = C.fg_gutter })
-    vim.api.nvim_set_hl(0, "MiniStatuslineDiagInfo", { fg = C.cyan, bg = C.fg_gutter })
-    vim.api.nvim_set_hl(0, "MiniStatuslineDiagHint", { fg = C.teal, bg = C.fg_gutter })
-
-    -- Statusline brightness steps (see header, item 6): moon fg_gutter as the
-    -- middle step, brightened/darkened toward the edges / center. Peak is the
-    -- rightmost filetype segment (brightest, mirroring the mode block).
-    vim.api.nvim_set_hl(0, "MiniStatuslineBright", { fg = C.fg, bg = C.bg_bright })
-    vim.api.nvim_set_hl(0, "MiniStatuslineDim", { fg = C.fg_dark, bg = C.fg_gutter })
-    vim.api.nvim_set_hl(0, "MiniStatuslineCenter", { fg = C.fg_dark, bg = C.bg_center })
-    vim.api.nvim_set_hl(0, "MiniStatuslinePeak", { fg = C.fg, bg = C.bg_peak })
-    -- Basename highlight inside the filename segment: bright text on the
-    -- same Dim background (a %# switch to a group without bg falls back to
-    -- the default background, so the bg must be explicit).
-    vim.api.nvim_set_hl(0, "MiniStatuslineFileBase", { fg = C.fg, bg = C.fg_gutter })
+    -- Re-hue the gradient to the current mode; set_mode_gradient is the only
+    -- writer of the MiniStatusline* groups.
+    M.set_mode_gradient(vim.fn.mode())
 end
 
 -- Re-apply after any colorscheme load (tokyonight loads via plugins/tokyonight.lua).
