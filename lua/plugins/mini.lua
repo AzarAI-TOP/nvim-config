@@ -1,4 +1,5 @@
--- mini.nvim ecosystem plugins (via vim.pack), all consolidated in this file.
+-- mini.nvim ecosystem plugins (via vim.pack), all consolidated in this file;
+-- mini.statusline lives in plugins/statusline.lua (custom content).
 -- Everything uses default config unless noted otherwise.
 
 -- ── Core mini.* plugins ──
@@ -23,6 +24,17 @@ for _, name in ipairs(core_plugins) do
     })
     require("mini." .. name).setup()
 end
+
+-- ── Git integration ──
+-- Branch / diff data for the statusline (MiniStatusline.section_git).
+-- Kept out of the core_plugins loop: the repo is nvim-mini/mini-git (hyphen),
+-- and a "mini.git" src would have ".git" parsed as a repo extension, making
+-- vim.pack resolve the plugin name to "mini" and clone a nonexistent URL.
+vim.pack.add({
+    { src = "https://github.com/nvim-mini/mini-git" },
+})
+
+require("mini.git").setup()
 
 -- ── Bracket navigation ──
 -- Treesitter targets disabled: conflicts with todo-comments' ]t/[t
@@ -94,8 +106,8 @@ require("mini.files").setup({
 
 -- ── Notification system ──
 -- mini.notify owns vim.notify (noice's notify routing is disabled in
--- plugins/noice.lua, so this override survives). The card background is made
--- transparent in config/colors.lua; width is capped at 30% of the editor.
+-- plugins/noice.lua, so this override survives). The card background is
+-- fully opaque (config/colors.lua); width capped at 30% of the editor.
 vim.pack.add({
     { src = "https://github.com/nvim-mini/mini.notify" },
 })
@@ -106,10 +118,11 @@ require("mini.notify").setup({
             focusable = true,
             border = "rounded",
         },
+        max_width_share = 0.3,
     },
-    config = {
-        max_width_share = 0.3, -- cap cards at 30% of the editor width
-    },
+    -- Progress cards off: noice's lsp.progress mini view already renders LSP
+    -- progress (default on); the statusline keeps the attached client names.
+    lsp_progress = { enable = false },
 })
 
 -- ── Completion and snippets (mini.snippets) ──

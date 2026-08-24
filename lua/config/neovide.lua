@@ -10,13 +10,7 @@ vim.o.guifont = "0xProto\\ Nerd\\ Font:h13:#e-subpixelantialias:#h-full"
 vim.g.neovide_pixel_geometry = "RGBH" -- required for subpixel antialiasing (most displays are RGBH)
 
 -- ── Window appearance ──
--- The window (and its unfocused state) sits at the baseline opacity. Floating
--- window translucency is handled per-highlight-group via the `blend` attribute
--- in config/colors.lua — Neovide 0.16 honors blend but has no floating-opacity
--- setting, and winblend proved unreliable.
-local OPACITY = 0.85
-vim.g.neovide_opacity = OPACITY
-vim.g.neovide_normal_opacity = OPACITY
+-- Fully opaque window (no transparency settings).
 vim.g.neovide_remember_window_size = true
 vim.g.neovide_confirm_quit = true
 vim.g.neovide_theme = "dark"
@@ -46,8 +40,6 @@ vim.g.neovide_cursor_vfx_mode = { "railgun", "torpedo", "pixiedust", "sonicboom"
 vim.g.neovide_cursor_vfx_opacity = 200.0
 
 -- ── Floating windows ──
-vim.g.neovide_floating_blur_amount_x = 2.0
-vim.g.neovide_floating_blur_amount_y = 2.0
 vim.g.neovide_floating_shadow = true
 
 -- ── Scroll animation ──
