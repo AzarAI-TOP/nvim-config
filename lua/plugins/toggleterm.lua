@@ -6,6 +6,8 @@
 --   <leader>tg          toggle lazygit (id 3)
 --   <leader>tp          toggle ipython (id 4)
 --   <leader>tf / <F2>   toggle a floating terminal (id 5)
+--   <F2> (terminal mode) toggle the terminal under the cursor, falling back
+--                       to the floating terminal in untagged :terminal buffers
 -- The default <C-\> open mapping is disabled so the key surface stays exactly
 -- the one defined in keymaps.lua; terminal-mode escape remains <C-\><C-n>
 -- and <Esc><Esc>.

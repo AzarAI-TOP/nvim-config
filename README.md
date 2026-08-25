@@ -249,7 +249,7 @@ while explicit clues label the mnemonic `<leader>` groups below.
 | `<leader>b` | Buffers | next/previous/delete (`;` opens bento directly) |
 | `<leader>l` | Languages | format / LSP actions (def, hover, rename, references, symbols, signature) / diagnostics |
 | `<leader>c` | Config | edit/reload config |
-| `<leader>t` | Terminal | `th` horizontal / `tv` vertical / `tf` float / `tg` lazygit / `tp` ipython (`<F2>` floats) |
+| `<leader>t` | Terminal | `th` horizontal / `tv` vertical / `tf` float / `tg` lazygit / `tp` ipython (`<F2>` toggles the float; in terminal mode, toggles the terminal under the cursor) |
 | `<leader>u` | Toggles | wrap / inlay hints |
 | `<leader>w` | Windows | forwards to native `<C-w>` commands |
 

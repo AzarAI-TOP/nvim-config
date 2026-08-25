@@ -142,10 +142,27 @@ util.map("v", "<C-/>", "gc", "Toggle comment", { remap = true })
 -- also keeps the bindings working after a :ConfigReload). Plain terminals use
 -- the configured shell (cmd.exe on Windows); lazygit / ipython run their own
 -- command. <F2> is a direct alias for the floating toggle, replacing the old
--- ":split | terminal" mappings.
+-- ":split | terminal" mappings. In terminal mode, <F2> toggles the terminal
+-- under the cursor instead — identify() reads the id from the buffer-name tag
+-- the plugin writes at spawn time; untagged :terminal buffers fall back to
+-- the float.
 local function terminal_toggle(id, direction, cmd)
     return function()
         require("toggleterm.terminal").Terminal:new({ id = id, direction = direction, cmd = cmd }):toggle()
+    end
+end
+
+-- One symbol for the float tuple so <leader>tf, <F2>, and the terminal-mode
+-- fallback below cannot drift apart.
+local toggle_float = terminal_toggle(5, "float")
+
+local function toggle_current_terminal()
+    local term_mod = require("toggleterm.terminal")
+    local _, term = term_mod.identify()
+    if term then
+        term:toggle()
+    else
+        toggle_float()
     end
 end
 
@@ -153,6 +170,7 @@ util.map("n", "<leader>th", terminal_toggle(1, "horizontal"), "Toggle horizontal
 util.map("n", "<leader>tv", terminal_toggle(2, "vertical"), "Toggle vertical terminal")
 util.map("n", "<leader>tg", terminal_toggle(3, "horizontal", "lazygit"), "Toggle lazygit")
 util.map("n", "<leader>tp", terminal_toggle(4, "horizontal", "ipython"), "Toggle ipython")
-util.map("n", "<leader>tf", terminal_toggle(5, "float"), "Toggle floating terminal")
-util.map("n", "<F2>", terminal_toggle(5, "float"), "Toggle floating terminal")
+util.map("n", "<leader>tf", toggle_float, "Toggle floating terminal")
+util.map("n", "<F2>", toggle_float, "Toggle floating terminal")
+util.map("t", "<F2>", toggle_current_terminal, "Toggle current terminal")
 util.map("t", "<Esc><Esc>", "<C-\\><C-n>", "Exit terminal's insert mode", { noremap = true })
