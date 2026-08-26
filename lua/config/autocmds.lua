@@ -131,6 +131,7 @@ for _, group in ipairs(indent_groups) do
             end
             vim.opt_local.tabstop = ts
             vim.opt_local.shiftwidth = sw
+            vim.opt_local.softtabstop = sw
             vim.opt_local.expandtab = et
         end,
     })
@@ -211,12 +212,14 @@ vim.api.nvim_create_autocmd("FileType", {
         if ind then
             vim.opt_local.tabstop = ind.tabwidth
             vim.opt_local.shiftwidth = ind.indent
+            vim.opt_local.softtabstop = ind.indent
             vim.opt_local.expandtab = not ind.use_tab
             return
         end
         -- Google default: 2-space indent
         vim.opt_local.tabstop = 2
         vim.opt_local.shiftwidth = 2
+        vim.opt_local.softtabstop = 2
         vim.opt_local.expandtab = true
     end,
 })

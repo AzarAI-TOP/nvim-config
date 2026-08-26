@@ -1,6 +1,6 @@
 -- Shared utility set for this config: keymap registry, unified keymap binding,
--- editorconfig indent helpers, and the LSP / formatter / system tool lists.
--- All small helper functions live in this one file.
+-- editorconfig indent helpers, :PackList row builder, and the LSP / formatter
+-- tool lists. All small helper functions live in this one file.
 
 local M = {}
 
@@ -37,7 +37,14 @@ end
 ---@param desc string
 ---@param opts? table
 function M.map(mode, lhs, rhs, desc, opts)
-    opts = vim.tbl_extend("force", { desc = desc }, opts or {})
+    opts = opts or {}
+    -- Ex-command string mappings echo the command line unless silenced; a
+    -- ":" in the RHS marks them, so silence by default (callers can pass an
+    -- explicit silent = false to override).
+    if opts.silent == nil and type(rhs) == "string" and rhs:find(":", 1, true) then
+        opts = vim.tbl_extend("force", { silent = true }, opts)
+    end
+    opts = vim.tbl_extend("force", { desc = desc }, opts)
     vim.keymap.set(mode, lhs, rhs, opts)
     M.register_keymap(mode, lhs)
 end
@@ -86,6 +93,37 @@ function M.reapply_editorconfig_indent(bufnr)
     if applied.tab_width ~= nil then vim.bo[bufnr].tabstop = tonumber(applied.tab_width) end
 end
 
+-- ── :PackList row builder ──
+-- Lives in util so config/pack.lua only registers user commands, which
+-- config.reload can delete and rebuild wholesale on :ConfigReload.
+
+---Strip protocol/host from a plugin source, keep "author/repo"
+---(e.g. "https://github.com/folke/noice.nvim" -> "folke/noice.nvim").
+---@param src string
+---@return string
+local function short_src(src)
+    local path = src:match("^%a+://[^/]+/(.+)$") or src:match("^git@[^:]+:(.+)$") or src
+    return path:gsub("%.git$", "")
+end
+
+---Rows sorted by plugin name: "name  author/repo", second column aligned.
+---@return string[]
+function M.pack_rows()
+    local rows = {}
+    local width = 0
+    for _, plugin in ipairs(vim.pack.get()) do
+        local spec = plugin.spec or {}
+        local name = spec.name or "?"
+        width = math.max(width, #name)
+        table.insert(rows, { name = name, src = short_src(spec.src or "") })
+    end
+    for i, row in ipairs(rows) do
+        rows[i] = (string.format("%-" .. width .. "s  %s", row.name, row.src)):gsub("%s+$", "")
+    end
+    table.sort(rows)
+    return rows
+end
+
 -- ── Tool lists ──
 
 -- LSP server list; names match the nvim-lspconfig / mason-lspconfig identifiers.
@@ -122,16 +160,5 @@ M.mason_formatters = {
 
 -- mason-tool-installer accepts plain package names.
 M.mason_packages = vim.list_extend(vim.list_extend({}, M.lsp_servers), M.mason_formatters)
-
--- System-level tools (outside Mason): the Linux bootstrap script installs
--- common tools; language-specific formatters come with their own toolchains.
-M.system_tools = {
-    "git",
-    "curl",
-    "fzf",
-    "rg",
-    "node",
-    "npm",
-}
 
 return M

@@ -21,7 +21,7 @@ vim.pack.add({
 -- columns. Screen and window pixel widths come from a background PowerShell
 -- probe (GetWindowRect on any Neovide instance — all share the font, so
 -- pixels per column is identical) and are cached in the state dir; 120 is
--- the fallback until the probe lands or on non-Windows.
+-- the fallback until the probe lands.
 local narrow_threshold = 120
 
 local function apply_probe(out)
@@ -55,12 +55,20 @@ end
 
 do
     read_cache()
-    -- Windows-only probe (PowerShell). Runs at VimEnter so the Neovide
-    -- window certainly exists (during config load it has no handle yet);
-    -- cache writes are gated on acceptance.
-    if require("config.platform").is_windows then
+    -- PowerShell probe, Neovide only: a terminal nvim has no window of its
+    -- own to measure, so spawning the probe there is pure waste. The probe
+    -- script lives in scripts/screen-probe.ps1 (statically checkable and
+    -- runnable on its own); it runs at VimEnter so the Neovide window
+    -- certainly exists (during config load it has no handle yet); cache
+    -- writes are gated on acceptance.
+    if vim.g.neovide then
+        local probe_script = vim.fs.joinpath(vim.fn.stdpath("config"), "scripts", "screen-probe.ps1")
         vim.api.nvim_create_autocmd("VimEnter", {
             callback = function()
+                -- The probe result only changes on monitor / DPI / font
+                -- changes, so a fresh cache (< 1h old) skips the spawn.
+                local mtime = vim.fn.getftime(cache_file)
+                if mtime > 0 and os.time() - mtime < 3600 then return end
                 read_cache()
                 -- The window is still at its initial size when VimEnter
                 -- fires; wait for Neovide to finish laying it out first.
@@ -68,12 +76,23 @@ do
                     vim.fn.jobstart({
                         "powershell",
                         "-NoProfile",
-                        "-Command",
-                        'Add-Type -AssemblyName System.Windows.Forms; Add-Type -TypeDefinition \'using System;using System.Runtime.InteropServices;public struct R{public int L,T,Rt,B;}public class W{[DllImport("user32.dll")]public static extern bool GetWindowRect(IntPtr h,out R r);}\'; $sw=[System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width; $p=Get-Process neovide -ErrorAction SilentlyContinue|Where-Object{$_.MainWindowHandle -ne 0}|Select-Object -First 1; if($p){$r=New-Object R;[W]::GetWindowRect($p.MainWindowHandle,[ref]$r)|Out-Null; "$sw $($r.Rt-$r.L)"}else{"$sw 0"}',
+                        "-File",
+                        probe_script,
                     }, {
                         on_stdout = function(_, data)
                             local px = data[1]
                             if px and apply_probe(px) then write_cache(px) end
+                        end,
+                        on_exit = function(_, code)
+                            if code ~= 0 then
+                                vim.notify(
+                                    "screen probe failed (exit "
+                                        .. code
+                                        .. "), narrow-layout threshold stays at default",
+                                    vim.log.levels.WARN,
+                                    { title = "statusline" }
+                                )
+                            end
                         end,
                     })
                 end, 1500)

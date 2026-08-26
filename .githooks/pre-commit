@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # Pre-commit hook: formats staged Lua files with StyLua (fail-closed).
 # Enable it with `git config core.hooksPath .githooks`.
 #
@@ -20,27 +20,17 @@ fi
 # dir (preferred over the .CMD shim), and finally Mason's bin dir.
 stylua_cmd=$(command -v stylua 2>/dev/null || true)
 if [ -z "$stylua_cmd" ]; then
-    mason_dirs=
-    [ -n "${LOCALAPPDATA:-}" ] && mason_dirs="$mason_dirs $LOCALAPPDATA/nvim-data/mason"
-    [ -n "${XDG_DATA_HOME:-}" ] && mason_dirs="$mason_dirs $XDG_DATA_HOME/nvim/mason"
-    mason_dirs="$mason_dirs ${HOME:-$HOME}/.local/share/nvim/mason"
-    for dir in $mason_dirs; do
-        for exe in "$dir"/packages/stylua/stylua.exe "$dir"/packages/stylua/*/stylua.exe \
-            "$dir"/packages/stylua/stylua "$dir"/packages/stylua/*/stylua; do
-            if [ -x "$exe" ] || [ -f "$exe" ]; then
-                stylua_cmd=$exe
-                break 2
-            fi
-        done
+    mason_dirs="$LOCALAPPDATA/nvim-data/mason"
+    for exe in "$mason_dirs"/packages/stylua/stylua.exe "$mason_dirs"/packages/stylua/*/stylua.exe; do
+        if [ -x "$exe" ] || [ -f "$exe" ]; then
+            stylua_cmd=$exe
+            break
+        fi
     done
 fi
 if [ -z "$stylua_cmd" ] && [ -n "${LOCALAPPDATA:-}" ]; then
     candidate="${LOCALAPPDATA}/nvim-data/mason/bin/stylua.CMD"
     [ -f "$candidate" ] && stylua_cmd=$candidate
-fi
-if [ -z "$stylua_cmd" ]; then
-    candidate="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/mason/bin/stylua"
-    [ -x "$candidate" ] && stylua_cmd=$candidate
 fi
 if [ -z "$stylua_cmd" ]; then
     echo "❌ stylua not found — commit aborted."
@@ -51,12 +41,13 @@ fi
 
 # Reject partially staged Lua files. Otherwise formatting the worktree copy
 # and re-adding would sweep unrelated unstaged changes into the commit.
-for file in $staged; do
+# NUL-separated so filenames with spaces survive the loop.
+while IFS= read -r -d '' file; do
     if ! git diff --quiet -- "$file"; then
         echo "❌ $file has both staged and unstaged changes. Stage or stash it before committing."
         exit 1
     fi
-done
+done < <(git diff --cached --name-only -z --diff-filter=ACMR | grep -z '\.lua$' || true)
 
 # Format the staged Lua files in place, then verify the result passes a clean
 # --check (no silent partial failures allowed).

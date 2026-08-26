@@ -1,4 +1,4 @@
--- Tree-sitter syntax highlighting (via vim.pack)
+-- Tree-sitter: parsers, highlighting, and textobject queries (via vim.pack)
 --
 -- Neovim's built-in 7 parsers don't cover languages like JavaScript;
 -- missing parsers fall back to basic regex highlighting.
@@ -6,6 +6,12 @@
 -- nvim-treesitter's new API lives on the main branch (Neovim 0.11+)
 vim.pack.add({
     { src = "https://github.com/nvim-treesitter/nvim-treesitter", version = "main" },
+    -- Textobject capture queries (@function.outer / @function.inner, ...).
+    -- Data-only: nothing is loaded or set up — mini.ai's treesitter F target
+    -- (plugins/mini.lua) reads queries/<lang>/textobjects.scm straight from
+    -- the runtimepath. Upstream is archived (2026-04, like nvim-treesitter)
+    -- but the query files need no maintenance.
+    { src = "https://github.com/nvim-treesitter/nvim-treesitter-textobjects" },
 })
 
 -- Parsers to install (language names, not filetype names). Requires a C
@@ -49,9 +55,12 @@ vim.treesitter.language.register("javascript", { "javascriptreact" })
 vim.treesitter.language.register("tsx", { "typescriptreact" })
 vim.treesitter.language.register("bash", { "sh" })
 
--- Enable Tree-sitter highlighting per filetype:
--- only activates when the parser is installed, otherwise silently falls back
--- to regex highlighting.
+-- Enable Tree-sitter highlighting per filetype.
+-- Neovim 0.12 does NOT auto-enable highlighting when a parser exists (only
+-- ftplugin/lua.lua calls vim.treesitter.start() itself) — this FileType
+-- autocmd is the enabling mechanism for every other filetype. The
+-- pcall(language.add) guard is mandatory: vim.treesitter.start() asserts on
+-- a missing parser instead of degrading to regex highlighting.
 vim.api.nvim_create_autocmd("FileType", {
     group = vim.api.nvim_create_augroup("treesitter_highlight", { clear = true }),
     callback = function(args)

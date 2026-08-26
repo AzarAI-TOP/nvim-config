@@ -2,10 +2,8 @@
 -- mini.statusline lives in plugins/statusline.lua (custom content).
 -- Everything uses default config unless noted otherwise.
 
--- ── Core mini.* plugins ──
+-- ── Core mini.* plugins (default config) ──
 local core_plugins = {
-    -- Text objects — extends built-in text objects (i) (a)
-    "ai",
     -- Comment toggling — gc (toggle), gcc (current line)
     "comment",
     -- Icon provider — file / directory / LSP icons for mini.files and others
@@ -14,6 +12,8 @@ local core_plugins = {
     "indentscope",
     -- Move lines / selections — Alt+Up/Down
     "move",
+    -- Surround editing — sa (add), sd (delete), sr (replace)
+    "surround",
     -- Trailing whitespace highlight and cleanup
     "trailspace",
 }
@@ -24,6 +24,20 @@ for _, name in ipairs(core_plugins) do
     })
     require("mini." .. name).setup()
 end
+
+-- ── mini.ai: text objects ──
+-- F (whole function definition) needs the @function.outer/inner captures
+-- shipped by nvim-treesitter-textobjects (plugins/treesitter.lua); without
+-- them aF / iF silently match nothing.
+vim.pack.add({
+    { src = "https://github.com/nvim-mini/mini.ai" },
+})
+
+require("mini.ai").setup({
+    custom_textobjects = {
+        F = require("mini.ai").gen_spec.treesitter({ a = "@function.outer", i = "@function.inner" }),
+    },
+})
 
 -- ── Git integration ──
 -- Branch / diff data for the statusline (MiniStatusline.section_git).
@@ -57,21 +71,22 @@ vim.pack.add({
 local miniclue = require("mini.clue")
 
 local clue_triggers = {
-    { mode = "n", keys = "<Leader>" },
+    { mode = "n", keys = "<leader>" },
     { mode = "n", keys = "[" },
     { mode = "n", keys = "]" },
 }
 
 local clues = {
-    { mode = "n", keys = "<Leader>b", desc = "󰈚 +Buffers" },
-    { mode = "n", keys = "<Leader>c", desc = "󰒓 +Config" },
-    { mode = "n", keys = "<Leader>f", desc = "󰈞 +Find" },
-    { mode = "n", keys = "<Leader>l", desc = "󰘋 +Language" },
-    { mode = "n", keys = "<Leader>p", desc = "󰏖 +Packages" },
-    { mode = "n", keys = "<Leader>s", desc = "󰤼 +Splits" },
-    { mode = "n", keys = "<Leader>t", desc = "󰆍 +Terminal" },
-    { mode = "n", keys = "<Leader>u", desc = "󰔡 +Toggles" },
-    { mode = "n", keys = "<Leader>w", desc = "󰒩 +Windows" },
+    { mode = "n", keys = "<leader>b", desc = "󰈚 +Buffers" },
+    { mode = "n", keys = "<leader>c", desc = "󰒓 +Config" },
+    { mode = "n", keys = "<leader>f", desc = "󰈞 +Find" },
+    { mode = "n", keys = "<leader>l", desc = "󰘋 +Language" },
+    { mode = "n", keys = "<leader>p", desc = "󰏖 +Packages" },
+    { mode = "n", keys = "<leader>s", desc = "󰤼 +Splits" },
+    { mode = "n", keys = "<leader>t", desc = "󰆍 +Terminal" },
+    { mode = "n", keys = "<leader>u", desc = "󰔡 +Toggles" },
+    { mode = "n", keys = "<leader>w", desc = "󰒩 +Windows" },
+    { mode = "n", keys = "<leader>S", desc = "󰗀 +Sessions" },
     miniclue.gen_clues.square_brackets(),
 }
 

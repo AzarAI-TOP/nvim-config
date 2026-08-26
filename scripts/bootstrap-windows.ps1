@@ -327,7 +327,7 @@ function Invoke-BootstrapWindows {
     }
 
     if (-not $SkipFont) {
-        # Install the same per-user Nerd Font that Neovide uses on Fedora.
+        # Install the per-user Nerd Font that Neovide renders with.
         $fontRegistry = "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts"
         $fontInstalled = @(
             "HKCU:\Software\Microsoft\Windows NT\CurrentVersion\Fonts",

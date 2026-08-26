@@ -1,8 +1,8 @@
 # nvim-config
 
-A minimal, pure-Lua Neovim configuration for Windows, Fedora desktop, WSL, and
-Ubuntu servers. Plugins are managed by Neovim's built-in `vim.pack`; LSP servers
-and portable formatters are managed by Mason (requires Neovim 0.12+).
+A minimal, pure-Lua Neovim configuration for Windows. Plugins are managed by
+Neovim's built-in `vim.pack`; LSP servers and portable formatters are managed
+by Mason (requires Neovim 0.12+).
 
 ## Layout
 
@@ -11,8 +11,8 @@ and portable formatters are managed by Mason (requires Neovim 0.12+).
 ├── init.lua                # entry point — loads config modules, then plugins
 ├── lua/
 │   ├── config/
-│   │   ├── util.lua        # shared helpers: keymap registry, map(), editorconfig
-│   │   │                   #   indent helpers, tool inventory (LSP/formatter/system)
+│   │   ├── util.lua        # keymap registry, unified map(), :PackList rows,
+│   │   │                   #   indent helpers, tool inventory
 │   │   ├── options.lua     # editor options (number, indent, search, undo, ...)
 │   │   ├── keymaps.lua     # key mappings (leader = <Space>)
 │   │   ├── autocmds.lua    # autocommands + per-filetype indent rules
@@ -20,15 +20,13 @@ and portable formatters are managed by Mason (requires Neovim 0.12+).
 │   │   │                   #   native completion activation, LSP keymaps
 │   │   ├── colors.lua      # noice UI colors: popupmenu/kind palette (moon),
 │   │   │                   #   transparent float surfaces, per-kind groups
-│   │   ├── neovide.lua     # shared Windows/Fedora Neovide settings
-│   │   ├── platform.lua    # Windows/Linux/WSL/SSH detection
+│   │   ├── neovide.lua     # Neovide GUI settings
 │   │   ├── pack.lua        # :PackUpdate / :PackList user commands
 │   │   └── reload.lua      # hot-reload of the core config layer
 │   └── plugins/            # one file per plugin: vim.pack.add + setup
 │       ├── init.lua        # loader — priority list, then alphabetical
 │       └── <name>.lua      # mason, tokyonight, fzf, mini, conform, ...
 ├── scripts/
-│   ├── bootstrap-linux.sh  # Fedora/Ubuntu/WSL system prerequisites
 │   └── bootstrap-windows.ps1 # Windows system prerequisites
 ├── .githooks/pre-commit    # auto-formats staged Lua files via StyLua
 └── .stylua.toml            # StyLua formatter config
@@ -59,10 +57,11 @@ display, native completion activation, and the LSP keymaps.
   terminal, `<leader>tv` a vertical one, `<leader>tf` / `<F2>` a floating one,
   `<leader>tg` lazygit, `<leader>tp` ipython.
 - **Native LSP completion + snippets** — Neovim 0.12 completion is enabled
-  per attached client with automatic trigger-character support; the popup never
-  auto-selects. `mini.snippets` loads the
+  per attached client and opens automatically on every printable character
+  (the server's trigger characters are extended to all printable ASCII);
+  the popup never auto-selects. `mini.snippets` loads the
   local C, C++, and Python collections from `snippets/`; type a prefix and
-  press `<Tab>` to expand, then `<Tab>` / `<S-Tab>` to move between fields and
+  press `<C-j>` to expand, then `<C-l>` / `<C-h>` to move between fields and
   `<C-q>` to stop the session.
   Markdown disables LSP completion to keep prose input immediate, while snippet expansion remains available.
 - **Simple plugin lifecycle** — every plugin registers its own
@@ -81,19 +80,23 @@ display, native completion activation, and the LSP keymaps.
   (Google Style only as fallback outside any configured project), and
   prettierd prefers project configuration while falling back to Prettier's
   built-in defaults when no project configuration exists.
-- **Tree-sitter syntax highlighting** — 22 parsers installed, enabled
+- **Tree-sitter syntax highlighting** — every configured parser enabled
   automatically on matching filetypes; falls back to regex otherwise.
-- **Textobjects** — `mini.ai` extends `a`/`i` with function calls, arguments,
-  tags, and more. Supports consecutive expansion (`in` → `in` → ...).
+- **Textobjects** — `mini.ai` extends `a`/`i` with arguments, function calls,
+  quotes, brackets, tags, and more. A custom treesitter target `aF` / `iF`
+  selects a whole function definition (outer with braces, inner body only),
+  backed by nvim-treesitter-textobjects' capture queries. Supports consecutive
+  expansion (`in` → `in` → ...).
 - **Bracket navigation** — `mini.bracketed` provides `]`/`[` mappings for
   diagnostics, indentation, comments, quickfix, buffers, windows, and more;
   pausing after either prefix displays the available targets through `mini.clue`.
 - **Comment toggling** — `mini.comment` via `gc` / `gcc` / `<C-/>`.
+- **Surround editing** — `mini.surround`: `sa` adds a surrounding pair,
+  `sd` deletes it, `sr` replaces it (visual mode: `S`).
 - **Leader = `<Space>`**, with mappings grouped by mnemonic prefix:
   `<leader>b` buffer, `<leader>c` config, `<leader>l` language (format),
   `<leader>e` explorer, `<leader>f` find/search, `<leader>t` terminal,
-  `<leader>u` toggles.
-  Direct window navigation via `<M-h/j/k/l>`.
+  `<leader>u` toggles. Window navigation goes through the `<leader>w` prefix.
 - **Per-filetype indentation** — 2 spaces for web/scripting/markup languages,
   4 spaces for systems languages, tabs for Go/Make. Project `.editorconfig`
   values (full property and glob support via the runtime module) take
@@ -110,13 +113,17 @@ display, native completion activation, and the LSP keymaps.
   position.
 - **TODO highlighting** — `todo-comments.nvim` highlights and searches for
   TODO/FIX/HACK/WARN/NOTE comments.
+- **Sessions** — `mini.sessions` snapshots the workspace (buffers, windows,
+  cwd, folds) into named global sessions under the data directory (nothing is
+  written into projects): `<leader>Ss` saves under a prompted name, `<leader>Sl`
+  restores or switches, `<leader>Sd` deletes. A restored session auto-updates
+  on exit.
 - **Notifications** — `mini.notify` replaces `vim.notify` with a cleaner UI.
 - **Visual aides** — `mini.indentscope` shows indent guides,
   `mini.trailspace` highlights trailing whitespace,
   `mini.move` moves lines/selections with `Alt+↑/↓`.
-- Persistent undo, system clipboard integration, `termguicolors`.
-- Deterministic plugin/LSP config loading on NTFS and Linux filesystems.
-- Native clipboard on Windows/Fedora; OSC52 clipboard for WSL and SSH.
+- Persistent undo, native system clipboard integration, `termguicolors`.
+- Deterministic plugin/LSP config loading (sorted module discovery).
 
 ## Plugins
 
@@ -138,17 +145,19 @@ display, native completion activation, and the LSP keymaps.
 | [mini.indentscope](https://github.com/nvim-mini/mini.indentscope) | Indent guides |
 | [mini.move](https://github.com/nvim-mini/mini.move) | Move lines/selections |
 | [mini.notify](https://github.com/nvim-mini/mini.notify) | Notification system |
+| [mini.sessions](https://github.com/nvim-mini/mini.sessions) | Per-directory session persistence |
+| [mini.statusline](https://github.com/nvim-mini/mini.statusline) | Statusline |
 | [mini.snippets](https://github.com/nvim-mini/mini.snippets) | Local C/C++/Python snippet expansion |
+| [mini.surround](https://github.com/nvim-mini/mini.surround) | Surround editing |
 | [mini.clue](https://github.com/nvim-mini/mini.clue) | Leader-key discovery and groups |
 | [mini.trailspace](https://github.com/nvim-mini/mini.trailspace) | Trailing whitespace |
 | [todo-comments.nvim](https://github.com/folke/todo-comments.nvim) | TODO highlighting |
 | [toggleterm.nvim](https://github.com/akinsho/toggleterm.nvim) | Toggleable terminals (terminal / lazygit / ipython) |
 | [tokyonight.nvim](https://github.com/folke/tokyonight.nvim) | Colorscheme (moon) |
 | [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) | Syntax highlighting |
+| [nvim-treesitter-textobjects](https://github.com/nvim-treesitter/nvim-treesitter-textobjects) | Textobject capture queries (consumed by mini.ai; the plugin itself stays unloaded) |
 
 ## Install
-
-### Windows
 
 ```powershell
 winget install --id Git.Git --exact --accept-package-agreements --accept-source-agreements
@@ -167,54 +176,25 @@ Java, LLVM, fzf, lazygit, ripgrep, 7-Zip, and the 0xProto Nerd Font, installs
 ipython via pip (the `<leader>tp` REPL), and then synchronizes all
 Mason-managed LSP servers and formatters.
 
-### Fedora / Ubuntu / WSL
-
-```sh
-if command -v dnf >/dev/null; then sudo dnf install -y git curl; else sudo apt-get update && sudo apt-get install -y git curl; fi
-git clone https://github.com/AzarAI-TOP/nvim-config "${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
-cd "${XDG_CONFIG_HOME:-$HOME/.config}/nvim"
-git config core.hooksPath .githooks
-bash scripts/bootstrap-linux.sh
-```
-
-The Linux bootstrap script:
-
-- installs `git`, `curl`, compilers, Node, Go, Rust, Java, `fzf`, and `ripgrep`;
-- installs Neovim under `~/.local` when the distro version is older than 0.12;
-- installs both `wl-clipboard` and `xclip` for Fedora desktop, even when run
-  from TTY/SSH; set `INSTALL_DESKTOP_DEPS=0` for a headless Fedora host;
-- replaces distro `fzf` with a pinned, checksum-verified user-local release
-  when it is older than the fzf-lua minimum (0.36);
-- installs 0xProto Nerd Font on Fedora desktop (disable with
-  `INSTALL_0XPROTO_FONT=0`);
-- runs Mason's synchronous LSP server and formatter installation.
-
-Ensure `~/.local/bin` is in your shell `PATH` after bootstrap.
-
 ## Platform behavior
 
-| Environment | UI | Clipboard | Shell |
-|-------------|----|-----------|-------|
-| Windows | terminal / Neovide | native Windows provider | `cmd.exe` pinned for `:!` compatibility |
-| Fedora desktop | terminal / Neovide | `wl-clipboard` (Wayland) or `xclip` (X11) | inherited user shell |
-| WSL | terminal | `<leader>y` copies through OSC52; ordinary `p` stays internal | inherited Linux shell |
-| Ubuntu over SSH | terminal | `<leader>y` copies through OSC52; ordinary `p` stays internal | inherited Linux shell |
-
-OSC52 copy works in modern terminals such as Windows Terminal, WezTerm, Kitty,
-and recent GNOME Terminal. Clipboard *read* may require explicit terminal
-permission; normal terminal paste remains available regardless.
-
-Neovide uses 0xProto Nerd Font at 13pt on Windows and Fedora. Windows-only title
-bar and rounded-corner settings are not applied on Linux.
+- **Clipboard** — native Windows provider, `clipboard = "unnamedplus"` (yank
+  and paste go through the system clipboard).
+- **Shell** — `cmd.exe` is pinned for `:!` / `system()` / filters so a Git
+  Bash-launched nvim never feeds cmd-style flags into Bash.
+- **Tool discovery** — at startup the config checks WinGet package dirs
+  (`%LOCALAPPDATA%\Microsoft\WinGet\Packages`) for `fzf` / `lazygit` and
+  prepends them to `PATH` when a stale Explorer/Neovide environment hides
+  them.
+- **Neovide** — 0xProto Nerd Font at 13pt, rounded corners, title bar in
+  TokyoNight Moon colors.
 
 ### Launching Neovide
 
-On Windows, press `Ctrl+Alt+N` to launch Neovide via the Start Menu shortcut
-(installed automatically by the bootstrap). Alternatively, run `neovide` from
-PowerShell after the bootstrap adds it to your user `PATH`, or find "Neovide"
-in the Start Menu.
-
-On Fedora, launch `neovide` from a terminal or your application launcher.
+Press `Ctrl+Alt+N` to launch Neovide via the Start Menu shortcut (installed
+automatically by the bootstrap). Alternatively, run `neovide` from PowerShell
+after the bootstrap adds it to your user `PATH`, or find "Neovide" in the
+Start Menu.
 
 IME auto-toggles for Chinese input: on in Insert mode and `/` / `?` search,
 off in Normal mode and `:` commands.
@@ -231,9 +211,10 @@ checking its built-in diagnostics:
 :PackUpdate                " update plugins via the vim.pack review buffer
 ```
 
-The bootstrap scripts install every dependency they declare and fail fast on
-any unacceptable exit code (winget, dnf, apt, curl checksums). If something is
-missing afterwards, `:checkhealth` names the tool and the fix.
+The bootstrap script installs every dependency it declares and fails fast on
+any unacceptable exit code (winget exit codes and SHA-256 checksum
+verification). If something is missing afterwards, `:checkhealth` names the
+tool and the fix.
 
 ## Key map groups
 
@@ -243,12 +224,14 @@ while explicit clues label the mnemonic `<leader>` groups below.
 
 | Prefix | Group | Examples |
 |--------|-------|----------|
-| `<leader>p` | Package management | `pm` Mason UI / `pu` plugin update / `pU` Mason tools update / `pp` plugin list / `pi` install |
+| `<leader>p` | Package management | `pm` Mason UI / `pu` plugin update / `pU` Mason tools update / `pl` plugin list / `pi` install |
 | `<leader>s` | Splits | create/close/keep split |
-| `<leader>f` | Find | files/config/registers/help/TODO |
+| `<leader>f` | Find | files/config/registers/help/TODO/keymaps; `fg` grep project / `fG` live grep / `fW` word under cursor |
 | `<leader>b` | Buffers | next/previous/delete (`;` opens bento directly) |
 | `<leader>l` | Languages | format / LSP actions (def, hover, rename, references, symbols, signature) / diagnostics |
 | `<leader>c` | Config | edit/reload config |
+| `<leader>e` | File explorer | `e` opens mini.files (Miller columns) |
+| `<leader>S` | Sessions | `Ss` save / `Sl` load / `Sd` delete |
 | `<leader>t` | Terminal | `th` horizontal / `tv` vertical / `tf` float / `tg` lazygit / `tp` ipython (`<F2>` toggles the float; in terminal mode, toggles the terminal under the cursor) |
 | `<leader>u` | Toggles | wrap / inlay hints |
 | `<leader>w` | Windows | forwards to native `<C-w>` commands |
@@ -262,22 +245,23 @@ outside LSP buffers.
 
 ## Completion and snippets
 
-- LSP completion opens automatically for server trigger characters. Use
-  `<C-Space>`/`<C-x><C-o>` for manual completion. The popup never auto-selects
-  or auto-inserts: move with `<C-n>`/`<C-p>`, accept with `<C-y>` or `<Tab>`.
-- Snippets: type `main`, `for`, `if`, `def`, etc., then press `<Tab>` to expand.
-  `<Tab>` accepts a completion while the popup is open, expands a snippet when a
-  prefix matches, and jumps to the next field during a snippet session. Use
-  `<S-Tab>` or `<C-h>` to move backward and `<C-l>` to move forward (`<C-q>`
-  stops the session). During a session, Backspace (the same key as `<C-h>`)
-  jumps to the previous field instead of deleting. Expansion is strict: Tab
-  never pops up a snippet picker, so indentation with Tab keeps working.
+- LSP completion opens automatically while typing (every printable character
+  is a trigger character). Use `<C-Space>` for a manual request. The popup
+  never auto-selects or auto-inserts: move with `<C-n>`/`<C-p>`, accept with
+  `<C-y>`. `<Tab>` does not accept — it closes the menu and keeps its usual
+  indentation behavior.
+- Snippets: type `main`, `for`, `if`, `def`, etc., then press `<C-j>` to
+  expand. During a snippet session, `<C-l>` jumps to the next field and
+  `<C-h>` (the same key as Backspace) to the previous one; `<C-q>` stops the
+  session. Expansion is strict (exact prefix or fuzzy match on the typed
+  word): the all-snippets picker never appears, so `<Tab>` keeps working for
+  indentation.
 - Snippet files live in `snippets/c.json`, `snippets/cpp.json`, and
   `snippets/python.json`; they use VS Code/LSP snippet JSON syntax. Loaders
   cache file contents, so after editing a snippet file restart Neovim or run
   `MiniSnippets.setup(MiniSnippets.config)` to clear the cached loaders.
 - Markdown disables LSP completion to keep prose input immediate, but retains
-  the snippet mechanism and its `<Tab>`/`<C-j>` mappings. No `markdown.json`
+  the snippet mechanism and its `<C-j>` expand mapping. No `markdown.json`
   snippet file is bundled; add one under `snippets/` to use snippets in
   Markdown.
 
@@ -286,10 +270,15 @@ outside LSP buffers.
 These upstream changes may affect this config in the near future:
 
 - **bento.nvim v2** — A `feat/v2` branch with a fully refactored API
-  (explicit action/key registration via `require("bento.api")`) is planned for
-  merge to `main` around **July 2026**. The current `setup({ main_keymap = ";" })`
-  config will need updating when that lands.
+  (explicit action/key registration via `require("bento.api")`) was announced
+  for a July 2026 merge, which has since passed. Before updating bento,
+  verify the current `main` API — `setup({ main_keymap = ";" })` may need
+  changes when v2 lands.
 - **nvim-treesitter archived** — The repository was archived on 2026-04-03 and
   is no longer actively developed. The current `main`-branch API works correctly
   for now. Long-term, Neovim 0.12+'s built-in `vim.treesitter` may be a
   sufficient replacement for syntax highlighting.
+- **nvim-treesitter-textobjects archived** — Archived on 2026-04-03 in the same
+  wave. It is consumed purely as query data by mini.ai's `F` target, which
+  keeps working without maintenance. Once a future Neovim version ships
+  built-in textobject queries, this dependency can be dropped.

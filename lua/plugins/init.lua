@@ -1,7 +1,7 @@
 -- Plugin loader. Every file under lua/plugins/ declares its own vim.pack.add
 -- and setup; adding a plugin means adding a file. A few infrastructure plugins
 -- load first by priority, the rest load alphabetically, keeping the order
--- deterministic across platforms.
+-- deterministic.
 
 local priority = {
     "mini", -- all mini.* plugins (icons, keymap hints, and other infrastructure)

@@ -2,8 +2,6 @@
 
 if not vim.g.neovide then return end
 
-local platform = require("config.platform")
-
 -- ── Font ──
 -- 0xProto Nerd Font, 13pt, subpixel antialiasing
 vim.o.guifont = "0xProto\\ Nerd\\ Font:h13:#e-subpixelantialias:#h-full"
@@ -15,12 +13,11 @@ vim.g.neovide_remember_window_size = true
 vim.g.neovide_confirm_quit = true
 vim.g.neovide_theme = "dark"
 
-if platform.is_windows then
-    vim.g.neovide_corner_preference = "round"
-    -- Match the TokyoNight Moon palette (background #222436 / text #82aaff)
-    vim.g.neovide_title_background_color = "222436"
-    vim.g.neovide_title_text_color = "82aaff"
-end
+-- Windows title bar: rounded corners, colors matched to the TokyoNight Moon
+-- palette (background #222436 / text #82aaff).
+vim.g.neovide_corner_preference = "round"
+vim.g.neovide_title_background_color = "222436"
+vim.g.neovide_title_text_color = "82aaff"
 
 -- Padding around the editor
 vim.g.neovide_padding_top = 5
