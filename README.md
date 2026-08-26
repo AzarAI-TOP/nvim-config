@@ -94,7 +94,7 @@ descriptions provide action hints, while explicit clues label the mnemonic
 |--------|-------|----------|
 | `<leader>p` | Package management | `pm` Mason UI / `pu` plugin update / `pU` Mason tools update / `pl` plugin list / `pi` install |
 | `<leader>s` | Splits | `ss` horizontal / `sv` vertical / `sc` close / `so` close others |
-| `<leader>f` | Find | `ff` files / `fc` config / `fr` registers / `fh` help / `ft` TODO / `fk` keymaps; `fg` grep project / `fG` live grep / `fW` word under cursor |
+| `<leader>f` | Find | `ff` files / `fc` config / `fr` registers / `fh` help / `ft` TODO / `fk` keymaps / `fn` notifications; `fg` grep project / `fG` live grep / `fW` word under cursor |
 | `<leader>b` | Buffers | `bn` next / `bp` previous / `bd` delete (`;` opens bento directly) |
 | `<leader>l` | Languages | `lf` format / `lD` diagnostic details; LSP: `ld` definition / `lh` hover / `lR` references / `lr` rename / `la` code actions / `li` implementation / `ls` document symbols / `lS` workspace symbols / `lI` signature help |
 | `<leader>c` | Config | `ce` edit / `cr` reload |
@@ -150,7 +150,7 @@ outside LSP buffers.
 |---------|-------------|
 | Built-in plugin management | No third-party plugin manager — plugins install via `vim.pack`. `:PackUpdate` opens the official review buffer (`:write` applies, `:quit` discards), `:PackList` lists installed plugins. |
 | Simple plugin lifecycle | Every plugin file carries its own `vim.pack.add` + setup; Mason sets up synchronously at startup (registry and commands only, tool installs run after startup via `run_on_start`). Bootstrap mode (`NVIM_BOOTSTRAP=1`) keeps automatic checks off so headless runs never hit the network. |
-| Styled floating UI | `noice.nvim` replaces the native cmdline, messages, and completion popupmenu with bordered floats (nui backend); notifications stay with `mini.notify`. |
+| Styled floating UI | `noice.nvim` replaces the native cmdline and completion popupmenu with bordered floats (nui backend); messages and notifications render as `mini.notify` cards. |
 | Buffer manager | `bento.nvim` (`;`) — floating buffer switcher with actions (open, delete, split, lock). |
 | File explorer | `mini.files` — Miller-column navigation and manipulation, replaces netrw by default, uses mini.icons. |
 | Fuzzy finding | `fzf-lua` — files, config, registers, help, TODOs, keymaps, and project grep. |
@@ -170,7 +170,7 @@ outside LSP buffers.
 | QoL autocmds | Highlight on yank; restore last cursor position. |
 | TODO highlighting | `todo-comments.nvim` — TODO/FIX/HACK/WARN/NOTE highlighting and search. |
 | Sessions | `mini.sessions` — named global sessions under the data directory (nothing written into projects); `<leader>Ss` save / `<leader>Sl` load / `<leader>Sd` delete; restored sessions auto-update on exit. |
-| Notifications | `mini.notify` replaces `vim.notify` with floating cards (noice's notify routing is disabled so it survives). |
+| Notifications | `mini.notify` renders every notification as floating cards (`<leader>fn` shows history): it owns `vim.notify` directly, and an adapter in `plugins/noice.lua` backs noice's notify view so native messages (E-errors, warnings, echo output) never fall back to the bottom MsgArea. |
 | Statusline | `mini.statusline` with custom content — per-mode gradient hue, git branch after cwd, centered cursor position, no file size. |
 | Visual aides | `mini.indentscope` indent guides, `mini.trailspace` trailing whitespace, `mini.move` line moves with `Alt+↑/↓`. |
 | Robust defaults | Persistent undo, native system clipboard (`unnamedplus`), `termguicolors`, deterministic plugin/config load order. |

@@ -91,6 +91,7 @@ util.map(
 util.map("n", "<leader>fg", function() require("fzf-lua").grep() end, "Grep project")
 util.map("n", "<leader>fG", function() require("fzf-lua").live_grep() end, "Live grep")
 util.map("n", "<leader>fW", function() require("fzf-lua").grep_cword() end, "Grep word under cursor")
+util.map("n", "<leader>fn", function() require("mini.notify").show_history() end, "Show notifications")
 
 -- TODO comment jumps
 util.map("n", "]t", function() require("todo-comments").jump_next() end, "Next TODO")
