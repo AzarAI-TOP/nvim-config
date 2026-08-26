@@ -85,7 +85,6 @@ local clues = {
     { mode = "n", keys = "<leader>s", desc = "󰤼 +Splits" },
     { mode = "n", keys = "<leader>t", desc = "󰆍 +Terminal" },
     { mode = "n", keys = "<leader>u", desc = "󰔡 +Toggles" },
-    { mode = "n", keys = "<leader>w", desc = "󰒩 +Windows" },
     { mode = "n", keys = "<leader>S", desc = "󰗀 +Sessions" },
     miniclue.gen_clues.square_brackets(),
 }

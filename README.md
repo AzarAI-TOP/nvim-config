@@ -96,7 +96,7 @@ display, native completion activation, and the LSP keymaps.
 - **Leader = `<Space>`**, with mappings grouped by mnemonic prefix:
   `<leader>b` buffer, `<leader>c` config, `<leader>l` language (format),
   `<leader>e` explorer, `<leader>f` find/search, `<leader>t` terminal,
-  `<leader>u` toggles. Window navigation goes through the `<leader>w` prefix.
+  `<leader>u` toggles. Window navigation uses the native `<C-w>` commands.
 - **Per-filetype indentation** — 2 spaces for web/scripting/markup languages,
   4 spaces for systems languages, tabs for Go/Make. Project `.editorconfig`
   values (full property and glob support via the runtime module) take
@@ -234,7 +234,6 @@ while explicit clues label the mnemonic `<leader>` groups below.
 | `<leader>S` | Sessions | `Ss` save / `Sl` load / `Sd` delete |
 | `<leader>t` | Terminal | `th` horizontal / `tv` vertical / `tf` float / `tg` lazygit / `tp` ipython (`<F2>` toggles the float; in terminal mode, toggles the terminal under the cursor) |
 | `<leader>u` | Toggles | wrap / inlay hints |
-| `<leader>w` | Windows | forwards to native `<C-w>` commands |
 
 Diagnostic navigation uses `]d` / `[d` (and `]D` / `[D` for first/last), plus
 `]b`/`[b` buffers, `]w`/`[w` windows, `]q`/`[q` quickfix/location, `]f`/`[f`

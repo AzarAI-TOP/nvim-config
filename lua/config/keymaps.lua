@@ -12,7 +12,6 @@
 --   <leader>S  sessions
 --   <leader>t  terminal
 --   <leader>u  toggles
---   <leader>w  windows (forwarded to <C-w>)
 --
 -- LSP keymaps (<leader>ld, <leader>lh, etc.) are registered in config/lsp.lua:
 -- vim.lsp.buf.* shows a native "no client attached" hint in buffers without a client.
@@ -23,7 +22,6 @@ local util = require("config.util")
 util.map({ "n", "i" }, "<C-s>", "<Esc>:write<CR>", "Save file")
 util.map("n", "<leader>q", ":quit<CR>", "Quit")
 util.map("n", "<leader>Q", ":qa<CR>", "Quit all")
-util.map("n", "<leader>nh", ":nohlsearch<CR>", "Clear search highlight")
 
 -- ── <leader>b — buffers ──
 util.map("n", "<leader>bd", ":bdelete<CR>", "Delete buffer")
@@ -98,11 +96,7 @@ util.map("n", "<leader>fW", function() require("fzf-lua").grep_cword() end, "Gre
 util.map("n", "]t", function() require("todo-comments").jump_next() end, "Next TODO")
 util.map("n", "[t", function() require("todo-comments").jump_prev() end, "Previous TODO")
 
--- ── <leader>w — windows (forwarded to <C-w>) ──
-util.map("n", "<leader>w", "<C-w>", "Window", { remap = true })
-
--- Direct window navigation (Alt+Arrows deliberately unmapped; <leader>w
--- covers window movement)
+-- Alt+Arrows deliberately unmapped
 util.map("n", "<C-Up>", ":resize -2<CR>", "Decrease height")
 util.map("n", "<C-Down>", ":resize +2<CR>", "Increase height")
 util.map("n", "<C-Left>", ":vertical resize -2<CR>", "Decrease width")
