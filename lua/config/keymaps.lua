@@ -91,7 +91,47 @@ util.map(
 util.map("n", "<leader>fg", function() require("fzf-lua").grep() end, "Grep project")
 util.map("n", "<leader>fG", function() require("fzf-lua").live_grep() end, "Live grep")
 util.map("n", "<leader>fW", function() require("fzf-lua").grep_cword() end, "Grep word under cursor")
-util.map("n", "<leader>fn", function() require("mini.notify").show_history() end, "Show notifications")
+
+-- Notification history as an fzf picker: fuzzy search over one-line entries
+-- (colored level + timestamp + collapsed message), preview pane shows the
+-- full message. opts.preview is the fzf-lua pattern also used by registers.
+local function notifications_picker()
+    local entries = require("mini.notify").get_all()
+    if #entries == 0 then
+        vim.notify("No notifications yet", vim.log.levels.INFO)
+        return
+    end
+    table.sort(entries, function(a, b) return a.ts_update < b.ts_update end)
+
+    local ansi = require("fzf-lua.utils").ansi_codes
+    local level_color = {
+        ERROR = ansi.red,
+        WARN = ansi.yellow,
+        INFO = ansi.green,
+        DEBUG = ansi.cyan,
+        TRACE = ansi.magenta,
+    }
+
+    local items, previews = {}, {}
+    for i, n in ipairs(entries) do
+        local ts = vim.fn.strftime("%H:%M:%S", math.floor(n.ts_update))
+        local color = level_color[n.level] or ansi.white
+        items[i] = color(string.format("[%s]", n.level)) .. " " .. ts .. " " .. n.msg:gsub("[\r\n]", " ")
+        previews[i] = string.format("[%s] %s\n\n%s", n.level, ts, n.msg)
+    end
+
+    require("fzf-lua").fzf_exec(items, {
+        prompt = "Notifications> ",
+        preview = function(args)
+            local sel = args[1]
+            for i, item in ipairs(items) do
+                if item == sel then return previews[i] end
+            end
+            return sel
+        end,
+    })
+end
+util.map("n", "<leader>fn", notifications_picker, "Show notifications")
 
 -- TODO comment jumps
 util.map("n", "]t", function() require("todo-comments").jump_next() end, "Next TODO")

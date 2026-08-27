@@ -4,6 +4,11 @@
 .hermes/
 .serena/
 
+# ZCode (AI assistant) workspace artifacts
+AGENTS.md
+.zcode/
+zcode.json
+
 # Neovim runtime artifacts
 plugin/
 shada/

@@ -170,7 +170,7 @@ outside LSP buffers.
 | QoL autocmds | Highlight on yank; restore last cursor position. |
 | TODO highlighting | `todo-comments.nvim` — TODO/FIX/HACK/WARN/NOTE highlighting and search. |
 | Sessions | `mini.sessions` — named global sessions under the data directory (nothing written into projects); `<leader>Ss` save / `<leader>Sl` load / `<leader>Sd` delete; restored sessions auto-update on exit. |
-| Notifications | `mini.notify` renders every notification as floating cards (`<leader>fn` shows history): it owns `vim.notify` directly, and an adapter in `plugins/noice.lua` backs noice's notify view so native messages (E-errors, warnings, echo output) never fall back to the bottom MsgArea. |
+| Notifications | `mini.notify` renders every notification as floating cards: it owns `vim.notify` directly, and an adapter in `plugins/noice.lua` backs noice's notify view so native messages (E-errors, warnings, echo output) never fall back to the bottom MsgArea. `<leader>fn` fuzzy-searches the history in an fzf picker with a full-message preview. |
 | Statusline | `mini.statusline` with custom content — per-mode gradient hue, git branch after cwd, centered cursor position, no file size. |
 | Visual aides | `mini.indentscope` indent guides, `mini.trailspace` trailing whitespace, `mini.move` line moves with `Alt+↑/↓`. |
 | Robust defaults | Persistent undo, native system clipboard (`unnamedplus`), `termguicolors`, deterministic plugin/config load order. |
