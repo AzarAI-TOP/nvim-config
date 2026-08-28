@@ -129,7 +129,10 @@ vim.pack.add({
 require("mini.notify").setup({
     window = {
         config = {
-            focusable = true,
+            -- Focusable cards would join <C-w>w window rotation, trapping the
+            -- cycle inside a toast. Content stays reachable via
+            -- MiniNotify.show_history() and the <leader>fn picker.
+            focusable = false,
             border = "rounded",
         },
         max_width_share = 0.3,

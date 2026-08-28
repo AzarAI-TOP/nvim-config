@@ -19,9 +19,10 @@ vim.pack.add({
 
 -- Narrow-layout threshold: one third of the primary screen width, in
 -- columns. Screen and window pixel widths come from a background PowerShell
--- probe (GetWindowRect on any Neovide instance — all share the font, so
--- pixels per column is identical) and are cached in the state dir; 120 is
--- the fallback until the probe lands.
+-- probe (GetWindowRect on this instance's Neovide window, located via the
+-- nvim process's parent — with several instances open, "first neovide
+-- found" could measure a differently sized one) and are cached in the state
+-- dir; 120 is the fallback until the probe lands.
 local narrow_threshold = 120
 
 local function apply_probe(out)
@@ -78,6 +79,8 @@ do
                         "-NoProfile",
                         "-File",
                         probe_script,
+                        "-NvimPid",
+                        tostring(vim.fn.getpid()),
                     }, {
                         on_stdout = function(_, data)
                             local px = data[1]

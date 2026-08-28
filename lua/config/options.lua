@@ -45,6 +45,9 @@ vim.opt.smartcase = true
 vim.opt.grepprg = "rg --vimgrep"
 
 -- ── Editing ──
+-- Quitting or deleting a modified buffer asks (y=save / n=discard / c=cancel)
+-- instead of failing with E37/E89; covers manual :q/:bd too.
+vim.opt.confirm = true
 vim.opt.wrap = false
 vim.opt.mouse = "a"
 -- Native Windows clipboard: unnamedplus ties yank/paste to the system clipboard.
