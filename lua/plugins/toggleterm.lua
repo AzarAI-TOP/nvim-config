@@ -20,8 +20,14 @@ require("toggleterm").setup({
     -- No default <C-\> open mapping: every toggle goes through the keymaps
     -- above.
     open_mapping = false,
-    -- Split terminals open 15 rows (horizontal) / 15 columns (vertical) tall.
-    size = 15,
+    -- Split size must be a function: a single number applies to every
+    -- direction, which would cap vertical splits at 15 columns. Horizontal
+    -- terminals open 15 rows; vertical ones 40% of the editor width. Floats
+    -- size themselves and never consult this option.
+    size = function(term)
+        if term.direction == "vertical" then return math.floor(vim.o.columns * 0.4) end
+        return 15
+    end,
     -- Floating terminal border matches the config's rounded border language.
     float_opts = { border = "rounded" },
 })

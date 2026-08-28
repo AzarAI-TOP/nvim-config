@@ -3,8 +3,10 @@
 -- happens after startup, triggered by mason-tool-installer's run_on_start.
 
 vim.pack.add({
-    { src = "https://github.com/williamboman/mason.nvim" },
-    { src = "https://github.com/williamboman/mason-lspconfig.nvim" },
+    -- mason-org is the upstream home; the old williamboman/* URLs survive
+    -- only via GitHub rename redirects, so don't depend on them.
+    { src = "https://github.com/mason-org/mason.nvim" },
+    { src = "https://github.com/mason-org/mason-lspconfig.nvim" },
     { src = "https://github.com/WhoIsSethDaniel/mason-tool-installer.nvim" },
     { src = "https://github.com/neovim/nvim-lspconfig" },
 })
