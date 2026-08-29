@@ -207,6 +207,11 @@ end
 
 local function is_markdown(bufnr) return vim.bo[bufnr].filetype == "markdown" end
 
+-- Every-keystroke autotrigger state, flipped by <leader>uc (keymaps.lua).
+-- New LspAttach events respect it; toggling re-applies it to what is
+-- already attached.
+local autotrigger = true
+
 --- Enable native completion for one LspAttach event.
 ---@param args { buf: integer, data: { client_id: integer } }
 ---@return boolean whether completion was enabled
@@ -228,7 +233,7 @@ function M.enable_for_client(args)
             end
             cp.triggerCharacters = chars
         end
-        vim.lsp.completion.enable(true, client.id, args.buf, { autotrigger = true })
+        vim.lsp.completion.enable(true, client.id, args.buf, { autotrigger = autotrigger })
         return true
     end
     return false
@@ -240,6 +245,29 @@ function M.trigger()
     if vim.bo.filetype == "markdown" then return false end
     vim.lsp.completion.get()
     return true
+end
+
+--- <leader>uc: flip the every-keystroke autotrigger on every attached
+--- client/buffer. vim.lsp.completion.enable() cannot remove the
+--- InsertCharPre autocmds it once created, so switching requires a full
+--- disable followed by a re-enable with the new opts; <C-Space> keeps
+--- working in both states.
+function M.toggle_autotrigger()
+    autotrigger = not autotrigger
+    for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_loaded(bufnr) and not is_markdown(bufnr) then
+            for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr })) do
+                if client:supports_method("textDocument/completion", bufnr) then
+                    vim.lsp.completion.enable(false, client.id, bufnr)
+                    vim.lsp.completion.enable(true, client.id, bufnr, { autotrigger = autotrigger })
+                end
+            end
+        end
+    end
+    vim.notify(
+        "Completion autotrigger " .. (autotrigger and "on" or "off (<C-Space> still works)"),
+        vim.log.levels.INFO
+    )
 end
 
 --- Register an LspAttach autocmd that activates completion per client.

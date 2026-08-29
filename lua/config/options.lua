@@ -10,6 +10,8 @@ local package_root = vim.fs.joinpath(vim.env.LOCALAPPDATA or "", "Microsoft", "W
 local winget_tools = {
     { exe = "fzf", glob = "junegunn.fzf_*/fzf.exe" },
     { exe = "lazygit", glob = "JesseDuffield.lazygit_*/lazygit.exe" },
+    -- ripgrep extracts into a versioned subdirectory
+    { exe = "rg", glob = "BurntSushi.ripgrep.MSVC_*/ripgrep-*/rg.exe" },
 }
 for _, tool in ipairs(winget_tools) do
     if vim.fn.executable(tool.exe) == 0 then
@@ -59,6 +61,15 @@ vim.opt.undodir = undo_dir
 vim.opt.swapfile = false
 vim.opt.backup = false
 vim.opt.writebackup = false
+
+-- ── Sessions ──
+-- Pinned explicitly: `options` (global options + mappings) must never leak
+-- into session files — loading an old session must not resurrect mappings
+-- deleted from the config since — and `terminal` is dropped because
+-- toggleterm owns its terminal lifecycle (restored terminal jobs are dead).
+-- Neovim 0.12's default already omits `options`; this pins the whole set
+-- against future default changes or plugin writes.
+vim.opt.sessionoptions = "blank,buffers,curdir,folds,help,tabpages,winsize"
 
 -- ── UI ──
 vim.opt.termguicolors = true

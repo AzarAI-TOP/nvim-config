@@ -74,6 +74,9 @@ local clue_triggers = {
     { mode = "n", keys = "<leader>" },
     { mode = "n", keys = "[" },
     { mode = "n", keys = "]" },
+    -- mini.surround's sa/sd/sr/... prefix (its mappings carry descriptions)
+    { mode = "n", keys = "s" },
+    { mode = "x", keys = "s" },
 }
 
 local clues = {
@@ -86,6 +89,8 @@ local clues = {
     { mode = "n", keys = "<leader>t", desc = "󰆍 +Terminal" },
     { mode = "n", keys = "<leader>u", desc = "󰔡 +Toggles" },
     { mode = "n", keys = "<leader>S", desc = "󰗀 +Sessions" },
+    { mode = "n", keys = "s", desc = "󰅱 +Surround" },
+    { mode = "x", keys = "s", desc = "󰅱 +Surround" },
     miniclue.gen_clues.square_brackets(),
 }
 

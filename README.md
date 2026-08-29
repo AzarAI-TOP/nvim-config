@@ -33,7 +33,7 @@ Mason installs and updates the LSP servers and portable formatters:
 |------|-------|
 | LSP servers | `gopls`, `clangd`, `rust_analyzer`, `ts_ls`, `html`, `cssls`, `jsonls`, `pyright`, `lua_ls`, `bashls`, `yamlls`, `kotlin_lsp` |
 | Formatters | `black`, `clang-format`, `goimports`, `isort`, `prettierd`, `shfmt`, `stylua`, `taplo`, `google-java-format`, `ktlint` |
-| Native toolchains | `gofmt` (Go) and `rustfmt` (Rust) — installed with their toolchains, not through Mason |
+| Native toolchains | `rustfmt` (Rust) — installed with its toolchain, not through Mason |
 
 ## Layouts
 
@@ -85,7 +85,7 @@ diagnostic display, native completion activation, and the LSP keymaps.
 
 ## Keymap Groups
 
-Leader = `<Space>`. Press `<Space>`, `[` or `]`; `mini.clue` displays the
+Leader = `<Space>`. Press `<Space>`, `[`, `]` or `s`; `mini.clue` displays the
 available groups and actions after a short delay. Existing mapping
 descriptions provide action hints, while explicit clues label the mnemonic
 `<leader>` groups below.
@@ -100,8 +100,8 @@ descriptions provide action hints, while explicit clues label the mnemonic
 | `<leader>c` | Config | `ce` edit / `cr` reload |
 | `<leader>e` | File explorer | opens mini.files (Miller columns) |
 | `<leader>S` | Sessions | `Ss` save / `Sl` load / `Sd` delete |
-| `<leader>t` | Terminal | `th` horizontal / `tv` vertical / `tf` float / `tg` lazygit / `tp` ipython (`<F2>` toggles the float; in terminal mode it toggles the terminal under the cursor) |
-| `<leader>u` | Toggles | `uw` wrap / `ui` inlay hints |
+| `<leader>t` | Terminal | `th` horizontal / `tv` vertical / `tf` float / `tg` lazygit / `tp` ipython (`<F2>` toggles the float from normal and insert mode; in terminal mode it toggles the terminal under the cursor) |
+| `<leader>u` | Toggles | `uw` wrap / `ui` inlay hints / `uc` completion autotrigger |
 
 Direct keys:
 
@@ -128,7 +128,8 @@ outside LSP buffers.
   is a trigger character). Use `<C-Space>` for a manual request. The popup
   never auto-selects or auto-inserts: move with `<C-n>`/`<C-p>`, accept with
   `<C-y>`. `<Tab>` does not accept — it closes the menu and keeps its usual
-  indentation behavior.
+  indentation behavior. `<leader>uc` turns the every-keystroke autotrigger
+  off when it gets noisy; `<C-Space>` keeps working in both states.
 - Snippets: type `main`, `for`, `if`, `def`, etc., then press `<C-j>` to
   expand. During a snippet session, `<C-l>` jumps to the next field and
   `<C-h>` (the same key as Backspace) to the previous one; `<C-q>` stops the
@@ -158,18 +159,18 @@ outside LSP buffers.
 | Terminals | `toggleterm.nvim` — horizontal / vertical / floating terminals, lazygit, ipython. |
 | Native LSP completion | Neovim 0.12 native completion per attached client; opens on every printable character, never auto-selects. |
 | Snippets | `mini.snippets` with the local C/C++/Python collections in `snippets/`; `<C-j>` expand, `<C-l>`/`<C-h>` fields, `<C-q>` stop; Markdown disables LSP completion only. |
-| Key discovery | `mini.clue` — lightweight which-key for `<leader>`, `[`, `]`, without a second overlapping hint UI. |
-| Code formatting | `conform.nvim` on demand (`<leader>lf`); formatters via Mason; project config preferred (`.clang-format`, Prettier) with Google Style / built-in defaults as fallback; `gofmt`/`rustfmt` come from their native toolchains. |
+| Key discovery | `mini.clue` — lightweight which-key for `<leader>`, `[`, `]`, `s` (surround), without a second overlapping hint UI. |
+| Code formatting | `conform.nvim` on demand (`<leader>lf`); formatters via Mason; project config preferred (`.clang-format`, Prettier) with Google Style / built-in defaults as fallback; `rustfmt` comes from the Rust toolchain. |
 | Syntax highlighting | tree-sitter — every configured parser enabled automatically per filetype, regex fallback otherwise. |
 | Textobjects | `mini.ai` — arguments, function calls, quotes, brackets, tags, and more; custom `aF`/`iF` whole-function target backed by nvim-treesitter-textobjects captures; consecutive expansion (`in` → `in` → ...). |
 | Bracket navigation | `mini.bracketed` — `]`/`[` for diagnostics, indentation, comments, quickfix, buffers, windows, and more; pausing after either prefix shows the targets via `mini.clue`. |
 | Comment toggling | `mini.comment` — `gc` / `gcc` / `<C-/>`. |
-| Surround editing | `mini.surround` — `sa` add, `sd` delete, `sr` replace (visual mode: `S`). |
+| Surround editing | `mini.surround` — `sa` add, `sd` delete, `sr` replace (visual add is also `sa` on the selection). |
 | Per-filetype indentation | 2 spaces web/scripting/markup, 4 spaces systems languages, tabs Go/Make; `.editorconfig` wins; C/C++/ObjC default to Google Style with a project `.clang-format` override. |
 | Real config reload | `<leader>cr` reloads the core config layer (options, keymaps, autocmds, LSP, Neovide settings, pack commands): tracked keymaps re-created, owned commands rebuilt, modules re-required in startup order. Plugin-file changes still need a restart. |
 | QoL autocmds | Highlight on yank; restore last cursor position. |
 | TODO highlighting | `todo-comments.nvim` — TODO/FIX/HACK/WARN/NOTE highlighting and search. |
-| Sessions | `mini.sessions` — named global sessions under the data directory (nothing written into projects); `<leader>Ss` save / `<leader>Sl` load / `<leader>Sd` delete; restored sessions auto-update on exit. |
+| Sessions | `mini.sessions` — named global sessions under the data directory (nothing written into projects); `<leader>Ss` save / `<leader>Sl` load / `<leader>Sd` delete; restored sessions auto-update on exit; `sessionoptions` pinned to buffer/window state, so no global options or mappings ever travel inside a session and no dead terminal buffers are restored. |
 | Notifications | `mini.notify` renders every notification as floating cards: it owns `vim.notify` directly, and an adapter in `plugins/noice.lua` backs noice's notify view so native messages (E-errors, warnings, echo output) never fall back to the bottom MsgArea. `<leader>fn` fuzzy-searches the history in an fzf picker with a full-message preview. |
 | Statusline | `mini.statusline` with custom content — per-mode gradient hue, git branch after cwd, centered cursor position, no file size. |
 | Visual aides | `mini.indentscope` indent guides, `mini.trailspace` trailing whitespace, `mini.move` line moves with `Alt+↑/↓`. |

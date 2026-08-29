@@ -12,7 +12,9 @@ require("conform").setup({
         lua = { "stylua" },
         python = { "isort", "black" },
         rust = { "rustfmt" },
-        go = { "goimports", "gofmt" },
+        -- goimports output is already gofmt-formatted; a second pass would
+        -- just spawn a redundant process
+        go = { "goimports" },
         c = { "clang-format" },
         cpp = { "clang-format" },
         java = { "google-java-format" },

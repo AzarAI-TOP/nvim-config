@@ -19,7 +19,9 @@
 local util = require("config.util")
 
 -- ── Top level: files / session (no prefix) ──
-util.map({ "n", "i" }, "<C-s>", "<Esc>:write<CR>", "Save file")
+-- Insert-mode save stays in Insert mode: <C-o> runs one command and returns.
+util.map("n", "<C-s>", ":write<CR>", "Save file")
+util.map("i", "<C-s>", "<C-o>:write<CR>", "Save file")
 util.map("n", "<leader>q", ":quit<CR>", "Quit")
 util.map("n", "<leader>Q", ":qa<CR>", "Quit all")
 
@@ -82,7 +84,8 @@ util.map("n", "<leader>ft", ":TodoFzfLua<CR>", "Find TODOs")
 util.map(
     "n",
     "<leader>fk",
-    function() require("fzf-lua").keymaps({ modes = { "n" }, prompt = "Keymaps> " }) end,
+    -- Default modes cover n/i/c/v/t, so insert/terminal bindings show too
+    function() require("fzf-lua").keymaps({ prompt = "Keymaps> " }) end,
     "Find keymaps"
 )
 -- Project-wide grep (ripgrep). In the picker, <C-q> sends matches to the
@@ -101,7 +104,8 @@ local function notifications_picker()
         vim.notify("No notifications yet", vim.log.levels.INFO)
         return
     end
-    table.sort(entries, function(a, b) return a.ts_update < b.ts_update end)
+    -- Newest first.
+    table.sort(entries, function(a, b) return a.ts_update > b.ts_update end)
 
     local ansi = require("fzf-lua.utils").ansi_codes
     local level_color = {
@@ -114,7 +118,11 @@ local function notifications_picker()
 
     local items, previews = {}, {}
     for i, n in ipairs(entries) do
-        local ts = vim.fn.strftime("%H:%M:%S", math.floor(n.ts_update))
+        -- Millisecond precision keeps display lines unique: the preview
+        -- matches by line, and same-second identical collapses would
+        -- otherwise preview the wrong full message.
+        local ms = string.format(".%03d", math.floor(n.ts_update * 1000) % 1000)
+        local ts = vim.fn.strftime("%H:%M:%S", math.floor(n.ts_update)) .. ms
         local color = level_color[n.level] or ansi.white
         items[i] = color(string.format("[%s]", n.level)) .. " " .. ts .. " " .. n.msg:gsub("[\r\n]", " ")
         previews[i] = string.format("[%s] %s\n\n%s", n.level, ts, n.msg)
@@ -158,6 +166,9 @@ util.map("n", "<leader>ui", function()
     vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled())
     vim.notify(vim.lsp.inlay_hint.is_enabled() and "Inlay hints on" or "Inlay hints off", vim.log.levels.INFO)
 end, "Toggle inlay hints")
+-- Completion autotrigger on/off for every attached client; <C-Space> keeps
+-- working either way (config/lsp.lua holds the state and the loop).
+util.map("n", "<leader>uc", function() require("config.lsp").toggle_autotrigger() end, "Toggle completion autotrigger")
 
 -- ── <leader>p — package management ──
 util.map("n", "<leader>pm", ":Mason<CR>", "Open Mason UI")
@@ -223,5 +234,6 @@ util.map("n", "<leader>tg", terminal_toggle(3, "horizontal", "lazygit"), "Toggle
 util.map("n", "<leader>tp", terminal_toggle(4, "horizontal", "ipython"), "Toggle ipython")
 util.map("n", "<leader>tf", toggle_float, "Toggle floating terminal")
 util.map("n", "<F2>", toggle_float, "Toggle floating terminal")
+util.map("i", "<F2>", toggle_float, "Toggle floating terminal")
 util.map("t", "<F2>", toggle_current_terminal, "Toggle current terminal")
 util.map("t", "<Esc><Esc>", "<C-\\><C-n>", "Exit terminal's insert mode", { noremap = true })
