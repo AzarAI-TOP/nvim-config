@@ -17,12 +17,13 @@ vim.pack.add({
     { src = "https://github.com/nvim-mini/mini.statusline" },
 })
 
--- Narrow-layout threshold: one third of the primary screen width, in
--- columns. Screen and window pixel widths come from a background PowerShell
--- probe (GetWindowRect on this instance's Neovide window, located via the
--- nvim process's parent — with several instances open, "first neovide
--- found" could measure a differently sized one) and are cached in the state
--- dir; 120 is the fallback until the probe lands.
+-- Narrow-layout threshold: one third of the screen width, in columns. Screen
+-- and window pixel widths come from a background PowerShell probe (the
+-- client area of this instance's Neovide window, located via the nvim
+-- process's parent — with several instances open, "first neovide found"
+-- could measure a differently sized one — measured against the monitor the
+-- window actually sits on, not necessarily the primary) and are cached in
+-- the state dir; 120 is the fallback until the probe lands.
 local narrow_threshold = 120
 
 local function apply_probe(out)
