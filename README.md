@@ -240,9 +240,9 @@ unacceptable exit code aborts the run.
 - **Shell** — `cmd.exe` is pinned for `:!` / `system()` / filters so a Git
   Bash-launched nvim never feeds cmd-style flags into Bash.
 - **Tool discovery** — at startup the config checks WinGet package dirs
-  (`%LOCALAPPDATA%\Microsoft\WinGet\Packages`) for `fzf` / `lazygit` and
-  prepends them to `PATH` when a stale Explorer/Neovide environment hides
-  them.
+  (`%LOCALAPPDATA%\Microsoft\WinGet\Packages`) for `fzf` / `lazygit` / `rg`
+  and prepends them to `PATH` when a stale Explorer/Neovide environment
+  hides them.
 - **Neovide** — 0xProto Nerd Font at 13pt, rounded corners, title bar in
   TokyoNight Moon colors.
 
