@@ -51,18 +51,22 @@ Mason installs and updates the LSP servers and portable formatters:
 │   │   │                   #   native completion activation, LSP keymaps
 │   │   ├── colors.lua      # noice UI colors: popupmenu/kind palette (moon),
 │   │   │                   #   opaque float surfaces, per-kind groups
+│   │   ├── notifications.lua # notification history fzf picker (<leader>fn)
 │   │   ├── neovide.lua     # Neovide GUI settings
 │   │   ├── pack.lua        # :PackUpdate / :PackList user commands
+│   │   ├── lazy.lua        # native lazy loading — defers vim.pack.add until
+│   │   │                   #   first require / command / keypress
 │   │   └── reload.lua      # hot-reload of the core config layer
 │   └── plugins/            # one file per plugin: vim.pack.add + setup
 │       ├── init.lua        # loader — priority list, then alphabetical
 │       ├── mini.lua        # most mini.* plugins (comment, icons, clue, ...)
-│       ├── mason.lua       # mason + LSP bridge + tool installer
+│       ├── mason.lua       # mason + LSP-name bridge + tool installer (deferred)
+│       ├── lspconfig.lua   # nvim-lspconfig (eager — base configs for vim.lsp)
 │       ├── noice.lua       # floating cmdline / messages / popupmenu UI
-│       ├── sessions.lua    # mini.sessions (named global sessions)
+│       ├── sessions.lua    # mini.sessions (named global sessions, deferred)
 │       ├── statusline.lua  # mini.statusline (custom content)
-│       └── ...             # bento, conform, fzf, hop, todo-comments,
-│                           #   toggleterm, tokyonight, treesitter
+│       └── ...             # bento, conform, fzf, todo-comments, toggleterm,
+│                           #   tokyonight, treesitter
 ├── snippets/               # VS Code-format snippet collections
 │   ├── c.json
 │   ├── cpp.json
@@ -79,9 +83,15 @@ Mason installs and updates the LSP servers and portable formatters:
 Each file under `lua/plugins/` is self-contained — it carries its own
 `vim.pack.add` alongside its setup — and `lua/plugins/init.lua` loads them
 all automatically (a short priority list first, then alphabetically). Adding
-or removing a plugin is just adding or removing one file. Per-server LSP
-configs live as inline tables in `lua/config/lsp.lua`, alongside the
-diagnostic display, native completion activation, and the LSP keymaps.
+or removing a plugin is just adding or removing one file. Low-frequency
+plugins (fzf-lua, toggleterm, bento, conform, mini.sessions, mini.jump2d,
+and the Mason stack) defer their `vim.pack.add` through `config/lazy.lua`:
+the first use — a `require` from a keymap callback, a `:Mason*` command, or
+the `;` key — pulls the plugin in, while always-on UI stays eager.
+`:PackUpdate` loads everything deferred first, so updates and `:PackList`
+cover all plugins. Per-server LSP configs live as inline tables in
+`lua/config/lsp.lua`, alongside the diagnostic display, native completion
+activation, and the LSP keymaps.
 
 ## Keymap Groups
 
@@ -111,8 +121,8 @@ Direct keys:
   result, `<C-d>`/`<C-u>` scroll half pages and center.
 - Windows: native `<C-w>` navigation; `<C-Up>`/`<C-Down>`/`<C-Left>`/
   `<C-Right>` resize the current window.
-- Motion and text: `f` hops within the current line and `F` across the whole
-  window (hop.nvim, replacing the built-in motions); `gc`/`gcc`/`<C-/>`
+- Motion and text: `f` jumps within the current line and `F` across the whole
+  window (mini.jump2d single-character prompt, replacing the built-in motions); `gc`/`gcc`/`<C-/>`
   toggle comments; `]t`/`[t` jump between TODOs.
 
 Diagnostic navigation uses `]d` / `[d` (and `]D` / `[D` for first/last), plus
@@ -150,12 +160,12 @@ outside LSP buffers.
 | Feature | Description |
 |---------|-------------|
 | Built-in plugin management | No third-party plugin manager — plugins install via `vim.pack`. `:PackUpdate` opens the official review buffer (`:write` applies, `:quit` discards), `:PackList` lists installed plugins. |
-| Simple plugin lifecycle | Every plugin file carries its own `vim.pack.add` + setup; Mason sets up synchronously at startup (registry and commands only, tool installs run after startup via `run_on_start`). Bootstrap mode (`NVIM_BOOTSTRAP=1`) keeps automatic checks off so headless runs never hit the network. |
+| Simple plugin lifecycle | Every plugin file carries its own `vim.pack.add` + setup — eager for always-on UI, or deferred through `config/lazy.lua` until first use (`require` / command / keypress). Mason defers to the first `:Mason*` command or 1s after `VimEnter`, keeping its background tool check off the startup path. Bootstrap mode (`NVIM_BOOTSTRAP=1`) runs every loader immediately so headless installs never miss a plugin. |
 | Styled floating UI | `noice.nvim` replaces the native cmdline and completion popupmenu with bordered floats (nui backend); messages and notifications render as `mini.notify` cards. |
 | Buffer manager | `bento.nvim` (`;`) — floating buffer switcher with actions (open, delete, split, lock). |
 | File explorer | `mini.files` — Miller-column navigation and manipulation, replaces netrw by default, uses mini.icons. |
 | Fuzzy finding | `fzf-lua` — files, config, registers, help, TODOs, keymaps, and project grep. |
-| Character jumping | `hop.nvim` — `f` in the current line, `F` across the whole window (replaces the built-in motions). |
+| Character jumping | `mini.jump2d` — `f` in the current line, `F` across the whole window (single-character prompt; replaces the built-in motions). |
 | Terminals | `toggleterm.nvim` — horizontal / vertical / floating terminals, lazygit, ipython. |
 | Native LSP completion | Neovim 0.12 native completion per attached client; opens on every printable character, never auto-selects. |
 | Snippets | `mini.snippets` with the local C/C++/Python collections in `snippets/`; `<C-j>` expand, `<C-l>`/`<C-h>` fields, `<C-q>` stop; Markdown disables LSP completion only. |
@@ -183,9 +193,8 @@ outside LSP buffers.
 | [bento.nvim](https://github.com/serhez/bento.nvim) | Buffer manager |
 | [conform.nvim](https://github.com/stevearc/conform.nvim) | Code formatting |
 | [fzf-lua](https://github.com/ibhagwan/fzf-lua) | Fuzzy finding |
-| [hop.nvim](https://github.com/smoka7/hop.nvim) | Character jumping |
 | [mason.nvim](https://github.com/mason-org/mason.nvim) | External tool package manager |
-| [mason-lspconfig.nvim](https://github.com/mason-org/mason-lspconfig.nvim) | LSP installation bridge |
+| [mason-lspconfig.nvim](https://github.com/mason-org/mason-lspconfig.nvim) | LSP server name → Mason package mapping (used by the tool installer) |
 | [mason-tool-installer.nvim](https://github.com/WhoIsSethDaniel/mason-tool-installer.nvim) | Formatter installation |
 | [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig) | Native LSP defaults |
 | [noice.nvim](https://github.com/folke/noice.nvim) | Floating cmdline / messages / popupmenu UI |
@@ -198,6 +207,7 @@ outside LSP buffers.
 | [mini.git](https://github.com/nvim-mini/mini-git) | Git data for the statusline |
 | [mini.icons](https://github.com/nvim-mini/mini.icons) | Icon provider |
 | [mini.indentscope](https://github.com/nvim-mini/mini.indentscope) | Indent guides |
+| [mini.jump2d](https://github.com/nvim-mini/mini.jump2d) | Character jumping (`f` / `F`) |
 | [mini.move](https://github.com/nvim-mini/mini.move) | Move lines/selections |
 | [mini.notify](https://github.com/nvim-mini/mini.notify) | Notification system |
 | [mini.sessions](https://github.com/nvim-mini/mini.sessions) | Named global session persistence |
@@ -235,8 +245,9 @@ unacceptable exit code aborts the run.
 
 ## Platform behavior
 
-- **Clipboard** — native Windows provider, `clipboard = "unnamedplus"` (yank
-  and paste go through the system clipboard).
+- **Clipboard** — native Windows provider via `win32yank.exe`, which Neovim's
+  own Windows distribution bundles in its `bin` directory (no extra install);
+  `clipboard = "unnamedplus"` (yank and paste go through the system clipboard).
 - **Shell** — `cmd.exe` is pinned for `:!` / `system()` / filters so a Git
   Bash-launched nvim never feeds cmd-style flags into Bash.
 - **Tool discovery** — at startup the config checks WinGet package dirs
@@ -266,6 +277,7 @@ checking its built-in diagnostics:
 :MasonToolsInstallSync     " (re)install all Mason-managed LSP servers and formatters
 :Mason                     " inspect package state in the Mason UI
 :PackUpdate                " update plugins via the vim.pack review buffer
+                            "   (deferred plugins load first, so all update)
 ```
 
 The bootstrap script installs every dependency it declares and fails fast on

@@ -5,7 +5,7 @@
 
 local priority = {
     "mini", -- all mini.* plugins (icons, keymap hints, and other infrastructure)
-    "mason", -- package manager (also defines :MasonTools* early)
+    "mason", -- package manager (its :Mason* command stubs exist from here on)
     "tokyonight", -- colorscheme (applied immediately to avoid flash)
 }
 

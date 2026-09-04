@@ -26,6 +26,7 @@
 -- Moon palette values used here (kept local so this module stays independent
 -- of the colorscheme's internal tables).
 local C = {
+    bg = "#222436", -- moon bg: main background, also the Neovide title bar
     bg_popup = "#1e2030", -- moon bg_dark: popup background
     bg_sel = "#2b3d73", -- blue0 blended into bg_popup at 40%, matches Visual
     blue = "#82aaff",
@@ -110,6 +111,11 @@ local KINDS = {
 }
 
 local M = {}
+
+-- Single source for TokyoNight moon values used outside this module (the
+-- Neovide title bar in config/neovide.lua reads bg/blue from here, so a
+-- palette tweak never needs a second edit).
+M.palette = C
 
 --- Kind icons in noice's `popupmenu.kind_icons` shape (icon + trailing space).
 function M.kind_icons()

@@ -7,6 +7,9 @@
 -- :write applies the changes, :quit discards them, optionally :restart loads
 -- the updated plugin code.
 vim.api.nvim_create_user_command("PackUpdate", function()
+    -- Deferred plugins are not in vim.pack's view until loaded; pull them all
+    -- in first so they update too (and show up in :PackList afterwards).
+    require("config.lazy").load_all()
     local ok, err = pcall(vim.pack.update)
     if not ok then
         vim.notify("Plugin update failed: " .. tostring(err), vim.log.levels.ERROR, { title = "PackUpdate" })

@@ -29,8 +29,9 @@ local OWNED_COMMANDS = { "PackUpdate", "PackList" }
 
 local function clear_owned_modules()
     for name in pairs(package.loaded) do
-        -- config.util (keymap registry) and config.reload (this module) must survive.
-        if name ~= "config.util" and name ~= "config.reload" then
+        -- config.util (keymap registry), config.lazy (lazy-load state), and
+        -- config.reload (this module) must survive.
+        if name ~= "config.util" and name ~= "config.lazy" and name ~= "config.reload" then
             if name:match("^config%.") then package.loaded[name] = nil end
         end
     end

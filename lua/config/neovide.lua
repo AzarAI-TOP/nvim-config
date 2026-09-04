@@ -13,11 +13,12 @@ vim.g.neovide_remember_window_size = true
 vim.g.neovide_confirm_quit = true
 vim.g.neovide_theme = "dark"
 
--- Windows title bar: rounded corners, colors matched to the TokyoNight Moon
--- palette (background #222436 / text #82aaff).
+-- Windows title bar: rounded corners, colors from the shared TokyoNight Moon
+-- palette (config/colors.lua — single source; Neovide wants hex without "#").
+local palette = require("config.colors").palette
 vim.g.neovide_corner_preference = "round"
-vim.g.neovide_title_background_color = "222436"
-vim.g.neovide_title_text_color = "82aaff"
+vim.g.neovide_title_background_color = palette.bg:sub(2)
+vim.g.neovide_title_text_color = palette.blue:sub(2)
 
 -- Padding around the editor
 vim.g.neovide_padding_top = 5

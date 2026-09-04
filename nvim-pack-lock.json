@@ -12,10 +12,6 @@
       "rev": "532d463f5c83595192fe740572d8fd6902b2217a",
       "src": "https://github.com/ibhagwan/fzf-lua"
     },
-    "hop.nvim": {
-      "rev": "6e83486f351066e38c3ae9daad2a4f01dfb262ad",
-      "src": "https://github.com/smoka7/hop.nvim"
-    },
     "mason-lspconfig.nvim": {
       "rev": "a4068c3ebd4cb335b25239e5ea35c22ee6007962",
       "src": "https://github.com/mason-org/mason-lspconfig.nvim"
@@ -59,6 +55,10 @@
     "mini.indentscope": {
       "rev": "92fbaf895f83c59575ec599df532b297ebf62b14",
       "src": "https://github.com/nvim-mini/mini.indentscope"
+    },
+    "mini.jump2d": {
+      "rev": "861123628b5ef905982080d726de683383bfcc22",
+      "src": "https://github.com/nvim-mini/mini.jump2d"
     },
     "mini.move": {
       "rev": "48fcaac289a19b8eff2fd5fe203267d478a8abdc",

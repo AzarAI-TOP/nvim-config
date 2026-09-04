@@ -18,10 +18,14 @@ local core_plugins = {
     "trailspace",
 }
 
+-- One multi-spec add (a single runtimepath pass) instead of a per-plugin add,
+-- then the per-plugin setups.
+local core_specs = {}
 for _, name in ipairs(core_plugins) do
-    vim.pack.add({
-        { src = "https://github.com/nvim-mini/mini." .. name },
-    })
+    table.insert(core_specs, { src = "https://github.com/nvim-mini/mini." .. name })
+end
+vim.pack.add(core_specs)
+for _, name in ipairs(core_plugins) do
     require("mini." .. name).setup()
 end
 
@@ -58,6 +62,25 @@ vim.pack.add({
 
 require("mini.bracketed").setup({
     treesitter = { suffix = "" },
+})
+
+-- ── Character jumping ──
+-- Replaces hop.nvim: single-character jumps via f (current line) / F (whole
+-- window), bound in config/keymaps.lua through builtin_opts.single_character.
+-- Lazy loaded: those callbacks require("mini.jump2d") lazily, which the
+-- preload stub turns into the load trigger. The default start mapping (<CR>)
+-- is disabled; <CR> keeps its builtin use.
+require("config.lazy").defer("mini.jump2d", {
+    mods = { "mini.jump2d" },
+    loader = function()
+        vim.pack.add({
+            { src = "https://github.com/nvim-mini/mini.jump2d" },
+        })
+
+        require("mini.jump2d").setup({
+            mappings = { start_jumping = "" },
+        })
+    end,
 })
 
 -- ── Keymap discovery ──

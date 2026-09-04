@@ -176,16 +176,14 @@ local function encoding()
     return string.format("%s[%s]", enc, vim.bo.fileformat)
 end
 
--- Icon from mini.icons when available (optional plugin); plain filetype otherwise.
+-- Icon from mini.icons (always loaded: the plugin loader's priority list runs
+-- plugins/mini.lua first); plain filetype otherwise.
 local function filetype()
     if vim.bo.buftype ~= "" then return "" end
     local ft = vim.bo.filetype
     if ft == "" then return "" end
-    local icon = ""
-    if _G.MiniIcons ~= nil then
-        local ok, glyph = pcall(_G.MiniIcons.get, "filetype", ft)
-        if ok and glyph ~= nil then icon = glyph .. " " end
-    end
+    local ok, glyph = pcall(require("mini.icons").get, "filetype", ft)
+    local icon = ok and glyph ~= nil and glyph .. " " or ""
     return icon .. ft
 end
 

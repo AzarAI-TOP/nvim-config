@@ -95,51 +95,8 @@ util.map("n", "<leader>fg", function() require("fzf-lua").grep() end, "Grep proj
 util.map("n", "<leader>fG", function() require("fzf-lua").live_grep() end, "Live grep")
 util.map("n", "<leader>fW", function() require("fzf-lua").grep_cword() end, "Grep word under cursor")
 
--- Notification history as an fzf picker: fuzzy search over one-line entries
--- (colored level + timestamp + collapsed message), preview pane shows the
--- full message. opts.preview is the fzf-lua pattern also used by registers.
-local function notifications_picker()
-    local entries = require("mini.notify").get_all()
-    if #entries == 0 then
-        vim.notify("No notifications yet", vim.log.levels.INFO)
-        return
-    end
-    -- Newest first.
-    table.sort(entries, function(a, b) return a.ts_update > b.ts_update end)
-
-    local ansi = require("fzf-lua.utils").ansi_codes
-    local level_color = {
-        ERROR = ansi.red,
-        WARN = ansi.yellow,
-        INFO = ansi.green,
-        DEBUG = ansi.cyan,
-        TRACE = ansi.magenta,
-    }
-
-    local items, previews = {}, {}
-    for i, n in ipairs(entries) do
-        -- Millisecond precision keeps display lines unique: the preview
-        -- matches by line, and same-second identical collapses would
-        -- otherwise preview the wrong full message.
-        local ms = string.format(".%03d", math.floor(n.ts_update * 1000) % 1000)
-        local ts = vim.fn.strftime("%H:%M:%S", math.floor(n.ts_update)) .. ms
-        local color = level_color[n.level] or ansi.white
-        items[i] = color(string.format("[%s]", n.level)) .. " " .. ts .. " " .. n.msg:gsub("[\r\n]", " ")
-        previews[i] = string.format("[%s] %s\n\n%s", n.level, ts, n.msg)
-    end
-
-    require("fzf-lua").fzf_exec(items, {
-        prompt = "Notifications> ",
-        preview = function(args)
-            local sel = args[1]
-            for i, item in ipairs(items) do
-                if item == sel then return previews[i] end
-            end
-            return sel
-        end,
-    })
-end
-util.map("n", "<leader>fn", notifications_picker, "Show notifications")
+-- Notification history picker (implementation in config/notifications.lua).
+util.map("n", "<leader>fn", function() require("config.notifications").pick() end, "Show notifications")
 
 -- TODO comment jumps
 util.map("n", "]t", function() require("todo-comments").jump_next() end, "Next TODO")
@@ -182,11 +139,33 @@ util.map("n", "<leader>pi", ":MasonToolsInstallSync<CR>", "Install Mason tools")
 util.map("n", "*", "*<C-o>", "Search word under cursor (no jump)")
 util.map("n", "<Esc><Esc>", ":nohlsearch<CR>", "Clear highlight (double Esc)")
 
--- Hop (character jump): f = in-line search (current line only), F = whole-window search.
--- Mode "v" covers visual AND select mode: jumping there extends the selection
--- instead of moving the cursor.
-util.map({ "n", "v" }, "f", function() require("hop").hint_char1({ current_line_only = true }) end, "Hop char in line")
-util.map({ "n", "v" }, "F", function() require("hop").hint_char1() end, "Hop char in window")
+-- Character jump (mini.jump2d): f = in-line search (current line only), F =
+-- whole-window search; both prompt for one character. Mode "v" covers visual
+-- AND select mode: jumping there extends the selection instead of moving the
+-- cursor. builtin_opts.single_character supplies the prompt + spotter; the
+-- in-line variant narrows allowed_lines to the cursor line (mini.jump2d has
+-- no "lines" option — allowed_lines' cursor_* flags are the mechanism).
+local function jump_char(current_line_only)
+    return function()
+        local j = require("mini.jump2d")
+        local opts = j.builtin_opts.single_character
+        if current_line_only then
+            opts = vim.tbl_deep_extend("force", opts, {
+                allowed_lines = {
+                    blank = false,
+                    cursor_before = false,
+                    cursor_at = true,
+                    cursor_after = false,
+                    fold = false,
+                },
+            })
+        end
+        j.start(opts)
+    end
+end
+
+util.map({ "n", "v" }, "f", jump_char(true), "Jump to char in line")
+util.map({ "n", "v" }, "F", jump_char(false), "Jump to char in window")
 
 -- Scroll and center
 util.map("n", "<C-d>", "<C-d>zz", "Scroll half page down and center")
@@ -199,41 +178,22 @@ util.map("n", "<C-/>", "gcc", "Toggle comment", { remap = true })
 util.map("v", "<C-/>", "gc", "Toggle comment", { remap = true })
 
 -- ── <leader>t — terminal (toggleterm.nvim) ──
--- Each binding owns a fixed terminal id, so toggling always reopens the same
--- terminal (Terminal:new returns the existing terminal for a taken id, which
--- also keeps the bindings working after a :ConfigReload). Plain terminals use
--- the configured shell (cmd.exe on Windows); lazygit / ipython run their own
--- command. <F2> is a direct alias for the floating toggle, replacing the old
--- ":split | terminal" mappings. In terminal mode, <F2> toggles the terminal
--- under the cursor instead — identify() reads the id from the buffer-name tag
--- the plugin writes at spawn time; untagged :terminal buffers fall back to
--- the float.
-local function terminal_toggle(id, direction, cmd)
-    return function()
-        require("toggleterm.terminal").Terminal:new({ id = id, direction = direction, cmd = cmd }):toggle()
-    end
-end
+-- Factories live in plugins/toggleterm.lua (lazy loaded on first toggle):
+-- each binding owns a fixed terminal id, so toggling always reopens the same
+-- terminal (also across a :ConfigReload). Plain terminals use the configured
+-- shell (cmd.exe on Windows); lazygit / ipython run their own command. <F2>
+-- is a direct alias for the floating toggle; in terminal mode it toggles the
+-- terminal under the cursor instead (identify() reads the id from the
+-- buffer-name tag; untagged :terminal buffers fall back to the float).
+local term = require("plugins.toggleterm")
 
--- One symbol for the float tuple so <leader>tf, <F2>, and the terminal-mode
--- fallback below cannot drift apart.
-local toggle_float = terminal_toggle(5, "float")
-
-local function toggle_current_terminal()
-    local term_mod = require("toggleterm.terminal")
-    local _, term = term_mod.identify()
-    if term then
-        term:toggle()
-    else
-        toggle_float()
-    end
-end
-
-util.map("n", "<leader>th", terminal_toggle(1, "horizontal"), "Toggle horizontal terminal")
-util.map("n", "<leader>tv", terminal_toggle(2, "vertical"), "Toggle vertical terminal")
-util.map("n", "<leader>tg", terminal_toggle(3, "horizontal", "lazygit"), "Toggle lazygit")
-util.map("n", "<leader>tp", terminal_toggle(4, "horizontal", "ipython"), "Toggle ipython")
+util.map("n", "<leader>th", term.toggle(1, "horizontal"), "Toggle horizontal terminal")
+util.map("n", "<leader>tv", term.toggle(2, "vertical"), "Toggle vertical terminal")
+util.map("n", "<leader>tg", term.toggle(3, "horizontal", "lazygit"), "Toggle lazygit")
+util.map("n", "<leader>tp", term.toggle(4, "horizontal", "ipython"), "Toggle ipython")
+local toggle_float = term.toggle(5, "float")
 util.map("n", "<leader>tf", toggle_float, "Toggle floating terminal")
 util.map("n", "<F2>", toggle_float, "Toggle floating terminal")
 util.map("i", "<F2>", toggle_float, "Toggle floating terminal")
-util.map("t", "<F2>", toggle_current_terminal, "Toggle current terminal")
+util.map("t", "<F2>", term.toggle_current, "Toggle current terminal")
 util.map("t", "<Esc><Esc>", "<C-\\><C-n>", "Exit terminal's insert mode", { noremap = true })
