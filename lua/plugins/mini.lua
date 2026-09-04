@@ -100,6 +100,12 @@ local clue_triggers = {
     -- mini.surround's sa/sd/sr/... prefix (its mappings carry descriptions)
     { mode = "n", keys = "s" },
     { mode = "x", keys = "s" },
+    -- Native prefixes: g (goto/selection commands) and z (scroll/fold);
+    -- descriptions come from built-in mappings and plugin maps alike.
+    { mode = "n", keys = "g" },
+    { mode = "x", keys = "g" },
+    { mode = "n", keys = "z" },
+    { mode = "x", keys = "z" },
 }
 
 local clues = {
@@ -144,30 +150,6 @@ require("mini.files").setup({
     windows = {
         preview = true, -- show a preview of the file under the cursor
     },
-})
-
--- ── Notification system ──
--- mini.notify owns vim.notify (noice's notify routing is disabled in
--- plugins/noice.lua, so this override survives). The card background is
--- fully opaque (config/colors.lua); width capped at 30% of the editor.
-vim.pack.add({
-    { src = "https://github.com/nvim-mini/mini.notify" },
-})
-
-require("mini.notify").setup({
-    window = {
-        config = {
-            -- Focusable cards would join <C-w>w window rotation, trapping the
-            -- cycle inside a toast. Content stays reachable via
-            -- MiniNotify.show_history() and the <leader>fn picker.
-            focusable = false,
-            border = "rounded",
-        },
-        max_width_share = 0.3,
-    },
-    -- Progress cards off: noice's lsp.progress mini view already renders LSP
-    -- progress (default on); the statusline keeps the attached client names.
-    lsp_progress = { enable = false },
 })
 
 -- ── Completion and snippets (mini.snippets) ──

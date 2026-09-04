@@ -140,52 +140,77 @@ end
 -- ── C / C++: Google Style defaults, project .clang-format overrides ──
 -- clang-format's fallback style is Google (see plugins/conform.lua), so the
 -- editor matches it by default: 2-space indent. A project .clang-format
--- (searched upward from the buffer) overrides that via its IndentWidth /
--- TabWidth / UseTab / BasedOnStyle keys. Project .editorconfig keeps
--- precedence over both.
+-- (searched upward from the buffer) overrides that by asking clang-format
+-- itself: `--dump-config` prints the fully resolved config — BasedOnStyle and
+-- every inheritance already expanded — so reading the three indentation keys
+-- from its flat output is exact, unlike regex-parsing the raw project file.
+-- The dump runs asynchronously (the buffer keeps the Google default until it
+-- lands, ~100ms) and is cached per .clang-format file, keyed by mtime.
+-- Project .editorconfig keeps precedence over everything.
 
-local CLANG_FORMAT_STYLES = {
-    LLVM = { indent = 2, tabwidth = 8, use_tab = false },
-    GNU = { indent = 2, tabwidth = 8, use_tab = false },
-    Google = { indent = 2, tabwidth = 8, use_tab = false },
-    Chromium = { indent = 2, tabwidth = 8, use_tab = false },
-    Mozilla = { indent = 2, tabwidth = 8, use_tab = false },
-    WebKit = { indent = 4, tabwidth = 8, use_tab = false },
-    Microsoft = { indent = 4, tabwidth = 4, use_tab = false },
-}
+---Apply one indentation spec to a buffer.
+---@param bufnr integer
+---@param indent integer
+---@param tabwidth integer
+---@param use_tab boolean
+local function apply_clang_indent(bufnr, indent, tabwidth, use_tab)
+    if not vim.api.nvim_buf_is_valid(bufnr) then return end
+    vim.bo[bufnr].shiftwidth = indent
+    vim.bo[bufnr].softtabstop = indent
+    vim.bo[bufnr].tabstop = tabwidth
+    vim.bo[bufnr].expandtab = not use_tab
+end
 
----Parse a .clang-format file for the indentation-relevant keys.
----@param path string
----@return table|nil {indent, tabwidth, use_tab}
-local function parse_clang_format(path)
-    local file = io.open(path, "r")
-    if not file then return nil end
-    local based_on, indent, tabwidth, use_tab
-    for line in file:lines() do
-        line = line:gsub("#.*$", ""):gsub("^%s+", ""):gsub("%s+$", "")
-        if line ~= "" and not line:match("^%-%-%-") and not line:match("^%.%.%.") then
-            local key, val = line:match("^([%w_]+)%s*:%s*(.-)%s*$")
-            if key and val ~= "" then
-                if key == "BasedOnStyle" then
-                    based_on = val
-                elseif key == "IndentWidth" then
-                    indent = tonumber(val)
-                elseif key == "TabWidth" then
-                    tabwidth = tonumber(val)
-                elseif key == "UseTab" then
-                    local v = val:lower()
-                    use_tab = v == "always" or v == "forindentation" or v == "true"
-                end
-            end
-        end
+---Read the three indentation keys from a resolved --dump-config output.
+---Top-level YAML in the dump is flat ("IndentWidth: 4"); the anchored
+---patterns cannot match inside nested sections.
+---@param dump string
+---@return { indent: integer, tabwidth: integer, use_tab: boolean }|nil
+local function parse_dump(dump)
+    local indent, tabwidth, use_tab
+    for line in dump:gmatch("[^\r\n]+") do
+        local n = line:match("^IndentWidth:%s+(%d+)")
+        if n then indent = tonumber(n) end
+        n = line:match("^TabWidth:%s+(%d+)")
+        if n then tabwidth = tonumber(n) end
+        local t = line:match("^UseTab:%s+(%S+)")
+        -- Match the old hand parser's semantics: only Always/ForIndentation
+        -- mean tab indentation; Never/false (and ForContinuation, which uses
+        -- tabs only for alignment continuations) keep expandtab.
+        if t then use_tab = t == "Always" or t == "ForIndentation" end
     end
-    file:close()
-    local base = (based_on and CLANG_FORMAT_STYLES[based_on]) or CLANG_FORMAT_STYLES.Google
-    return {
-        indent = indent or base.indent,
-        tabwidth = tabwidth or base.tabwidth,
-        use_tab = use_tab or base.use_tab,
-    }
+    if not indent then return nil end
+    return { indent = indent, tabwidth = tabwidth or indent, use_tab = use_tab or false }
+end
+
+-- dump cache: .clang-format path -> { mtime: integer, opts: table }
+local clang_dumps = {}
+
+---Apply the project .clang-format's resolved indentation to the buffer.
+---One retry when clang-format is not on PATH yet (a C file opened before
+---Mason's bin joined PATH); LLVM's system install normally resolves at once.
+local function apply_from_clang_format(bufnr, path, retry)
+    local mtime = vim.fn.getftime(path)
+    local cached = clang_dumps[path]
+    if cached and cached.mtime == mtime then
+        apply_clang_indent(bufnr, cached.opts.indent, cached.opts.tabwidth, cached.opts.use_tab)
+        return
+    end
+    if vim.fn.executable("clang-format") == 0 then
+        if not retry then vim.defer_fn(function() apply_from_clang_format(bufnr, path, true) end, 2000) end
+        return
+    end
+    vim.system(
+        { "clang-format", "--dump-config", "--style=file:" .. path:gsub("\\", "/") },
+        { text = true },
+        function(obj)
+            if obj.code ~= 0 then return end
+            local opts = parse_dump(obj.stdout)
+            if not opts then return end
+            clang_dumps[path] = { mtime = mtime, opts = opts }
+            vim.schedule(function() apply_clang_indent(bufnr, opts.indent, opts.tabwidth, opts.use_tab) end)
+        end
+    )
 end
 
 ---Locate the nearest .clang-format above the buffer's directory.
@@ -208,12 +233,13 @@ vim.api.nvim_create_autocmd("FileType", {
             return
         end
         local cf = find_clang_format(args.buf)
-        local ind = cf and parse_clang_format(cf)
-        if ind then
-            vim.opt_local.tabstop = ind.tabwidth
-            vim.opt_local.shiftwidth = ind.indent
-            vim.opt_local.softtabstop = ind.indent
-            vim.opt_local.expandtab = not ind.use_tab
+        if cf then
+            -- Google default until the dump lands (or forever on dump failure).
+            vim.opt_local.tabstop = 2
+            vim.opt_local.shiftwidth = 2
+            vim.opt_local.softtabstop = 2
+            vim.opt_local.expandtab = true
+            apply_from_clang_format(args.buf, cf, false)
             return
         end
         -- Google default: 2-space indent

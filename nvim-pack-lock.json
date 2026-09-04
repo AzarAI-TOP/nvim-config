@@ -1,8 +1,9 @@
 {
   "plugins": {
     "bento.nvim": {
-      "rev": "3b529fb1ff417fe0ab5759a712372a6a64152271",
-      "src": "https://github.com/serhez/bento.nvim"
+      "rev": "08054c6cd3cfb1246f1bfbc74b04e1587f476003",
+      "src": "https://github.com/serhez/bento.nvim",
+      "version": "'feat/v2'"
     },
     "conform.nvim": {
       "rev": "619363c30309d29ffa631e67c8183f2a72caa373",
@@ -63,10 +64,6 @@
     "mini.move": {
       "rev": "48fcaac289a19b8eff2fd5fe203267d478a8abdc",
       "src": "https://github.com/nvim-mini/mini.move"
-    },
-    "mini.notify": {
-      "rev": "13df5edffc3e27937b166a0f25a8329b46e15a4e",
-      "src": "https://github.com/nvim-mini/mini.notify"
     },
     "mini.sessions": {
       "rev": "87d068a84abf6d687f7c68de2b496a9bd88bc533",

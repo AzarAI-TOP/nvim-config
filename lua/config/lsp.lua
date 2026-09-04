@@ -208,11 +208,19 @@ end
 local function is_markdown(bufnr) return vim.bo[bufnr].filetype == "markdown" end
 
 -- Every-keystroke autotrigger state, flipped by <leader>uc (keymaps.lua).
--- New LspAttach events respect it; toggling re-applies it to what is
--- already attached.
+-- The InsertCharPre autocmd in register() reads it live.
 local autotrigger = true
 
 --- Enable native completion for one LspAttach event.
+---
+--- Manual mode only — the client's capabilities stay untouched (extending
+--- triggerCharacters mutates state shared by every consumer, and the built-in
+--- autotrigger's InsertCharPre autocmds only die with the LAST completion
+--- client in a buffer, which would make toggling a full teardown/rebuild).
+--- The InsertCharPre autocmd in register() instead drives
+--- vim.lsp.completion.get() on printable ASCII — the officially documented
+--- alternative for every-keystroke completion (:h lsp-attach), and the same
+--- path <C-Space> uses.
 ---@param args { buf: integer, data: { client_id: integer } }
 ---@return boolean whether completion was enabled
 function M.enable_for_client(args)
@@ -220,20 +228,9 @@ function M.enable_for_client(args)
 
     local client = vim.lsp.get_client_by_id(args.data.client_id)
     if client and client:supports_method("textDocument/completion", args.buf) then
-        -- autotrigger only fires on the server's triggerCharacters, which are
-        -- typically just ".", ":", ">", etc. Extend them to all printable
-        -- non-space ASCII (33-126) so the popup opens on every keystroke.
-        -- completeopt=noselect/noinsert (set in config/options.lua) still keeps
-        -- the menu from pre-selecting or auto-inserting an item.
-        local cp = client.server_capabilities.completionProvider
-        if cp then
-            local chars = {}
-            for i = 33, 126 do
-                table.insert(chars, string.char(i))
-            end
-            cp.triggerCharacters = chars
-        end
-        vim.lsp.completion.enable(true, client.id, args.buf, { autotrigger = autotrigger })
+        -- completeopt=noselect/noinsert (set in config/options.lua) keeps the
+        -- menu from pre-selecting or auto-inserting an item.
+        vim.lsp.completion.enable(true, client.id, args.buf, { autotrigger = false })
         return true
     end
     return false
@@ -247,38 +244,40 @@ function M.trigger()
     return true
 end
 
---- <leader>uc: flip the every-keystroke autotrigger on every attached
---- client/buffer. The shared InsertCharPre autocmds die only when the LAST
---- completion client leaves a buffer, so switching needs a full teardown
---- pass per buffer before rebuilding through enable_for_client();
+--- <leader>uc: flip the every-keystroke autotrigger. The InsertCharPre
+--- autocmd reads this flag live, so toggling is a single boolean — no
+--- teardown or rebuild, and no multi-client lifecycle to reason about.
 --- <C-Space> keeps working in both states.
 function M.toggle_autotrigger()
     autotrigger = not autotrigger
-    for _, bufnr in ipairs(vim.api.nvim_list_bufs()) do
-        if vim.api.nvim_buf_is_loaded(bufnr) then
-            local clients = {}
-            for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr })) do
-                if client:supports_method("textDocument/completion", bufnr) then clients[#clients + 1] = client end
-            end
-            for _, client in ipairs(clients) do
-                vim.lsp.completion.enable(false, client.id, bufnr)
-            end
-            for _, client in ipairs(clients) do
-                M.enable_for_client({ buf = bufnr, data = { client_id = client.id } })
-            end
-        end
-    end
     vim.notify(
         "Completion autotrigger " .. (autotrigger and "on" or "off (<C-Space> still works)"),
         vim.log.levels.INFO
     )
 end
 
---- Register an LspAttach autocmd that activates completion per client.
+--- Register the LspAttach activator and the per-keystroke trigger.
 function M.register()
+    local group = vim.api.nvim_create_augroup("lsp_completion", { clear = true })
     vim.api.nvim_create_autocmd("LspAttach", {
-        group = vim.api.nvim_create_augroup("lsp_completion", { clear = true }),
+        group = group,
         callback = M.enable_for_client,
+    })
+    -- Every-keystroke popup, replacing the built-in autotrigger: request
+    -- completion on printable ASCII only. Multi-byte input (e.g. the IME)
+    -- and Markdown buffers never trigger; buffers without a completion
+    -- client bail on the (cheap) client lookup.
+    vim.api.nvim_create_autocmd("InsertCharPre", {
+        group = group,
+        callback = function()
+            if not autotrigger or vim.bo.filetype == "markdown" then return end
+            local char = vim.v.char
+            if #char ~= 1 then return end
+            local byte = char:byte()
+            if byte < 33 or byte > 126 then return end
+            if #vim.lsp.get_clients({ bufnr = 0, method = "textDocument/completion" }) == 0 then return end
+            vim.lsp.completion.get()
+        end,
     })
 end
 

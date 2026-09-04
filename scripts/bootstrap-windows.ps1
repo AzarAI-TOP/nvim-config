@@ -288,16 +288,35 @@ function Invoke-BootstrapWindows {
         [Environment]::GetEnvironmentVariable("Path", "User")
     ) -join ";"
 
+    # Resolve the Neovide install directory instead of hardcoding it: PATH
+    # first (already-repaired environments), then winget's two known targets
+    # (machine-wide Program Files, per-user LOCALAPPDATA\Programs). Falls back
+    # to Program Files so a missing install still surfaces Repair-NeovidePath's
+    # explicit error.
+    $neovideCommand = & $TestCommand "neovide"
+    $neovideCandidates = @()
+    if ($neovideCommand) { $neovideCandidates += (Split-Path -Parent $neovideCommand.Source) }
+    $neovideCandidates += @(
+        (Join-Path $env:ProgramFiles "Neovide"),
+        (Join-Path $env:LOCALAPPDATA "Programs\Neovide")
+    )
+    $neovideDirectory = $neovideCandidates |
+        Where-Object { & $TestPath (Join-Path $_ "neovide.exe") } |
+        Select-Object -First 1
+    if (-not $neovideDirectory) {
+        $neovideDirectory = Join-Path $env:ProgramFiles "Neovide"
+    }
+
     # The Neovide PATH repair must run after installation and the PATH refresh,
     # so a clean first run actually fixes it.
-    Repair-NeovidePath -NeovideDirectory "C:\Program Files\Neovide" `
+    Repair-NeovidePath -NeovideDirectory $neovideDirectory `
         -TestPath $TestPath -TestCommand $TestCommand `
         -ReadUserPath $ReadUserPath -WriteUserPath $WriteUserPath
 
     # Start Menu shortcut with the documented Ctrl+Alt+N hotkey. Idempotent:
     # the factory skips creation when a shortcut with that hotkey exists.
     $null = New-NeovideShortcut `
-        -TargetPath "C:\Program Files\Neovide\neovide.exe" `
+        -TargetPath (Join-Path $neovideDirectory "neovide.exe") `
         -ShortcutFactory $ShortcutFactory `
         -TestPath $TestPath
 

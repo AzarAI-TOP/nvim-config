@@ -95,8 +95,9 @@ util.map("n", "<leader>fg", function() require("fzf-lua").grep() end, "Grep proj
 util.map("n", "<leader>fG", function() require("fzf-lua").live_grep() end, "Live grep")
 util.map("n", "<leader>fW", function() require("fzf-lua").grep_cword() end, "Grep word under cursor")
 
--- Notification history picker (implementation in config/notifications.lua).
-util.map("n", "<leader>fn", function() require("config.notifications").pick() end, "Show notifications")
+-- Notification/message history: noice's own picker (uses fzf-lua when
+-- available), full-message preview included.
+util.map("n", "<leader>fn", ":Noice pick<CR>", "Show notifications")
 
 -- TODO comment jumps
 util.map("n", "]t", function() require("todo-comments").jump_next() end, "Next TODO")
@@ -191,7 +192,7 @@ util.map("n", "<leader>th", term.toggle(1, "horizontal"), "Toggle horizontal ter
 util.map("n", "<leader>tv", term.toggle(2, "vertical"), "Toggle vertical terminal")
 util.map("n", "<leader>tg", term.toggle(3, "horizontal", "lazygit"), "Toggle lazygit")
 util.map("n", "<leader>tp", term.toggle(4, "horizontal", "ipython"), "Toggle ipython")
-local toggle_float = term.toggle(5, "float")
+local toggle_float = term.toggle_float
 util.map("n", "<leader>tf", toggle_float, "Toggle floating terminal")
 util.map("n", "<F2>", toggle_float, "Toggle floating terminal")
 util.map("i", "<F2>", toggle_float, "Toggle floating terminal")

@@ -51,7 +51,6 @@ Mason installs and updates the LSP servers and portable formatters:
 │   │   │                   #   native completion activation, LSP keymaps
 │   │   ├── colors.lua      # noice UI colors: popupmenu/kind palette (moon),
 │   │   │                   #   opaque float surfaces, per-kind groups
-│   │   ├── notifications.lua # notification history fzf picker (<leader>fn)
 │   │   ├── neovide.lua     # Neovide GUI settings
 │   │   ├── pack.lua        # :PackUpdate / :PackList user commands
 │   │   ├── lazy.lua        # native lazy loading — defers vim.pack.add until
@@ -134,8 +133,10 @@ outside LSP buffers.
 
 ### Completion and snippets
 
-- LSP completion opens automatically while typing (every printable character
-  is a trigger character). Use `<C-Space>` for a manual request. The popup
+- LSP completion opens automatically while typing: every printable ASCII
+  keystroke requests completion from an `InsertCharPre` autocmd (the
+  documented native alternative to extending triggerCharacters); multi-byte
+  IME input never triggers. Use `<C-Space>` for a manual request. The popup
   never auto-selects or auto-inserts: move with `<C-n>`/`<C-p>`, accept with
   `<C-y>`. `<Tab>` does not accept — it closes the menu and keeps its usual
   indentation behavior. `<leader>uc` turns the every-keystroke autotrigger
@@ -161,7 +162,7 @@ outside LSP buffers.
 |---------|-------------|
 | Built-in plugin management | No third-party plugin manager — plugins install via `vim.pack`. `:PackUpdate` opens the official review buffer (`:write` applies, `:quit` discards), `:PackList` lists installed plugins. |
 | Simple plugin lifecycle | Every plugin file carries its own `vim.pack.add` + setup — eager for always-on UI, or deferred through `config/lazy.lua` until first use (`require` / command / keypress). Mason defers to the first `:Mason*` command or 1s after `VimEnter`, keeping its background tool check off the startup path. Bootstrap mode (`NVIM_BOOTSTRAP=1`) runs every loader immediately so headless installs never miss a plugin. |
-| Styled floating UI | `noice.nvim` replaces the native cmdline and completion popupmenu with bordered floats (nui backend); messages and notifications render as `mini.notify` cards. |
+| Styled floating UI | `noice.nvim` replaces the native cmdline and completion popupmenu with bordered floats (nui backend); messages and notifications render as noice's built-in unfocusable mini cards (no nvim-notify needed). |
 | Buffer manager | `bento.nvim` (`;`) — floating buffer switcher with actions (open, delete, split, lock). |
 | File explorer | `mini.files` — Miller-column navigation and manipulation, replaces netrw by default, uses mini.icons. |
 | Fuzzy finding | `fzf-lua` — files, config, registers, help, TODOs, keymaps, and project grep. |
@@ -181,7 +182,7 @@ outside LSP buffers.
 | QoL autocmds | Highlight on yank; restore last cursor position. |
 | TODO highlighting | `todo-comments.nvim` — TODO/FIX/HACK/WARN/NOTE highlighting and search. |
 | Sessions | `mini.sessions` — named global sessions under the data directory (nothing written into projects); `<leader>Ss` save / `<leader>Sl` load / `<leader>Sd` delete; restored sessions auto-update on exit; `sessionoptions` pinned to buffer/window state, so no global options or mappings ever travel inside a session and no dead terminal buffers are restored. |
-| Notifications | `mini.notify` renders every notification as floating cards: it owns `vim.notify` directly, and an adapter in `plugins/noice.lua` backs noice's notify view so native messages (E-errors, warnings, echo output) never fall back to the bottom MsgArea. `<leader>fn` fuzzy-searches the history in an fzf picker with a full-message preview. |
+| Notifications | `noice.nvim` owns `vim.notify` and renders every notification as unfocusable floating cards (built-in mini backend, 5s lifetime); native messages (E-errors, warnings, echo output) route through the same history. `<leader>fn` opens noice's message-history picker (fzf-lua, full-message preview). |
 | Statusline | `mini.statusline` with custom content — per-mode gradient hue, git branch after cwd, centered cursor position, no file size. |
 | Visual aides | `mini.indentscope` indent guides, `mini.trailspace` trailing whitespace, `mini.move` line moves with `Alt+↑/↓`. |
 | Robust defaults | Persistent undo, native system clipboard (`unnamedplus`), `termguicolors`, deterministic plugin/config load order. |
@@ -209,7 +210,6 @@ outside LSP buffers.
 | [mini.indentscope](https://github.com/nvim-mini/mini.indentscope) | Indent guides |
 | [mini.jump2d](https://github.com/nvim-mini/mini.jump2d) | Character jumping (`f` / `F`) |
 | [mini.move](https://github.com/nvim-mini/mini.move) | Move lines/selections |
-| [mini.notify](https://github.com/nvim-mini/mini.notify) | Notification system |
 | [mini.sessions](https://github.com/nvim-mini/mini.sessions) | Named global session persistence |
 | [mini.snippets](https://github.com/nvim-mini/mini.snippets) | Local C/C++/Python snippet expansion |
 | [mini.statusline](https://github.com/nvim-mini/mini.statusline) | Statusline |
@@ -250,10 +250,10 @@ unacceptable exit code aborts the run.
   `clipboard = "unnamedplus"` (yank and paste go through the system clipboard).
 - **Shell** — `cmd.exe` is pinned for `:!` / `system()` / filters so a Git
   Bash-launched nvim never feeds cmd-style flags into Bash.
-- **Tool discovery** — at startup the config checks WinGet package dirs
-  (`%LOCALAPPDATA%\Microsoft\WinGet\Packages`) for `fzf` / `lazygit` / `rg`
-  and prepends them to `PATH` when a stale Explorer/Neovide environment
-  hides them.
+- **Tool discovery** — right after the UI comes up the config checks WinGet
+  package dirs (`%LOCALAPPDATA%\Microsoft\WinGet\Packages`) for `fzf` /
+  `lazygit` / `rg` and prepends them to `PATH` when a stale Explorer/Neovide
+  environment hides them.
 - **Neovide** — 0xProto Nerd Font at 13pt, rounded corners, title bar in
   TokyoNight Moon colors.
 
@@ -285,20 +285,38 @@ any unacceptable exit code (winget exit codes and SHA-256 checksum
 verification). If something is missing afterwards, `:checkhealth` names the
 tool and the fix.
 
+Headless acceptance scripts live in `scripts/smoke/` (lazy-loading stubs,
+command stubs + `:ConfigReload` interaction, terminal spawn + key stubs).
+Run them from the dev checkout (via the `nvim-config` junction):
+
+```sh
+NVIM_APPNAME=nvim-config nvim --headless -S scripts/smoke/lazy.lua
+```
+
 ## Future Considerations
 
 These upstream changes may affect this config in the near future:
 
-- **bento.nvim v2** — A `feat/v2` branch with a fully refactored API
-  (explicit action/key registration via `require("bento.api")`) was announced
-  for a July 2026 merge, which has since passed. Before updating bento,
-  verify the current `main` API — `setup({ main_keymap = ";" })` may need
-  changes when v2 lands.
-- **nvim-treesitter archived** — The repository was archived on 2026-04-03 and
-  is no longer actively developed. The current `main`-branch API works correctly
-  for now. Long-term, Neovim 0.12+'s built-in `vim.treesitter` may be a
-  sufficient replacement for syntax highlighting.
-- **nvim-treesitter-textobjects archived** — Archived on 2026-04-03 in the same
-  wave. It is consumed purely as query data by mini.ai's `F` target, which
-  keeps working without maintenance. Once a future Neovim version ships
-  built-in textobject queries, this dependency can be dropped.
+- **bento.nvim v2** — Migrated to the v2 API on the `feat/v2` branch
+  (2026-09): explicit key/action registration via `require("bento.api")`,
+  the `main_keymap` option is gone (`register_expand_key(";")` +
+  `register_last_buffer_key(";")` recreate it). The branch is unmerged and
+  the repo dormant since 2026-05; the lock file pins the exact rev, so drift
+  only enters through a deliberate `:PackUpdate`. Re-check before updating:
+  if upstream merges v2 into main (or reshapes the API), the registration
+  block in `lua/plugins/bento.lua` is the only thing to touch.
+- **nvim-treesitter health** — The repository was archived on 2026-04-03 and
+  **reopened on 2026-07-18**; it is actively maintained again (parser bumps
+  land every few days). This config uses it solely as the parser + query
+  installer — highlighting itself already runs on the built-in
+  `vim.treesitter` API. The long-term native path is Neovim's planned
+  `nvim-treeconfig` distribution ([neovim#39006](https://github.com/neovim/neovim/issues/39006),
+  plus prebuilt artifacts in [#39007](https://github.com/neovim/neovim/issues/39007));
+  migrating to it once it ships should be near-zero cost, so watch those
+  issues rather than pre-migrating.
+- **nvim-treesitter-textobjects** — Archived in the same 2026-04 wave and
+  likewise reopened; query updates track parser changes. Consumed purely as
+  query data by mini.ai's `F` target (the plugin's Lua code never loads).
+  If maintenance ever stops again, vendoring the per-language
+  `textobjects.scm` files into `after/queries/` is the documented fallback
+  (see mini.ai's manual-query notes).

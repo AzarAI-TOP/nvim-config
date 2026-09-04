@@ -1,8 +1,8 @@
--- UI adaptation layer for noice.nvim and mini.notify on top of TokyoNight moon.
+-- UI adaptation layer for noice.nvim on top of TokyoNight moon.
 --
 -- Philosophy: the colorscheme owns everything it defines. This module exists
 -- only for what a colorscheme CANNOT express:
---   1. Float surface colors (Pmenu / NoiceCmdlinePopup / MiniNotifyNormal) —
+--   1. Float surface colors (Pmenu / NoiceCmdlinePopup / NoiceMini) —
 --      fully opaque.
 --   2. Per-kind popupmenu colors (NoiceCompletionItemKind<Name>) — noice's
 --      private groups; without definitions here every kind renders in one
@@ -19,7 +19,7 @@
 --
 -- Group definitions are non-default, applied before the plugins load (this
 -- module runs in the core config phase), so plugins' `default=true` links
--- (e.g. mini.notify's MiniNotifyNormal) leave them untouched. Re-applied on
+-- (e.g. noice's NoiceMini) leave them untouched. Re-applied on
 -- every ColorScheme event: plugins re-apply only their own groups, and a
 -- colorscheme switch could clear the custom ones.
 
@@ -163,7 +163,7 @@ local function apply()
     vim.api.nvim_set_hl(0, "Pmenu", { bg = C.bg_popup, fg = C.fg })
     vim.api.nvim_set_hl(0, "PmenuSel", { bg = C.bg_sel })
     vim.api.nvim_set_hl(0, "NoiceCmdlinePopup", { bg = C.bg_popup })
-    vim.api.nvim_set_hl(0, "MiniNotifyNormal", { bg = C.bg_popup })
+    vim.api.nvim_set_hl(0, "NoiceMini", { bg = C.bg_popup })
 
     for name, spec in pairs(KINDS) do
         vim.api.nvim_set_hl(0, "NoiceCompletionItemKind" .. name, { fg = spec.color })

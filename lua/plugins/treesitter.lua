@@ -9,8 +9,8 @@ vim.pack.add({
     -- Textobject capture queries (@function.outer / @function.inner, ...).
     -- Data-only: nothing is loaded or set up — mini.ai's treesitter F target
     -- (plugins/mini.lua) reads queries/<lang>/textobjects.scm straight from
-    -- the runtimepath. Upstream is archived (2026-04, like nvim-treesitter)
-    -- but the query files need no maintenance.
+    -- the runtimepath. Upstream was archived 2026-04 and reopened 2026-07;
+    -- query updates track parser changes (see README Future Considerations).
     { src = "https://github.com/nvim-treesitter/nvim-treesitter-textobjects" },
 })
 

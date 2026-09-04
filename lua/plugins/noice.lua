@@ -1,10 +1,9 @@
 -- noice.nvim: styled floating UIs replacing the native cmdline, messages, and
--- completion popupmenu (nui backend). Every notification — vim.notify calls
--- and native message-channel output (E-errors, warnings, echo) — renders as a
--- mini.notify card: mini.notify owns vim.notify directly (plugins/mini.lua),
--- and the adapter below lets noice's "notify" view reuse it, so nothing falls
--- back to the bottom MsgArea. Colors and popupmenu kind metadata live in
--- config/colors.lua.
+-- completion popupmenu (nui backend). noice also owns vim.notify: the notify
+-- view falls back to noice's built-in "mini" backend (nvim-notify is not
+-- installed), rendering notifications as unfocusable floating cards — the
+-- card lifetime is bumped to 5s, matching the mini.notify defaults this
+-- replaces. Colors and popupmenu kind metadata live in config/colors.lua.
 
 local colors = require("config.colors")
 
@@ -13,47 +12,7 @@ vim.pack.add({
     { src = "https://github.com/MunifTanjim/nui.nvim" },
 })
 
--- Adapter: noice routes every msg_show (info / error / warning) to its
--- "notify" view, which calls require("notify") — nvim-notify's module. That
--- plugin is deliberately not installed, so without this adapter the view
--- falls back to the "mini" backend (bottom MsgArea). mini.notify implements
--- the same (msg, level) contract, so expose it under that module name.
--- Two contract gaps to bridge: make_notify() returns a vim.schedule_wrap C
--- closure, which cannot carry fields (noice also calls
--- require("notify").dismiss), hence the callable table wrapper; and it only
--- accepts numeric vim.log.levels, while noice passes "error"/"warn"/"info"
--- strings.
-package.preload["notify"] = function()
-    local mini_notify = require("mini.notify").make_notify()
-    local level_numbers = {}
-    for name, num in pairs(vim.log.levels) do
-        level_numbers[name:lower()] = num
-    end
-    return setmetatable({}, {
-        __call = function(_, msg, level, _)
-            msg = msg or ""
-            if type(level) == "string" then level = level_numbers[level:lower()] or vim.log.levels.INFO end
-            return mini_notify(msg, level)
-        end,
-        __index = {
-            -- nvim-notify API called on message clear; mini.notify has no
-            -- pending queue, cards expire on their own — no-op.
-            dismiss = function() end,
-        },
-    })
-end
-
 require("noice").setup({
-    -- ── Notifications ──
-    -- mini.notify owns vim.notify; noice must not wrap it, otherwise the
-    -- mini.notify override (installed earlier in the plugin phase) is replaced.
-    notify = {
-        enabled = false,
-    },
-    -- ── Completion popupmenu ──
-    popupmenu = {
-        kind_icons = colors.kind_icons(), -- Nerd Font icons + per-kind colors
-    },
     -- ── Views ──
     views = {
         popupmenu = {
@@ -62,6 +21,13 @@ require("noice").setup({
             border = { style = "rounded" },
             size = { max_height = 10 }, -- match the previous pumheight=10 cap
         },
+        -- Notification cards (vim.notify and routed msg_show): unfocusable by
+        -- noice's own default; 5s lifetime (noice default is 2s).
+        mini = { timeout = 5000 },
+    },
+    -- ── Completion popupmenu ──
+    popupmenu = {
+        kind_icons = colors.kind_icons(), -- Nerd Font icons + per-kind colors
     },
     -- ── Presets ──
     presets = {

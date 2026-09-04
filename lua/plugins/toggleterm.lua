@@ -46,7 +46,9 @@ function M.toggle(id, direction, cmd)
     end
 end
 
-local toggle_float = M.toggle(5, "float")
+---The floating toggle (id 5): one closure shared by the <leader>tf / <F2>
+---bindings and the terminal-mode fallback below, so they cannot drift apart.
+M.toggle_float = M.toggle(5, "float")
 
 ---Terminal-mode toggle: the terminal under the cursor when identify() finds a
 ---fixed-id toggleterm (it reads the id from the buffer-name tag the plugin
@@ -56,7 +58,7 @@ function M.toggle_current()
     if term then
         term:toggle()
     else
-        toggle_float()
+        M.toggle_float()
     end
 end
 
