@@ -47,8 +47,8 @@ local parsers = {
 }
 
 -- Install / update parsers asynchronously (already installed ones are skipped);
--- bootstrap mode skips this
-if vim.env.NVIM_BOOTSTRAP ~= "1" then require("nvim-treesitter").install(parsers) end
+-- requires the tree-sitter CLI (see scripts/bootstrap-windows.ps1).
+require("nvim-treesitter").install(parsers)
 
 -- Filetype → parser mapping (when names differ)
 vim.treesitter.language.register("javascript", { "javascriptreact" })

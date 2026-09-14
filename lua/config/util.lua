@@ -1,36 +1,10 @@
--- Shared utility set for this config: keymap registry, unified keymap binding,
--- editorconfig indent helpers, :PackList row builder, and the LSP / formatter
--- tool lists. All small helper functions live in this one file.
+-- Shared utility set for this config: the unified keymap helper, editorconfig
+-- indent helpers, and the LSP / formatter tool lists. All small helper
+-- functions live in this one file.
 
 local M = {}
 
--- ── Keymap registry ──
--- Records every global keymap registered by this config. config.reload deletes
--- all registered mappings first, then keymap modules re-register (and re-record)
--- them; therefore this module must never be cleared during reload.
-
-M.keymaps = {}
-
----Register a global keymap owned by this config.
----@param mode string|string[]
----@param lhs string
-function M.register_keymap(mode, lhs)
-    for _, m in ipairs(type(mode) == "table" and mode or { mode }) do
-        table.insert(M.keymaps, { mode = m, lhs = lhs })
-    end
-end
-
----Delete all registered keymaps (idempotent; mappings already removed by the
----user or a plugin are skipped automatically).
-function M.delete_all_keymaps()
-    for _, m in ipairs(M.keymaps) do
-        pcall(vim.keymap.del, m.mode, m.lhs)
-    end
-    M.keymaps = {}
-end
-
----Unified keymap entry point: set the mapping, write a description, and record
----it in the registry.
+---Unified keymap entry point: set the mapping and write a description.
 ---@param mode string|string[]
 ---@param lhs string
 ---@param rhs string|function
@@ -46,7 +20,6 @@ function M.map(mode, lhs, rhs, desc, opts)
     end
     opts = vim.tbl_extend("force", { desc = desc }, opts)
     vim.keymap.set(mode, lhs, rhs, opts)
-    M.register_keymap(mode, lhs)
 end
 
 -- ── editorconfig indent helpers ──
@@ -91,37 +64,6 @@ function M.reapply_editorconfig_indent(bufnr)
         end
     end
     if applied.tab_width ~= nil then vim.bo[bufnr].tabstop = tonumber(applied.tab_width) end
-end
-
--- ── :PackList row builder ──
--- Lives in util so config/pack.lua only registers user commands, which
--- config.reload can delete and rebuild wholesale on :ConfigReload.
-
----Strip protocol/host from a plugin source, keep "author/repo"
----(e.g. "https://github.com/folke/noice.nvim" -> "folke/noice.nvim").
----@param src string
----@return string
-local function short_src(src)
-    local path = src:match("^%a+://[^/]+/(.+)$") or src:match("^git@[^:]+:(.+)$") or src
-    return path:gsub("%.git$", "")
-end
-
----Rows sorted by plugin name: "name  author/repo", second column aligned.
----@return string[]
-function M.pack_rows()
-    local rows = {}
-    local width = 0
-    for _, plugin in ipairs(vim.pack.get()) do
-        local spec = plugin.spec or {}
-        local name = spec.name or "?"
-        width = math.max(width, #name)
-        table.insert(rows, { name = name, src = short_src(spec.src or "") })
-    end
-    for i, row in ipairs(rows) do
-        rows[i] = (string.format("%-" .. width .. "s  %s", row.name, row.src)):gsub("%s+$", "")
-    end
-    table.sort(rows)
-    return rows
 end
 
 -- ── Tool lists ──

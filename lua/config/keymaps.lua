@@ -1,5 +1,5 @@
--- Global keymaps. Every binding is registered via config.util.map, which also
--- records it in a registry so config.reload can delete and rebuild on reload.
+-- Global keymaps. Every binding goes through config.util.map, which attaches a
+-- description and auto-silences Ex-command mappings.
 --
 -- <leader> prefix groups:
 --   <leader>b  buffers
@@ -32,7 +32,6 @@ util.map("n", "<leader>bp", ":bprevious<CR>", "Previous buffer")
 
 -- ── <leader>c — config ──
 util.map("n", "<leader>ce", ":vsplit $MYVIMRC<CR>", "Edit config")
-util.map("n", "<leader>cr", function() require("config.reload").reload() end, "Reload config")
 
 -- ── <leader>S — sessions ──
 -- Global sessions keep project directories clean; restored sessions

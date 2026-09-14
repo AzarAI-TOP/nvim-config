@@ -17,23 +17,21 @@ vim.pack.add({
     { src = "https://github.com/nvim-mini/mini.statusline" },
 })
 
--- Narrow-layout threshold: one third of the screen width, in columns. Screen
--- and window pixel widths come from a background PowerShell probe (the
--- client area of this instance's Neovide window, located via the nvim
--- process's parent — with several instances open, "first neovide found"
--- could measure a differently sized one — measured against the monitor the
--- window actually sits on, not necessarily the primary) and are cached in
--- the state dir; 120 is the fallback until the probe lands.
+-- Narrow-layout threshold: the statusline falls back to its minimal form only
+-- when the window is narrower than a QUARTER of the screen it sits on. Screen
+-- and window pixel widths come from a background PowerShell probe (the client
+-- area of this instance's Neovide window, located via the nvim process's parent
+-- — with several instances open, "first neovide found" could measure a
+-- differently sized one — measured against the monitor the window actually sits
+-- on, not necessarily the primary) and are cached in the state dir; 120 is the
+-- fallback until the probe lands.
 local narrow_threshold = 120
 
 local function apply_probe(out)
     local sw, ww = out:match("(%d+)%s+(%d+)")
     sw, ww = tonumber(sw), tonumber(ww)
-    if not sw or sw <= 0 or not ww or ww <= 0 or vim.o.columns <= 0 then return false end
-    local px_per_col = ww / vim.o.columns
-    -- Reject nonsense ratios (e.g. pre-attach UI sizes); ~8-11px at 13pt.
-    if px_per_col < 5 or px_per_col > 16 then return false end
-    narrow_threshold = math.max(40, math.floor(sw / 3 / px_per_col))
+    if not sw or not ww or vim.o.columns <= 0 then return false end
+    narrow_threshold = math.max(40, math.floor(sw / 4 / (ww / vim.o.columns)))
     return true
 end
 
@@ -86,17 +84,6 @@ do
                         on_stdout = function(_, data)
                             local px = data[1]
                             if px and apply_probe(px) then write_cache(px) end
-                        end,
-                        on_exit = function(_, code)
-                            if code ~= 0 then
-                                vim.notify(
-                                    "screen probe failed (exit "
-                                        .. code
-                                        .. "), narrow-layout threshold stays at default",
-                                    vim.log.levels.WARN,
-                                    { title = "statusline" }
-                                )
-                            end
                         end,
                     })
                 end, 1500)
@@ -182,8 +169,8 @@ local function filetype()
     if vim.bo.buftype ~= "" then return "" end
     local ft = vim.bo.filetype
     if ft == "" then return "" end
-    local ok, glyph = pcall(require("mini.icons").get, "filetype", ft)
-    local icon = ok and glyph ~= nil and glyph .. " " or ""
+    local glyph = require("mini.icons").get("filetype", ft)
+    local icon = glyph ~= nil and glyph .. " " or ""
     return icon .. ft
 end
 

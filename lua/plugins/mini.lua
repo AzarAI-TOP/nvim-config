@@ -67,20 +67,13 @@ require("mini.bracketed").setup({
 -- ── Character jumping ──
 -- Replaces hop.nvim: single-character jumps via f (current line) / F (whole
 -- window), bound in config/keymaps.lua through builtin_opts.single_character.
--- Lazy loaded: those callbacks require("mini.jump2d") lazily, which the
--- preload stub turns into the load trigger. The default start mapping (<CR>)
--- is disabled; <CR> keeps its builtin use.
-require("config.lazy").defer("mini.jump2d", {
-    mods = { "mini.jump2d" },
-    loader = function()
-        vim.pack.add({
-            { src = "https://github.com/nvim-mini/mini.jump2d" },
-        })
+-- The default start mapping (<CR>) is disabled; <CR> keeps its builtin use.
+vim.pack.add({
+    { src = "https://github.com/nvim-mini/mini.jump2d" },
+})
 
-        require("mini.jump2d").setup({
-            mappings = { start_jumping = "" },
-        })
-    end,
+require("mini.jump2d").setup({
+    mappings = { start_jumping = "" },
 })
 
 -- ── Keymap discovery ──
@@ -186,11 +179,9 @@ mini_snippets.setup({
 -- ── Commands ──
 
 -- :TrimTrailSpace — remove trailing whitespace and trailing blank lines
--- force=true: config.reload re-runs this file and can rebuild it without a
--- "command already exists" error.
 vim.api.nvim_create_user_command("TrimTrailSpace", function()
     local view = vim.fn.winsaveview()
     require("mini.trailspace").trim()
     require("mini.trailspace").trim_last_lines()
     vim.fn.winrestview(view)
-end, { desc = "Trim trailing whitespace and blank lines in the current buffer", force = true })
+end, { desc = "Trim trailing whitespace and blank lines in the current buffer" })
