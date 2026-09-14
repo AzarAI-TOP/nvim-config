@@ -200,17 +200,13 @@ local function apply_from_clang_format(bufnr, path, retry)
         if not retry then vim.defer_fn(function() apply_from_clang_format(bufnr, path, true) end, 2000) end
         return
     end
-    vim.system(
-        { "clang-format", "--dump-config", "--style=file:" .. path:gsub("\\", "/") },
-        { text = true },
-        function(obj)
-            if obj.code ~= 0 then return end
-            local opts = parse_dump(obj.stdout)
-            if not opts then return end
-            clang_dumps[path] = { mtime = mtime, opts = opts }
-            vim.schedule(function() apply_clang_indent(bufnr, opts.indent, opts.tabwidth, opts.use_tab) end)
-        end
-    )
+    vim.system({ "clang-format", "--dump-config", "--style=file:" .. path }, { text = true }, function(obj)
+        if obj.code ~= 0 then return end
+        local opts = parse_dump(obj.stdout)
+        if not opts then return end
+        clang_dumps[path] = { mtime = mtime, opts = opts }
+        vim.schedule(function() apply_clang_indent(bufnr, opts.indent, opts.tabwidth, opts.use_tab) end)
+    end)
 end
 
 ---Locate the nearest .clang-format above the buffer's directory.

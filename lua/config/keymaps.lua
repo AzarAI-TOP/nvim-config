@@ -1,5 +1,5 @@
--- Global keymaps. Every binding is registered via config.util.map, which also
--- records it in a registry so config.reload can delete and rebuild on reload.
+-- Global keymaps. Every binding goes through config.util.map, which attaches a
+-- description and auto-silences Ex-command mappings.
 --
 -- <leader> prefix groups:
 --   <leader>b  buffers
@@ -32,7 +32,6 @@ util.map("n", "<leader>bp", ":bprevious<CR>", "Previous buffer")
 
 -- ── <leader>c — config ──
 util.map("n", "<leader>ce", ":vsplit $MYVIMRC<CR>", "Edit config")
-util.map("n", "<leader>cr", function() require("config.reload").reload() end, "Reload config")
 
 -- ── <leader>S — sessions ──
 -- Global sessions keep project directories clean; restored sessions
@@ -179,10 +178,9 @@ util.map("n", "<C-/>", "gcc", "Toggle comment", { remap = true })
 util.map("v", "<C-/>", "gc", "Toggle comment", { remap = true })
 
 -- ── <leader>t — terminal (toggleterm.nvim) ──
--- Factories live in plugins/toggleterm.lua (lazy loaded on first toggle):
--- each binding owns a fixed terminal id, so toggling always reopens the same
--- terminal (also across a :ConfigReload). Plain terminals use the configured
--- shell (cmd.exe on Windows); lazygit / ipython run their own command. <F2>
+-- Factories live in plugins/toggleterm.lua: each binding owns a fixed terminal
+-- id, so toggling always reopens the same terminal. Plain terminals use the
+-- configured shell ($SHELL, bash); lazygit / ipython run their own command. <F2>
 -- is a direct alias for the floating toggle; in terminal mode it toggles the
 -- terminal under the cursor instead (identify() reads the id from the
 -- buffer-name tag; untagged :terminal buffers fall back to the float).

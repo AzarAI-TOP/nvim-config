@@ -3,38 +3,6 @@
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
--- A Winget portable package may have updated the user PATH while Explorer/Neovide
--- still hold the old environment. Discover tools for the current process right
--- away; bootstrap-windows.ps1 also persists the directories for future shells.
--- Deferred to just after the UI comes up: every consumer (fzf-lua, toggleterm's
--- lazygit, :grep) runs post-startup, while the three executable() PATH scans
--- cost ~14ms of cold-start time.
-vim.api.nvim_create_autocmd("VimEnter", {
-    group = vim.api.nvim_create_augroup("winget_path_probe", { clear = true }),
-    callback = function()
-        vim.schedule(function()
-            local package_root = vim.fs.joinpath(vim.env.LOCALAPPDATA or "", "Microsoft", "WinGet", "Packages")
-            local winget_tools = {
-                { exe = "fzf", glob = "junegunn.fzf_*/fzf.exe" },
-                { exe = "lazygit", glob = "JesseDuffield.lazygit_*/lazygit.exe" },
-                -- ripgrep extracts into a versioned subdirectory
-                { exe = "rg", glob = "BurntSushi.ripgrep.MSVC_*/ripgrep-*/rg.exe" },
-            }
-            for _, tool in ipairs(winget_tools) do
-                if vim.fn.executable(tool.exe) == 0 then
-                    local matches = vim.fn.glob(vim.fs.joinpath(package_root, tool.glob), false, true)
-                    if #matches > 0 then vim.env.PATH = vim.fs.dirname(matches[1]) .. ";" .. (vim.env.PATH or "") end
-                end
-            end
-        end)
-    end,
-})
-
--- A Windows nvim.exe launched from Git Bash inherits $SHELL=...bash.exe but keeps
--- cmd.exe's /s /c flags. Pin the native shell so :!, system(), filters, and :make
--- don't feed cmd flags into Bash.
-vim.opt.shell = vim.env.COMSPEC or "cmd.exe"
-
 -- ── Display ──
 vim.opt.number = true
 vim.opt.relativenumber = true
@@ -62,7 +30,8 @@ vim.opt.grepprg = "rg --vimgrep"
 vim.opt.confirm = true
 vim.opt.wrap = false
 vim.opt.mouse = "a"
--- Native Windows clipboard: unnamedplus ties yank/paste to the system clipboard.
+-- System clipboard via $SHELL's environment: unnamedplus ties yank/paste to the
+-- X11 (xclip) / Wayland (wl-clipboard) clipboard; bootstrap-ubuntu.sh installs xclip.
 vim.opt.clipboard = "unnamedplus"
 vim.opt.undofile = true
 local undo_dir = vim.fs.joinpath(vim.fn.stdpath("data"), "undo")
@@ -106,6 +75,6 @@ vim.opt.completeopt = "menuone,noselect,noinsert"
 vim.opt.wildmode = "list:longest,full"
 vim.opt.wildignore = { "*.o", "*.pyc", "*.class", "node_modules/*" }
 
--- ── Windows ──
+-- ── Split placement ──
 vim.opt.splitright = true
 vim.opt.splitbelow = true

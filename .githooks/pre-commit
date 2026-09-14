@@ -3,7 +3,7 @@
 # Enable it with `git config core.hooksPath .githooks`.
 #
 # The commit is aborted when:
-#   - StyLua cannot be found anywhere (PATH, Mason packages, Mason bin), or
+#   - StyLua cannot be found anywhere (PATH or Mason), or
 #   - formatting fails, or
 #   - the formatted `stylua --check` fails.
 # There is no silent skip path: an unformattable commit is a failed commit.
@@ -17,20 +17,16 @@ if [ -z "$staged" ]; then
 fi
 
 # Find StyLua: PATH first, then the real executable inside the Mason packages
-# dir (preferred over the .CMD shim), and finally Mason's bin dir.
+# dir (preferred over the bin symlink).
 stylua_cmd=$(command -v stylua 2>/dev/null || true)
 if [ -z "$stylua_cmd" ]; then
-    mason_dirs="$LOCALAPPDATA/nvim-data/mason"
-    for exe in "$mason_dirs"/packages/stylua/stylua.exe "$mason_dirs"/packages/stylua/*/stylua.exe; do
-        if [ -x "$exe" ] || [ -f "$exe" ]; then
+    mason="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/mason"
+    for exe in "$mason"/packages/stylua/stylua "$mason"/packages/stylua/*/stylua; do
+        if [ -x "$exe" ]; then
             stylua_cmd=$exe
             break
         fi
     done
-fi
-if [ -z "$stylua_cmd" ] && [ -n "${LOCALAPPDATA:-}" ]; then
-    candidate="${LOCALAPPDATA}/nvim-data/mason/bin/stylua.CMD"
-    [ -f "$candidate" ] && stylua_cmd=$candidate
 fi
 if [ -z "$stylua_cmd" ]; then
     echo "❌ stylua not found — commit aborted."

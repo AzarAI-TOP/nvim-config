@@ -14,7 +14,15 @@ vim.api.nvim_create_autocmd("ColorSchemePre", {
     group = vim.api.nvim_create_augroup("tokyonight_lazy_setup", { clear = true }),
     pattern = "tokyonight*",
     once = true,
-    callback = function() require("tokyonight").setup({ style = "moon" }) end,
+    callback = function()
+        -- transparent = true hands the background to the terminal: kitty renders
+        -- its background_opacity only in cells that still use the default
+        -- background, so an explicit Normal background paints opaque and the
+        -- window padding around the editor reads as a frame in a different
+        -- shade. kitty.conf sets its background to this same moon tone, so the
+        -- padding and the editor canvas stay indistinguishable.
+        require("tokyonight").setup({ style = "moon", transparent = true })
+    end,
 })
 
 vim.cmd.colorscheme("tokyonight-moon")

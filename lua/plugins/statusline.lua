@@ -17,35 +17,33 @@ vim.pack.add({
     { src = "https://github.com/nvim-mini/mini.statusline" },
 })
 
--- Narrow-layout threshold: one third of the screen width, in columns. Screen
--- and window pixel widths come from a background PowerShell probe (the
--- client area of this instance's Neovide window, located via the nvim
--- process's parent — with several instances open, "first neovide found"
--- could measure a differently sized one — measured against the monitor the
--- window actually sits on, not necessarily the primary) and are cached in
--- the state dir; 120 is the fallback until the probe lands.
-local narrow_threshold = 120
+-- Narrow-layout threshold: the statusline falls back to its minimal form only
+-- when the window is narrower than a QUARTER of the screen it sits on. Screen
+-- and window pixel widths come from scripts/screen-probe.sh (xrandr + xwininfo)
+-- and are cached in the state dir. The probe reports "<screen_px> <window_px>",
+-- measured against the monitor the window actually sits on — with two screens of
+-- different sizes attached, "the primary" is routinely the wrong reference.
+-- 60 is the fallback until a probe lands.
+local narrow_threshold = 60
 
-local function apply_probe(out)
-    local sw, ww = out:match("(%d+)%s+(%d+)")
-    sw, ww = tonumber(sw), tonumber(ww)
-    if not sw or sw <= 0 or not ww or ww <= 0 or vim.o.columns <= 0 then return false end
-    local px_per_col = ww / vim.o.columns
-    -- Reject nonsense ratios (e.g. pre-attach UI sizes); ~8-11px at 13pt.
-    if px_per_col < 5 or px_per_col > 16 then return false end
-    narrow_threshold = math.max(40, math.floor(sw / 3 / px_per_col))
+---@param screen_px integer|nil
+---@param window_px integer|nil
+---@return boolean accepted
+local function apply_probe(screen_px, window_px)
+    if not screen_px or not window_px or vim.o.columns <= 0 then return false end
+    local px_per_col = window_px / vim.o.columns
+    narrow_threshold = math.max(40, math.floor(screen_px / 4 / px_per_col))
     return true
 end
 
 local cache_file = vim.fn.stdpath("state") .. "/statusline_screen_px"
 local function read_cache()
     local f = io.open(cache_file, "r")
-    if f then
-        local ok = apply_probe(f:read("*a"))
-        f:close()
-        return ok
-    end
-    return false
+    if not f then return false end
+    local content = f:read("*a")
+    f:close()
+    local sw, ww = content:match("(%d+)%s+(%d+)")
+    return apply_probe(tonumber(sw), tonumber(ww))
 end
 local function write_cache(px)
     local f = io.open(cache_file, "w")
@@ -57,42 +55,38 @@ end
 
 do
     read_cache()
-    -- PowerShell probe, Neovide only: a terminal nvim has no window of its
-    -- own to measure, so spawning the probe there is pure waste. The probe
-    -- script lives in scripts/screen-probe.ps1 (statically checkable and
-    -- runnable on its own); it runs at VimEnter so the Neovide window
-    -- certainly exists (during config load it has no handle yet); cache
-    -- writes are gated on acceptance.
-    if vim.g.neovide then
-        local probe_script = vim.fs.joinpath(vim.fn.stdpath("config"), "scripts", "screen-probe.ps1")
+    -- The probe lives in scripts/screen-probe.sh (statically checkable and
+    -- runnable on its own). It runs at VimEnter so the window certainly exists
+    -- and has its settled size (during config load the terminal may still be
+    -- laying out). The window id comes from $WINDOWID, which kitty exports.
+    local probe_cmd
+    if (vim.env.WINDOWID or "") ~= "" then
+        probe_cmd = {
+            vim.fs.joinpath(vim.fn.stdpath("config"), "scripts", "screen-probe.sh"),
+            vim.env.WINDOWID,
+        }
+    end
+
+    if probe_cmd then
         vim.api.nvim_create_autocmd("VimEnter", {
             callback = function()
-                -- The probe result only changes on monitor / DPI / font
-                -- changes, so a fresh cache (< 1h old) skips the spawn.
+                -- The probe result only changes on monitor / DPI / font / window
+                -- position changes, so a fresh cache (< 1h old) skips the spawn.
                 local mtime = vim.fn.getftime(cache_file)
                 if mtime > 0 and os.time() - mtime < 3600 then return end
                 read_cache()
-                -- The window is still at its initial size when VimEnter
-                -- fires; wait for Neovide to finish laying it out first.
                 vim.defer_fn(function()
-                    vim.fn.jobstart({
-                        "powershell",
-                        "-NoProfile",
-                        "-File",
-                        probe_script,
-                        "-NvimPid",
-                        tostring(vim.fn.getpid()),
-                    }, {
+                    vim.fn.jobstart(probe_cmd, {
                         on_stdout = function(_, data)
-                            local px = data[1]
-                            if px and apply_probe(px) then write_cache(px) end
+                            local px = data and data[1]
+                            if not px then return end
+                            local sw, ww = px:match("(%d+)%s+(%d+)")
+                            if apply_probe(tonumber(sw), tonumber(ww)) then write_cache(px) end
                         end,
                         on_exit = function(_, code)
                             if code ~= 0 then
                                 vim.notify(
-                                    "screen probe failed (exit "
-                                        .. code
-                                        .. "), narrow-layout threshold stays at default",
+                                    "screen probe failed (exit " .. code .. ")",
                                     vim.log.levels.WARN,
                                     { title = "statusline" }
                                 )
@@ -182,11 +176,10 @@ local function filetype()
     if vim.bo.buftype ~= "" then return "" end
     local ft = vim.bo.filetype
     if ft == "" then return "" end
-    local ok, glyph = pcall(require("mini.icons").get, "filetype", ft)
-    local icon = ok and glyph ~= nil and glyph .. " " or ""
+    local glyph = require("mini.icons").get("filetype", ft)
+    local icon = glyph ~= nil and glyph .. " " or ""
     return icon .. ft
 end
-
 -- Relative filename with modified/readonly flags; terminal buffers show the
 -- job title via "%t". A path containing a directory renders the basename with
 -- bright text (MiniStatuslineFileBase) while the directory part keeps the
@@ -196,12 +189,11 @@ end
 local function filename(short)
     if vim.bo.buftype == "terminal" then return "%t" end
     -- ":." = cwd-relative: files opened by absolute path still show their
-    -- relative form; paths outside cwd stay absolute. Forward slashes keep
-    -- the display consistent with fzf/mini.files-opened buffers.
-    local f = vim.fn.fnamemodify(vim.fn.expand("%f"), ":."):gsub("\\", "/")
+    -- relative form; paths outside cwd stay absolute.
+    local f = vim.fn.fnamemodify(vim.fn.expand("%f"), ":.")
     local flags = (vim.bo.modified and " [+]" or "") .. (vim.bo.readonly and " [RO]" or "")
     if f == "" then return flags end
-    local dir, base = f:match("^(.*[/\\])([^/\\]*)$")
+    local dir, base = f:match("^(.*/)([^/]*)$")
     if dir then
         if short then return string.format("%%#MiniStatuslineFileBase#%s%%#MiniStatuslineDim#%s", base, flags) end
         return string.format("%s%%#MiniStatuslineFileBase#%s%%#MiniStatuslineDim#%s", dir, base, flags)

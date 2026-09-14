@@ -1,26 +1,41 @@
 -- vim.pack-based plugin update / list commands (no third-party plugin manager).
--- The PackList row builder lives in config.util (pack_rows); this file only
--- registers the user commands, so reload can delete and rebuild them.
+--
+-- Follows the official vim.pack update flow (:help pack-update): downloads
+-- updates and opens a confirmation buffer in a separate tabpage — :write
+-- applies the changes, :quit discards them, optionally :restart loads the
+-- updated plugin code.
+vim.api.nvim_create_user_command(
+    "PackUpdate",
+    function() vim.pack.update() end,
+    { desc = "Update vim.pack plugins (opens review buffer)", nargs = 0 }
+)
 
--- Follows the official vim.pack update flow (:help pack-update):
--- downloads updates and opens a confirmation buffer in a separate tabpage —
--- :write applies the changes, :quit discards them, optionally :restart loads
--- the updated plugin code.
-vim.api.nvim_create_user_command("PackUpdate", function()
-    -- Deferred plugins are not in vim.pack's view until loaded; pull them all
-    -- in first so they update too (and show up in :PackList afterwards).
-    require("config.lazy").load_all()
-    local ok, err = pcall(vim.pack.update)
-    if not ok then
-        vim.notify("Plugin update failed: " .. tostring(err), vim.log.levels.ERROR, { title = "PackUpdate" })
-    end
-end, { desc = "Update vim.pack plugins (opens review buffer)", nargs = 0 })
+-- Strips protocol/host from a plugin source, keeping "author/repo"
+-- (e.g. "https://github.com/folke/noice.nvim" -> "folke/noice.nvim").
+local function short_src(src)
+    local path = src:match("^%a+://[^/]+/(.+)$") or src:match("^git@[^:]+:(.+)$") or src
+    return path:gsub("%.git$", "")
+end
 
-vim.api.nvim_create_user_command("PackList", function()
-    local ok, fzf = pcall(require, "fzf-lua")
-    if not ok then
-        vim.notify("fzf-lua unavailable", vim.log.levels.ERROR)
-        return
+---One row per plugin, sorted by name: "name  author/repo", second column aligned.
+local function pack_rows()
+    local rows = {}
+    local width = 0
+    for _, plugin in ipairs(vim.pack.get()) do
+        local spec = plugin.spec or {}
+        local name = spec.name or "?"
+        width = math.max(width, #name)
+        table.insert(rows, { name = name, src = short_src(spec.src or "") })
     end
-    fzf.fzf_exec(require("config.util").pack_rows(), { prompt = "plugins> " })
-end, { desc = "List vim.pack plugins", nargs = 0 })
+    for i, row in ipairs(rows) do
+        rows[i] = (string.format("%-" .. width .. "s  %s", row.name, row.src)):gsub("%s+$", "")
+    end
+    table.sort(rows)
+    return rows
+end
+
+vim.api.nvim_create_user_command(
+    "PackList",
+    function() require("fzf-lua").fzf_exec(pack_rows(), { prompt = "plugins> " }) end,
+    { desc = "List vim.pack plugins", nargs = 0 }
+)
