@@ -21,6 +21,7 @@ local parsers = {
     "vim",
     "vimdoc",
     "query",
+    "regex", -- noice cmdline regex highlighting
     "javascript",
     "typescript",
     "tsx",
