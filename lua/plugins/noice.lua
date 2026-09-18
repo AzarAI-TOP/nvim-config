@@ -1,16 +1,20 @@
 -- noice.nvim: styled floating UIs replacing the native cmdline, messages, and
--- completion popupmenu (nui backend). noice also owns vim.notify: the notify
--- view falls back to noice's built-in "mini" backend (nvim-notify is not
--- installed), rendering notifications as unfocusable floating cards — the
--- card lifetime is bumped to 5s, matching the mini.notify defaults this
--- replaces. Colors and popupmenu kind metadata live in config/colors.lua.
+-- completion popupmenu (nui backend). Notifications route to noice's `notify`
+-- view, backed by nvim-notify (noice's health check requires one of
+-- nvim-notify / snacks.nvim for that view); background_colour is pinned
+-- because nvim-notify's default transparent blend renders black message
+-- cards on Windows. Colors and popupmenu kind metadata live in
+-- config/colors.lua.
 
 local colors = require("config.colors")
 
 vim.pack.add({
     { src = "https://github.com/folke/noice.nvim" },
     { src = "https://github.com/MunifTanjim/nui.nvim" },
+    { src = "https://github.com/rcarriga/nvim-notify" },
 })
+
+require("notify").setup({ background_colour = "#000000" })
 
 require("noice").setup({
     -- ── Views ──
@@ -36,5 +40,14 @@ require("noice").setup({
         long_message_to_split = true, -- long messages render in a split
         inc_rename = false, -- inc-rename.nvim not installed
         lsp_doc_border = true, -- borders on hover docs and signature help
+    },
+    -- ── LSP ──
+    lsp = {
+        -- Route LSP hover/signature markdown through noice's formatter
+        -- (fenced-code-block aware) instead of the stock vim.lsp.util ones.
+        override = {
+            ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
+            ["vim.lsp.util.stylize_markdown"] = true,
+        },
     },
 })

@@ -3,6 +3,14 @@
 vim.g.mapleader = " "
 vim.g.maplocalleader = " "
 
+-- Disable the node/perl/ruby remote-plugin providers: nothing in this config
+-- or its plugins uses those client bindings, and none of the runtimes are on
+-- PATH — skipping them avoids startup probing and checkhealth warnings.
+-- Python stays enabled (pynvim is installed).
+vim.g.loaded_node_provider = 0
+vim.g.loaded_perl_provider = 0
+vim.g.loaded_ruby_provider = 0
+
 -- A Winget portable package may have updated the user PATH while Explorer/Neovide
 -- still hold the old environment. Discover tools for the current process right
 -- away; bootstrap-windows.ps1 also persists the directories for future shells.

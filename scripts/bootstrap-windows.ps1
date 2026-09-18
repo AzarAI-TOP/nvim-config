@@ -1,6 +1,15 @@
 # Bootstraps the Windows system-level dependencies for this Neovim config.
 # Run in PowerShell. Mason installs the LSP servers and portable formatters.
 #
+# Scoped to this machine's baseline after the Go / Rust / JVM development
+# moved to the Ubuntu box: those toolchains are deliberately not installed.
+# Git and Node.js stay in the list because the plugin/LSP layer hard-depends
+# on them (vim.pack clones via git; the npm-based Mason servers run on node) —
+# today they happen to resolve from the agent toolchain on PATH, but a
+# from-scratch restore re-establishes them independently. The C compiler the
+# tree-sitter parser builds need is NOT installed here: this machine provides
+# it through CodeBlocks' MinGW via the ~/.local/bin shims.
+#
 # Every package installs through winget; the Neovide PATH repair and the
 # Ctrl+Alt+N Start Menu launcher are fixed up afterwards, and every installed
 # tool is mirrored into PATH for the current process so later steps resolve.
@@ -19,12 +28,7 @@ $script:DefaultPackages = @(
     "junegunn.fzf",
     "JesseDuffield.lazygit",
     "OpenJS.NodeJS.LTS",
-    "Python.Python.3.13",
-    "GoLang.Go",
-    "Rustlang.Rustup",
-    "Microsoft.OpenJDK.21",
-    "LLVM.LLVM",
-    "7zip.7zip"
+    "Python.Python.3.14"
 )
 
 $script:NerdFontsVersion = "3.5.0"
@@ -183,10 +187,6 @@ function Invoke-BootstrapWindows {
         } finally {
             Remove-Item $fontTemp -Recurse -Force -ErrorAction SilentlyContinue
         }
-    }
-
-    if (Get-Command rustup -ErrorAction SilentlyContinue) {
-        rustup toolchain install stable --profile minimal --component rustfmt
     }
 
     # Every plugin loads at startup, so :Mason* resolves without the

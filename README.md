@@ -10,18 +10,23 @@ is no lazy-loading layer and no hot-reload.
 - **Windows 10/11** with **PowerShell** and **winget** (Microsoft App
   Installer). `scripts/bootstrap-windows.ps1` fails fast when winget is missing.
 - **Neovim 0.12+** — for `vim.pack` and the native `vim.lsp.completion` APIs.
-- **A C compiler on `PATH`** — tree-sitter parsers are compiled locally; the
-  bootstrap installs LLVM, which provides `clang`.
+- **A C compiler on `PATH`** — tree-sitter parsers are compiled locally; this
+  machine provides it through CodeBlocks' MinGW via the `~/.local/bin` shims.
 - **The `tree-sitter` CLI** — nvim-treesitter drives parser builds through it.
 - **StyLua** — the pre-commit hook formats staged Lua files and aborts commits
   it cannot format.
+- **Node.js** — the npm-based LSP servers and `prettierd` run on it; today it
+  resolves from the agent toolchain on `PATH`.
 
-`scripts/bootstrap-windows.ps1` installs the system tools (Git, Neovim, Neovide,
-ripgrep, fzf, lazygit, Node.js LTS, Python 3.13, Go, Rust, OpenJDK 21, LLVM,
-7-Zip), repairs Neovide's missing `PATH` entry, creates the `Ctrl+Alt+N` Start
-Menu launcher, installs the 0xProto Nerd Font and ipython, and then
-synchronizes every Mason-managed LSP server and formatter headlessly
-(`+MasonToolsInstallSync`).
+The config is scoped to the toolchains actually installed here — Go / Rust /
+JVM development lives on the Ubuntu box, so their servers, formatters, and
+parsers are deliberately absent.
+
+`scripts/bootstrap-windows.ps1` installs the system tools (Git, Neovim,
+Neovide, ripgrep, fzf, lazygit, Node.js LTS, Python 3.14), repairs Neovide's
+missing `PATH` entry, creates the `Ctrl+Alt+N` Start Menu launcher, installs
+the 0xProto Nerd Font and ipython, and then synchronizes every Mason-managed
+LSP server and formatter headlessly (`+MasonToolsInstallSync`).
 
 ## Layout
 
@@ -90,10 +95,9 @@ mini.{ai,bracketed,clue,comment,files,git,icons,indentscope,jump2d,move,sessions
 todo-comments.nvim · toggleterm.nvim · tokyonight.nvim · nvim-treesitter ·
 nvim-treesitter-textobjects
 
-Mason installs 12 LSP servers (gopls, clangd, rust_analyzer, ts_ls, html, cssls,
-jsonls, pyright, lua_ls, bashls, yamlls, kotlin_lsp) and 10 formatters (black,
-clang-format, goimports, isort, prettierd, shfmt, stylua, taplo,
-google-java-format, ktlint). `rustfmt` comes from the Rust toolchain.
+Mason installs 9 LSP servers (clangd, ts_ls, html, cssls, jsonls, pyright,
+lua_ls, bashls, yamlls) and 7 formatters (black, clang-format, isort,
+prettierd, shfmt, stylua, taplo).
 
 ## Machine-specific notes
 

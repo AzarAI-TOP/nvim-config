@@ -15,7 +15,9 @@ vim.pack.add({
 })
 
 -- Parsers to install (language names, not filetype names). Requires a C
--- compiler (cc/gcc) on PATH.
+-- compiler on PATH (this machine: CodeBlocks MinGW via the ~/.local/bin
+-- shims). Go / Rust / JVM parsers are absent — that development moved to
+-- the Ubuntu box.
 local parsers = {
     "lua",
     "vim",
@@ -30,6 +32,8 @@ local parsers = {
     "graphql",
     "vue",
     "svelte",
+    -- noice highlights the :s/// pattern preview with the regex parser
+    "regex",
     "json",
     -- "jsonc" is unsupported
     "yaml",
@@ -38,12 +42,8 @@ local parsers = {
     "markdown",
     "markdown_inline",
     "python",
-    "rust",
-    "go",
     "c",
     "cpp",
-    "java",
-    "kotlin",
 }
 
 -- Install / update parsers asynchronously (already installed ones are skipped);

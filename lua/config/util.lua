@@ -69,10 +69,11 @@ end
 -- ── Tool lists ──
 
 -- LSP server list; names match the nvim-lspconfig / mason-lspconfig identifiers.
+-- Scoped to the toolchains actually installed on this Windows machine: Go /
+-- Rust / JVM development lives on the Ubuntu box, so gopls, rust_analyzer,
+-- kotlin_lsp (and their formatters / parsers) are deliberately absent.
 M.lsp_servers = {
-    "gopls",
     "clangd",
-    "rust_analyzer",
     "ts_ls",
     "html",
     "cssls",
@@ -81,23 +82,17 @@ M.lsp_servers = {
     "lua_ls",
     "bashls",
     "yamlls",
-    "kotlin_lsp",
 }
 
 -- Portable formatters available from the Mason registry.
--- gofmt and rustfmt deliberately come from the official Go/Rust toolchains
--- (Mason does not publish standalone packages for them).
 M.mason_formatters = {
     "black",
     "clang-format",
-    "goimports",
     "isort",
     "prettierd",
     "shfmt",
     "stylua",
     "taplo",
-    "google-java-format",
-    "ktlint",
 }
 
 -- mason-tool-installer accepts plain package names.

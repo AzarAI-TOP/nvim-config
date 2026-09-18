@@ -69,22 +69,6 @@ local server_configs = {
         },
     },
 
-    gopls = {
-        -- Go modules and workspaces: static analysis runs continuously,
-        -- formatting belongs to conform.nvim.
-        root_markers = { "go.work", "go.mod", ".git" },
-        settings = {
-            gopls = {
-                analyses = { unusedparams = true, unusedwrite = true },
-                completeUnimported = true,
-                gofumpt = false,
-                semanticTokens = true,
-                staticcheck = true,
-                usePlaceholders = true,
-            },
-        },
-    },
-
     html = {
         -- VS Code HTML language server: extra template filetypes share
         -- completion and validation.
@@ -105,20 +89,6 @@ local server_configs = {
                 validate = { enable = true },
             },
         },
-    },
-
-    kotlin_lsp = {
-        -- Official Kotlin language server: Gradle / Maven markers scope
-        -- projects.
-        root_markers = {
-            "settings.gradle.kts",
-            "settings.gradle",
-            "build.gradle.kts",
-            "build.gradle",
-            "pom.xml",
-            ".git",
-        },
-        settings = { kotlin = { compiler = { jvm = { target = "21" } } } },
     },
 
     lua_ls = {
@@ -154,20 +124,6 @@ local server_configs = {
         },
     },
 
-    rust_analyzer = {
-        -- Cargo projects: Clippy handles save-time checks, rustfmt belongs
-        -- to the Rust toolchain.
-        root_markers = { "Cargo.toml", "rust-project.json", ".git" },
-        settings = {
-            ["rust-analyzer"] = {
-                cargo = { allFeatures = true },
-                check = { command = "clippy" },
-                completion = { callable = { snippets = "add_parentheses" } },
-                procMacro = { enable = true },
-            },
-        },
-    },
-
     ts_ls = {
         -- TypeScript / JavaScript: single-file mode lets small scripts work
         -- outside a package root.
@@ -179,7 +135,11 @@ local server_configs = {
 
     yamlls = {
         -- Red Hat YAML language server: enable the Schema Store, don't
-        -- hardcode project schemas.
+        -- hardcode project schemas. Only the plain "yaml" filetype is kept:
+        -- the compound filetypes lspconfig lists by default
+        -- (yaml.docker-compose, yaml.gitlab, yaml.helm-values) have no
+        -- detection rules here, so they could never match anyway.
+        filetypes = { "yaml" },
         root_markers = { ".yamllint", ".git" },
         settings = {
             redhat = { telemetry = { enabled = false } },

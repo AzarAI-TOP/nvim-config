@@ -12,14 +12,8 @@ require("conform").setup({
     formatters_by_ft = {
         lua = { "stylua" },
         python = { "isort", "black" },
-        rust = { "rustfmt" },
-        -- goimports output is already gofmt-formatted; a second pass would
-        -- just spawn a redundant process
-        go = { "goimports" },
         c = { "clang-format" },
         cpp = { "clang-format" },
-        java = { "google-java-format" },
-        kotlin = { "ktlint" },
         -- prettierd covers web / markup / declarative languages
         javascript = { "prettierd" },
         javascriptreact = { "prettierd" },

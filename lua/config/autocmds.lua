@@ -38,8 +38,7 @@ local indent_augroup = vim.api.nvim_create_augroup("indent_settings", { clear = 
 
 -- Indent group format: [tabstop, shiftwidth, expandtab, filetype list]
 local indent_groups = {
-    -- 2 spaces — web / scripting / markup / declarative languages; java sits
-    -- here because google-java-format mandates 2-space Google Java Style.
+    -- 2 spaces — web / scripting / markup / declarative languages
     {
         2,
         2,
@@ -54,34 +53,14 @@ local indent_groups = {
             "css",
             "scss",
             "less",
-            "sass",
             "json",
             "jsonc",
             "yaml",
-            "ruby",
-            "eruby",
-            "fish",
             "markdown",
-            "elixir",
-            "eelixir",
-            "heex",
-            "haskell",
-            "lhaskell",
-            "ocaml",
-            "reason",
-            "scala",
-            "dart",
-            "cmake",
             "graphql",
             "svelte",
             "vue",
-            "terraform",
-            "hcl",
             "toml",
-            "nix",
-            "rescript",
-            "gleam",
-            "java",
         },
     },
 
@@ -97,22 +76,11 @@ local indent_groups = {
             "sh",
             "bash",
             "python",
-            "rust",
-            "kotlin",
-            "swift",
-            "fsharp",
-            "zig",
-            "ada",
-            "perl",
-            "prolog",
-            "solidity",
-            "pascal",
         },
     },
 
     -- Tab indentation — toolchains that mandate tabs
     { 4, 4, false, {
-        "go",
         "make",
     } },
 }
