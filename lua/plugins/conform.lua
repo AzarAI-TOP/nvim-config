@@ -35,6 +35,12 @@ require("conform").setup({
         json = { "prettierd" },
         jsonc = { "prettierd" },
         yaml = { "prettierd" },
+        -- Derived yaml pseudo-filetypes (config/filetypes.lua) format the
+        -- same way; listed so prettierd keeps running after detection splits
+        -- them off from plain yaml.
+        ["yaml.gitlab"] = { "prettierd" },
+        ["yaml.docker-compose"] = { "prettierd" },
+        ["yaml.helm-values"] = { "prettierd" },
         -- Markdown gets no formatter — keep prose input immediate
         sh = { "shfmt" },
         bash = { "shfmt" },

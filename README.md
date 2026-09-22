@@ -30,6 +30,7 @@ and then syncs every Mason-managed LSP server and formatter headlessly.
 │   │   ├── options.lua     # editor options (number, indent, search, undo, ...)
 │   │   ├── keymaps.lua     # key mappings (leader = <Space>)
 │   │   ├── autocmds.lua    # autocommands + per-filetype indent rules
+│   │   ├── filetypes.lua   # yaml.gitlab / yaml.docker-compose / yaml.helm-values / gotmpl detection
 │   │   ├── lsp.lua         # LSP config, diagnostics, native completion, LSP keymaps
 │   │   ├── colors.lua      # noice UI colors and the statusline colour gradient
 │   │   └── pack.lua        # :PackUpdate / :PackList
@@ -54,7 +55,7 @@ a short delay.
 
 | Prefix | Group | Examples |
 |--------|-------|----------|
-| `<leader>p` | Packages | `pm` Mason UI / `pu` plugin update / `pU` Mason tools update / `pl` plugin list |
+| `<leader>p` | Packages | `pm` Mason UI / `pu` plugin update / `pt` treesitter parsers / `pU` Mason tools update / `pl` plugin list |
 | `<leader>s` | Splits | `ss` horizontal / `sv` vertical / `sc` close / `so` close others |
 | `<leader>f` | Find | `ff` files / `fc` config / `fr` registers / `fh` help / `ft` TODO / `fk` keymaps / `fn` notifications; `fg` grep project / `fG` live grep |
 | `<leader>b` | Buffers | `bn` next / `bp` previous / `bd` delete (`;` opens bento) |
@@ -103,7 +104,15 @@ google-java-format, ktlint). `rustfmt` comes from the Rust toolchain.
 
 ```vim
 :PackUpdate      " vim.pack review buffer (:write applies, :quit discards)
+:TSUpdate        " treesitter parsers — run after :PackUpdate moved nvim-treesitter
+                 " (startup install() skips installed parsers; a plugin update
+                 "  refreshes queries but not the parser .so files)
 :PackList        " installed plugins
 :Mason           " Mason package state
 :checkhealth     " full plugin/provider/Mason/toolchain report
 ```
+
+Update order that keeps queries and parsers in sync: `:PackUpdate` → `:restart`
+→ `:TSUpdate`. The parsers are pinned by revision inside nvim-treesitter's
+repo, so a plugin update with stale parsers produces "Invalid node type"
+query errors (kotlin hit this on 2026-09-22).

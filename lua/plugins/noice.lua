@@ -29,6 +29,17 @@ require("noice").setup({
     popupmenu = {
         kind_icons = colors.kind_icons(), -- Nerd Font icons + per-kind colors
     },
+    -- ── LSP markdown overrides ──
+    -- Off by default upstream since Neovim 0.12 reimplemented hover /
+    -- signature help in core; enabling keeps noice's formatter in the (now
+    -- legacy) util entry points any remaining caller still uses, and stops
+    -- :checkhealth noice from flagging them as unhandled.
+    lsp = {
+        override = {
+            ["vim.lsp.util.convert_input_to_markdown_lines"] = true,
+            ["vim.lsp.util.stylize_markdown"] = true,
+        },
+    },
     -- ── Presets ──
     presets = {
         bottom_search = true, -- classic bottom cmdline for search prompts

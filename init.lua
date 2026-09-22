@@ -4,6 +4,7 @@ require("config.options")
 require("config.colors") -- popupmenu & per-kind highlights (noice + tokyonight moon)
 require("config.keymaps")
 require("config.autocmds")
+require("config.filetypes") -- yaml.gitlab / yaml.docker-compose / yaml.helm-values / gotmpl
 require("config.pack") -- :PackUpdate / :PackList user commands
 
 -- Plugins (auto-loads every file under lua/plugins/)

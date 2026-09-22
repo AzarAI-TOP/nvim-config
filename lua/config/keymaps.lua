@@ -130,6 +130,7 @@ util.map("n", "<leader>uc", function() require("config.lsp").toggle_autotrigger(
 -- ── <leader>p — package management ──
 util.map("n", "<leader>pm", ":Mason<CR>", "Open Mason UI")
 util.map("n", "<leader>pu", ":PackUpdate<CR>", "Update plugins")
+util.map("n", "<leader>pt", ":TSUpdate<CR>", "Update treesitter parsers")
 util.map("n", "<leader>pU", ":MasonToolsUpdate<CR>", "Update Mason tools")
 util.map("n", "<leader>pl", ":PackList<CR>", "List plugins")
 util.map("n", "<leader>pi", ":MasonToolsInstallSync<CR>", "Install Mason tools")
